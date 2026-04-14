@@ -32,15 +32,19 @@ export default function SettingsPage() {
     const [darkMode, setDarkMode] = useState(false);
 
     useEffect(() => {
-        Promise.all([fetchSettings(), fetchMembers()])
+        setLoading(true);
+        Promise.all([fetchSettings().catch(() => ({})), fetchMembers().catch(() => [])])
             .then(([s, m]) => {
-                setSettings({ ...settings, ...s });
-                setMembers(m);
+                setSettings(prev => ({ ...prev, ...(s || {}) }));
+                setMembers(m || []);
             })
-            .catch(() => {
-                setMembers([]);
+            .catch(err => {
+                console.error("Settings Core Failure:", err);
+                toast.error("Strategy synchronization failed - utilizing local cache");
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                setLoading(false);
+            });
     }, []);
 
     const handleSave = async (e) => {
@@ -152,21 +156,21 @@ export default function SettingsPage() {
                                 <div
                                     key={page.id}
                                     onClick={() => togglePage(page.id)}
-                                    className={`p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between group/item ${enabledPages[page.id]
+                                    className={`p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer flex items-center justify-between group/item ${enabledPages?.[page.id]
                                         ? 'bg-white border-[#E8820C]/20 shadow-xl shadow-black/5'
                                         : 'bg-gray-50 border-transparent opacity-40 grayscale hover:grayscale-0 hover:opacity-100'
                                         }`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${enabledPages[page.id] ? 'bg-[#E8820C] text-white shadow-lg' : 'bg-white text-black/10'}`}>
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${enabledPages?.[page.id] ? 'bg-[#E8820C] text-white shadow-lg' : 'bg-white text-black/10'}`}>
                                             <page.icon size={20} />
                                         </div>
                                         <div className="min-w-0">
                                             <p className="text-[11px] font-black text-[#1A1A2E] truncate tracking-tight">{page.label}</p>
-                                            <p className="text-[9px] font-bold text-black/20 uppercase tracking-[0.2em]">{enabledPages[page.id] ? 'Operational' : 'Deactivated'}</p>
+                                            <p className="text-[9px] font-bold text-black/20 uppercase tracking-[0.2em]">{enabledPages?.[page.id] ? 'Operational' : 'Deactivated'}</p>
                                         </div>
                                     </div>
-                                    <div className={`w-3 h-3 rounded-full transition-all duration-500 ${enabledPages[page.id] ? 'bg-[#E8820C] shadow-[0_0_15px_#E8820C] scale-110' : 'bg-black/5'}`}></div>
+                                    <div className={`w-3 h-3 rounded-full transition-all duration-500 ${enabledPages?.[page.id] ? 'bg-[#E8820C] shadow-[0_0_15px_#E8820C] scale-110' : 'bg-black/5'}`}></div>
                                 </div>
                             ))}
                         </div>

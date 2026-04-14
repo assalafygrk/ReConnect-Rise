@@ -237,10 +237,10 @@ export default function AdviceRoomPage() {
                     {/* Propose Vision FAB: Institutional Uplink */}
                     <button
                         onClick={() => setShowProposalModal(true)}
-                        className="fixed bottom-12 right-12 w-24 h-24 bg-[#E8820C] text-white rounded-full shadow-[0_30px_70px_rgba(232,130,12,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group border-4 border-white"
+                        className="fixed bottom-6 right-6 md:bottom-12 md:right-12 w-16 h-16 md:w-24 md:h-24 bg-[#E8820C] text-white rounded-full shadow-[0_30px_70px_rgba(232,130,12,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group border-4 border-white"
                     >
-                        <Plus size={40} className="group-hover:rotate-90 transition-transform duration-700" strokeWidth={4} />
-                        <div className="absolute right-full mr-10 py-4 px-8 bg-[#1A1A2E] text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-3xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-2xl translate-x-10 group-hover:translate-x-0">
+                        <Plus size={32} className="group-hover:rotate-90 transition-transform duration-700" strokeWidth={4} />
+                        <div className="absolute right-full mr-6 md:mr-10 py-3 md:py-4 px-6 md:px-8 bg-[#1A1A2E] text-white text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] rounded-3xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-2xl translate-x-10 group-hover:translate-x-0 hidden sm:block">
                             Initialize New Proposal
                         </div>
                     </button>
@@ -250,30 +250,30 @@ export default function AdviceRoomPage() {
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
                             <div className="absolute inset-0 bg-[#1A1A2E]/95 backdrop-blur-2xl animate-in fade-in duration-500" onClick={() => !isRecording && !submitting && setShowProposalModal(false)}></div>
                             <div
-                                className="relative bg-white rounded-[4.5rem] w-full max-w-3xl overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700"
+                                className="relative bg-white rounded-[3rem] md:rounded-[4.5rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700"
                                 onMouseMove={handleMouseMove}
                                 onTouchMove={handleMouseMove}
                                 onMouseUp={() => isHolding && !isLocked && handleStopRecording()}
                                 onTouchEnd={() => isHolding && !isLocked && handleStopRecording()}
                             >
-                                <div className="p-12 md:p-16 space-y-12">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-20 h-20 rounded-[2rem] bg-orange-50 flex items-center justify-center text-[#E8820C] shadow-inner relative group/icon">
+                                <div className="p-6 md:p-16 space-y-8 md:space-y-12">
+                                    <div className="flex items-center justify-between sticky top-0 bg-white z-30 py-2">
+                                        <div className="flex items-center gap-4 md:gap-6">
+                                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] bg-orange-50 flex items-center justify-center text-[#E8820C] shadow-inner relative group/icon shrink-0">
                                                 <div className="absolute inset-2 bg-[#E8820C]/10 rounded-2xl animate-pulse"></div>
-                                                <Lightbulb size={36} className="relative z-10 group-hover/icon:scale-110 transition-transform" />
+                                                <Lightbulb size={28} className="relative z-10 group-hover/icon:scale-110 transition-transform" />
                                             </div>
                                             <div>
-                                                <h3 className="text-3xl font-black text-[#1A1A2E] font-serif tracking-tight">Institutional Proposal</h3>
-                                                <p className="text-[11px] text-[#E8820C] font-black uppercase tracking-[0.4em] mt-1 italic">Contribution to the Group Architecture</p>
+                                                <h3 className="text-xl md:text-3xl font-black text-[#1A1A2E] font-serif tracking-tight">Institutional Proposal</h3>
+                                                <p className="text-[9px] md:text-[11px] text-[#E8820C] font-black uppercase tracking-[0.4em] mt-1 italic hidden sm:block">Contribution to the Group Architecture</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => setShowProposalModal(false)}
-                                            className="w-14 h-14 bg-gray-50 text-black/20 hover:text-red-500 rounded-2xl transition-all flex items-center justify-center hover:rotate-90"
+                                            className="w-12 h-12 md:w-14 md:h-14 bg-gray-50 text-black/20 hover:text-red-500 rounded-2xl transition-all flex items-center justify-center hover:rotate-90 shrink-0"
                                             disabled={isRecording || submitting}
                                         >
-                                            <X size={28} strokeWidth={4} />
+                                            <X size={24} strokeWidth={4} />
                                         </button>
                                     </div>
 
@@ -467,7 +467,7 @@ export default function AdviceRoomPage() {
                         {filteredIdeas.map((idea, idx) => (
                             <div
                                 key={idea.id}
-                                className="group bg-white rounded-[4rem] p-12 md:p-16 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] border border-black/5 relative flex flex-col hover:shadow-[0_60px_100px_-20px_rgba(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-700 overflow-hidden"
+                                className="group bg-white rounded-[3rem] md:rounded-[4rem] p-6 sm:p-10 md:p-16 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] border border-black/5 relative flex flex-col hover:shadow-[0_60px_100px_-20px_rgba(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-700 overflow-hidden"
                                 style={{ animationDelay: `${idx * 200}ms` }}
                             >
                                 <div className="absolute top-0 left-0 w-3 h-full bg-gradient-to-b from-[#E8820C] to-[#1A1A2E] opacity-[0.05] group-hover:opacity-100 transition-opacity duration-1000"></div>
@@ -573,13 +573,13 @@ export default function AdviceRoomPage() {
                                     <div className="flex gap-4 w-full md:w-auto">
                                         <button
                                             onClick={() => toast('Discussion thread accessing...')}
-                                            className="flex-1 md:flex-none px-10 py-5 bg-gray-50 text-[11px] font-black uppercase tracking-[0.3em] text-black/40 rounded-[2rem] hover:bg-[#1A1A2E] hover:text-white transition-all border-2 border-transparent hover:border-white/10 shadow-inner group/msg"
+                                            className="flex-1 md:flex-none px-6 sm:px-10 py-5 bg-gray-50 text-[11px] font-black uppercase tracking-[0.3em] text-black/40 rounded-[2rem] hover:bg-[#1A1A2E] hover:text-white transition-all border-2 border-transparent hover:border-white/10 shadow-inner group/msg flex items-center justify-center whitespace-nowrap"
                                         >
                                             Interrogate Node <span className="text-[#F5A623] ml-2 group-hover:scale-110">(12)</span>
                                         </button>
                                         <button
                                             onClick={() => toast('Contextual analysis initializing...')}
-                                            className="p-5 bg-gray-50 text-black/10 hover:text-[#E8820C] hover:bg-white rounded-[2rem] transition-all border-2 border-black/5 hover:border-[#E8820C]/20 shadow-inner group/ser"
+                                            className="p-5 bg-gray-50 text-black/10 hover:text-[#E8820C] hover:bg-white rounded-[2rem] transition-all border-2 border-black/5 hover:border-[#E8820C]/20 shadow-inner group/ser flex items-center justify-center"
                                         >
                                             <Search size={22} className="group-hover/ser:scale-110 transition-transform" />
                                         </button>

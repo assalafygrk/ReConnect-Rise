@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X, Plus, Trash2, Info, CheckCircle2, Users, Wallet, CheckSquare, Loader2 } from 'lucide-react';
 
 const VOTE_TYPES = [
@@ -57,10 +58,10 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A1A2E]/60 backdrop-blur-md overflow-y-auto">
-            <div className="bg-white rounded-[2rem] w-full max-w-xl shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 backdrop-blur-md overflow-hidden">
+            <div className="bg-white rounded-[2rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between p-8 border-b border-black/5">
+                <div className="flex items-center justify-between p-6 sm:p-8 border-b border-black/5 sticky top-0 bg-white z-10 py-4">
                     <div>
                         <h3 className="text-2xl font-serif font-bold text-[#1A1A2E]">Launch New Vote</h3>
                         <p className="text-sm text-black/40 mt-1">Step {step} of 2: {step === 1 ? 'Choose Vote Type' : 'Configure Details'}</p>
@@ -71,7 +72,7 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="p-8 space-y-6">
+                    <div className="p-6 sm:p-8 space-y-6">
                         {step === 1 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {VOTE_TYPES.map((type) => (
@@ -204,7 +205,7 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
                         )}
                     </div>
 
-                    <div className="p-8 bg-gray-50 rounded-b-[2rem] flex gap-3">
+                    <div className="p-6 sm:p-8 bg-gray-50 rounded-b-[2rem] flex gap-3 sticky bottom-0 z-10">
                         {step === 2 && (
                             <button
                                 type="button"

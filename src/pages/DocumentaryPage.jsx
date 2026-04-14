@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import dayjs from 'dayjs';
 import {
     Upload, FileText, Image as ImageIcon, Plus, X, Search,
     Download, ExternalLink, Filter, MoreVertical, Grid, List,
@@ -73,7 +74,7 @@ export default function DocumentaryPage() {
 
     const filteredGallery = MOCK_GALLERY.filter(item =>
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const filteredFiles = MOCK_FILES.filter(item =>
@@ -150,7 +151,7 @@ export default function DocumentaryPage() {
             </div>
 
             {/* Tactical Control Bar */}
-            <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] p-6 shadow-2xl border border-black/5 flex flex-col lg:flex-row items-center gap-8 relative z-40 sticky top-4">
+            <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] p-6 shadow-2xl border border-black/5 flex flex-col lg:flex-row items-center gap-8 relative z-40 relative top-4">
                 <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-[2rem] w-full lg:w-auto shadow-inner">
                     <button
                         onClick={() => setActiveTab('gallery')}
@@ -254,9 +255,9 @@ export default function DocumentaryPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white rounded-[3.5rem] border border-black/5 shadow-2xl overflow-hidden p-4">
+                    <div className="bg-white rounded-[3.5rem] border border-black/5 shadow-2xl p-4 overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead>
+                            <thead className="whitespace-nowrap">
                                 <tr className="border-b-2 border-black/5">
                                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Archive Meta</th>
                                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Strategic Narrative</th>
@@ -264,7 +265,7 @@ export default function DocumentaryPage() {
                                     <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 text-right">Protocol</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-black/5">
+                            <tbody className="divide-y divide-black/5 whitespace-nowrap md:whitespace-normal">
                                 {filteredGallery.map(item => (
                                     <tr
                                         key={item.id}
@@ -422,9 +423,9 @@ export default function DocumentaryPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="w-full lg:w-[450px] p-12 md:p-16 bg-white space-y-12 overflow-y-auto">
+                        <div className="w-full lg:w-[450px] p-6 md:p-16 bg-white space-y-12 overflow-y-auto">
                             <div className="space-y-6">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between sticky top-0 bg-white z-10 py-2">
                                     <span className="px-5 py-2 bg-[#E8820C]/10 text-[#E8820C] text-[10px] font-black uppercase tracking-[0.3em] rounded-full border border-[#E8820C]/20 shadow-inner">Entry #{selectedMedia.id}</span>
                                     <button onClick={() => setSelectedMedia(null)} className="p-4 bg-gray-50 text-black/20 hover:text-red-500 rounded-2xl transition-all hover:rotate-90 group/x">
                                         <X size={24} strokeWidth={3} />
@@ -479,19 +480,19 @@ export default function DocumentaryPage() {
 
             {/* Deposit Modal: Institutional Asset Entry */}
             {showUploadModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-[#1A1A2E]/90 overflow-y-auto">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-[#1A1A2E]/90 overflow-hidden">
                     <div className="absolute inset-0" onClick={() => !uploading && setShowUploadModal(false)}></div>
-                    <div className="relative bg-white rounded-[4.5rem] w-full max-w-2xl p-12 md:p-16 shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500">
-                        <div className="flex items-center justify-between mb-12">
+                    <div className="relative bg-white rounded-[4.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-16 shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500">
+                        <div className="flex items-center justify-between mb-8 md:mb-12 sticky top-0 bg-white z-20 py-2">
                             <div className="space-y-2">
                                 <div className="inline-flex items-center gap-2 px-4 py-1 bg-[#E8820C]/10 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-[#E8820C]">
                                     <Upload size={10} /> Inbound Relay
                                 </div>
-                                <h3 className="text-4xl font-black font-serif text-[#1A1A2E] leading-none">Material Deposit</h3>
-                                <p className="text-[10px] text-black/20 uppercase tracking-[0.4em] font-black italic mt-2">Documenting the brotherhood trajectory</p>
+                                <h3 className="text-3xl md:text-4xl font-black font-serif text-[#1A1A2E] leading-none">Material Deposit</h3>
+                                <p className="text-[10px] text-black/20 uppercase tracking-[0.4em] font-black italic mt-2">Documenting the trajectory</p>
                             </div>
-                            <button onClick={() => !uploading && setShowUploadModal(false)} className="p-5 bg-gray-50 text-black/20 hover:text-red-500 rounded-3xl transition-all hover:rotate-90 group">
-                                <X size={28} strokeWidth={4} />
+                            <button onClick={() => !uploading && setShowUploadModal(false)} className="p-4 md:p-5 bg-gray-50 text-black/20 hover:text-red-500 rounded-3xl transition-all hover:rotate-90 group">
+                                <X size={24} strokeWidth={4} />
                             </button>
                         </div>
 

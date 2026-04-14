@@ -229,7 +229,7 @@ export default function ContributionsPage() {
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-gray-50 text-left">
+                                <thead className="bg-gray-50 text-left whitespace-nowrap">
                                     <tr>
                                         <th className="px-8 py-4 text-[10px] font-black text-black/30 uppercase tracking-widest">Member Name</th>
                                         <th className="px-6 py-4 text-[10px] font-black text-black/30 uppercase tracking-widest text-center">Base</th>
@@ -238,7 +238,7 @@ export default function ContributionsPage() {
                                         <th className="px-8 py-4 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Records</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-black/5 font-medium">
+                                <tbody className="divide-y divide-black/5 font-medium whitespace-nowrap">
                                     {filteredMembers.map((m, i) => (
                                         <tr key={m.id} className="hover:bg-gray-50/50 transition-colors group">
                                             <td className="px-8 py-4">

@@ -16,23 +16,42 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [activeRole, setActiveRole] = useState(null);
     const [enabledPages, setEnabledPages] = useState(() => {
-        const saved = localStorage.getItem('rr_enabled_pages');
-        return saved ? JSON.parse(saved) : {
-            dashboard: true,
-            contributions: true,
-            members: true,
-            disbursements: true,
-            loans: true,
-            requests: true,
-            votes: true,
-            meetings: true,
-            chat: true,
-            wallet: true,
-            settings: true,
-            profile: true,
-            documentary: true,
-            advice: true
-        };
+        try {
+            const saved = localStorage.getItem('rr_enabled_pages');
+            return saved ? JSON.parse(saved) : {
+                dashboard: true,
+                contributions: true,
+                members: true,
+                disbursements: true,
+                loans: true,
+                requests: true,
+                votes: true,
+                meetings: true,
+                chat: true,
+                wallet: true,
+                settings: true,
+                profile: true,
+                documentary: true,
+                advice: true
+            };
+        } catch (e) {
+            return {
+                dashboard: true,
+                contributions: true,
+                members: true,
+                disbursements: true,
+                loans: true,
+                requests: true,
+                votes: true,
+                meetings: true,
+                chat: true,
+                wallet: true,
+                settings: true,
+                profile: true,
+                documentary: true,
+                advice: true
+            };
+        }
     });
     const [loading, setLoading] = useState(true);
 

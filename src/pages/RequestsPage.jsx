@@ -218,7 +218,7 @@ export default function RequestsPage() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-50 text-left border-b border-black/5">
+                        <thead className="bg-gray-50 text-left border-b border-black/5 whitespace-nowrap">
                             <tr>
                                 <th className="px-8 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Protocol ID</th>
                                 <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Applicant</th>
@@ -228,7 +228,7 @@ export default function RequestsPage() {
                                 <th className="px-8 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Registry Date</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-black/5">
+                        <tbody className="divide-y divide-black/5 whitespace-nowrap">
                             {filtered.map((req) => {
                                 const st = statusStyles[req.status] || statusStyles.pending;
                                 return (
@@ -284,12 +284,12 @@ export default function RequestsPage() {
 
             {/* Application Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowForm(false)} />
-                    <div className="bg-white w-full max-w-xl rounded-[2.5rem] p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
                             <div className="space-y-1">
-                                <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">Support Application</h3>
+                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Support Application</h3>
                                 <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
                                     <ClipboardCheck size={12} className="text-[#E8820C]" /> Formal Registry Entry
                                 </p>
@@ -361,12 +361,12 @@ export default function RequestsPage() {
 
             {/* Audit Review Modal */}
             {selectedRequest && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setSelectedRequest(null)} />
-                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
+                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
                             <div className="space-y-1">
-                                <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">Case Audit</h3>
+                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Case Audit</h3>
                                 <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
                                     <ClipboardCheck size={12} className="text-blue-500" /> Protocol #REQ-{String(selectedRequest.id).padStart(4, '0')}
                                 </p>

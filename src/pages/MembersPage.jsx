@@ -88,7 +88,7 @@ export default function MembersPage() {
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.3em] mb-2">
                         <Users size={14} /> Brotherhood Directory
                     </div>
-                    <h1 className="text-4xl font-serif font-black text-[#1A1A2E] tracking-tight">The Registry</h1>
+                    <h1 className="text-3xl sm:text-4xl font-serif font-black text-[#1A1A2E] tracking-tight">The Registry</h1>
                     <p className="text-sm text-black/40 font-medium">Formal archive of all verified members and active leadership.</p>
                 </div>
 
@@ -142,7 +142,7 @@ export default function MembersPage() {
                             <Link
                                 key={member.id}
                                 to={`/members/${member.id}`}
-                                className="group bg-white rounded-[2.5rem] p-8 border border-black/5 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden"
+                                className="group bg-white rounded-[2.5rem] p-6 sm:p-8 border border-black/5 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
 
@@ -214,12 +214,12 @@ export default function MembersPage() {
 
             {/* Induction Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden">
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowAddModal(false)} />
-                    <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
                             <div className="space-y-1">
-                                <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">Brother Induction</h3>
+                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Brother Induction</h3>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-[#E8820C]">Formal Registry Entry</p>
                             </div>
                             <button onClick={() => setShowAddModal(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">

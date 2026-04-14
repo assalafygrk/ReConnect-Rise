@@ -5,7 +5,7 @@ import {
     Send, User, Users, Search, MoreVertical, Paperclip, Smile, Menu, X,
     CheckCircle2, MessageSquare, Image, Video, Mic, MapPin, UserPlus,
     FileText, BarChart3, Calendar, Camera, Plus, Play, Pause, Download, ExternalLink,
-    ShieldLock, Loader2, Zap, Signal, Fingerprint, Lock
+    ShieldAlert, Loader2, Zap, Signal, Fingerprint, Lock
 } from 'lucide-react';
 import { fetchMessages, sendMessage } from '../api/chat';
 import { useAuth } from '../context/AuthContext';
@@ -132,7 +132,7 @@ export default function ChatPage() {
                     {pinnedChats.length > 0 && (
                         <div className="mb-8">
                             <p className="px-4 text-[9px] uppercase font-black text-[#E8820C] tracking-[0.4em] mb-4 flex items-center gap-2">
-                                <ShieldLock size={12} /> Strategic Locks
+                                <ShieldAlert size={12} /> Strategic Locks
                             </p>
                             <div className="space-y-2">
                                 {pinnedChats.map(id => {
@@ -208,7 +208,7 @@ export default function ChatPage() {
                                     {activeTab === 'public' ? 'Strategic Room' : currentBrother?.name}
                                 </h3>
                                 <button onClick={() => togglePin(activeTab)} className={`p-1.5 rounded-xl transition-all ${pinnedChats.includes(activeTab) ? 'text-[#E8820C] bg-[#E8820C]/10 shadow-inner' : 'text-black/10 hover:text-black/30'}`}>
-                                    <ShieldLock size={16} />
+                                    <ShieldAlert size={16} />
                                 </button>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
@@ -258,12 +258,12 @@ export default function ChatPage() {
                             </div>
                         ) : filteredMessages.length > 0 ? (
                             filteredMessages.map((msg, i) => {
-                                const showAvatar = !msg.isMe && activeTab === 'public' && (i === 0 || filteredMessages[i - 1].sender !== msg.sender);
+                                const showAvatar = !msg.isMe && activeTab === 'public' && (i === 0 || filteredMessages[i - 1]?.sender !== msg.sender);
                                 return (
                                     <div key={msg.id} className={`flex items-end gap-5 ${msg.isMe ? 'justify-end' : 'justify-start'} ${!showAvatar && !msg.isMe ? 'ml-19' : ''}`}>
                                         {showAvatar && (
                                             <div className="w-14 h-14 rounded-2xl bg-[#1A1A2E] text-white flex items-center justify-center text-[12px] font-black shadow-2xl mb-8 shrink-0 border-2 border-white">
-                                                {msg.sender.split(' ').map(n => n[0]).join('')}
+                                                {msg.sender?.split(' ').map(n => n[0]).join('')}
                                             </div>
                                         )}
                                         <div className={`max-w-[85%] sm:max-w-xl flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
@@ -304,9 +304,9 @@ export default function ChatPage() {
                                                             <BarChart3 size={20} className="text-[#E8820C]" />
                                                             <p className="font-black text-lg font-serif">{msg.text}</p>
                                                         </div>
-                                                        {msg.content?.options.map((opt, idx) => {
-                                                            const votes = msg.content.votes[idx];
-                                                            const total = msg.content.votes.reduce((a, b) => a + b, 0);
+                                                        {msg.content?.options?.map((opt, idx) => {
+                                                            const votes = msg.content?.votes?.[idx] || 0;
+                                                            const total = msg.content?.votes?.reduce((a, b) => a + b, 0) || 1;
                                                             const pct = Math.round((votes / total) * 100);
                                                             return (
                                                                 <div key={idx} className="space-y-2 cursor-pointer group/poll relative">
@@ -385,7 +385,7 @@ export default function ChatPage() {
 
                             <div className="p-8 bg-[#1A1A2E] rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
-                                    <ShieldLock size={80} />
+                                    <ShieldAlert size={80} />
                                 </div>
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#F5A623] mb-4">Encryption Protocol v4</h5>
                                 <p className="text-[11px] text-white/50 leading-relaxed font-serif italic">
@@ -443,7 +443,7 @@ export default function ChatPage() {
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                                 className="flex-1 bg-transparent border-0 outline-none text-lg font-serif italic py-4 px-6 text-[#1A1A2E] placeholder:text-black/10"
-                                placeholder={activeTab === 'public' ? "Draft strategy for the room..." : `Private uplink with Brother ${currentBrother?.name.split(' ')[0]}...`}
+                                placeholder={activeTab === 'public' ? "Draft strategy for the room..." : `Private uplink with Brother ${currentBrother?.name?.split(' ')[0]}...`}
                             />
 
                             <button

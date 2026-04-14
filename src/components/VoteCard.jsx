@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, Share2, FileBarChart2, Users, Wallet, CheckSquare, ChevronRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Clock, Share2, FileBarChart, Users, Wallet, CheckSquare, ChevronRight, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-hot-toast';
 
@@ -10,12 +10,12 @@ const COLORS = {
 };
 
 export default function VoteCard({ vote, onVote, onShare, onReport, casting, canManage, onClose }) {
-    const totalVotes = Object.values(vote.results).reduce((s, n) => s + n, 0);
+    const totalVotes = Object.values(vote.results || {}).reduce((s, n) => s + n, 0);
     const isClosed = vote.status === 'closed';
 
     const getPieData = () => {
         if (vote.type === 'election' || vote.type === 'multiple_choice') {
-            return Object.entries(vote.results).map(([name, value], i) => ({
+            return Object.entries(vote.results || {}).map(([name, value], i) => ({
                 name,
                 value,
                 fill: COLORS.options[i % COLORS.options.length]
@@ -115,7 +115,7 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
             <div className="mt-8 pt-6 border-t border-black/5">
                 {!vote.myVote && !isClosed ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {vote.options ? (
+                        {vote.options?.length > 0 ? (
                             vote.options.map((option) => (
                                 <button
                                     key={option}
@@ -164,7 +164,7 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
                                 </button>
                                 <button onClick={() => onReport(vote)}
                                     className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-[#1A1A2E]/10 text-[#1A1A2E] text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-all">
-                                    <FileBarChart2 size={14} /> Report
+                                    <FileBarChart size={14} /> Report
                                 </button>
                             </div>
                         )}

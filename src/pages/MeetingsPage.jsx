@@ -279,11 +279,11 @@ export default function MeetingsPage() {
             </div>
 
             {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A1A2E]/60 backdrop-blur-md overflow-y-auto">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto">
-                        <div className="flex items-center justify-between p-8 border-b border-black/5">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 backdrop-blur-md overflow-hidden">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto">
+                        <div className="flex items-center justify-between p-6 sm:p-8 border-b border-black/5 sticky top-0 bg-white z-10 py-4">
                             <div>
-                                <h3 className="text-2xl font-serif font-bold text-[#1A1A2E]">Schedule Assembly</h3>
+                                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#1A1A2E]">Schedule Assembly</h3>
                                 <p className="text-[10px] text-black/30 font-black uppercase tracking-widest mt-1">Authorized Summit Dispatch</p>
                             </div>
                             <button onClick={() => setShowForm(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-black/40 hover:text-black"><X size={24} /></button>
@@ -338,11 +338,11 @@ export default function MeetingsPage() {
             )}
 
             {showMinutesModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A1A2E]/60 backdrop-blur-md overflow-y-auto">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto">
-                        <div className="p-10 space-y-8">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 backdrop-blur-md overflow-hidden">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto p-6 sm:p-10">
+                        <div className="space-y-8">
                             <div className="text-center space-y-2">
-                                <h3 className="text-3xl font-serif font-black text-[#1A1A2E]">Official Minutes</h3>
+                                <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#1A1A2E]">Official Minutes</h3>
                                 <p className="text-[10px] font-black text-[#E8820C] uppercase tracking-[0.4em]">Historical Archive Entry</p>
                             </div>
                             <textarea

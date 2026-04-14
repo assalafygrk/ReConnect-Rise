@@ -108,11 +108,11 @@ export default function DashboardPage() {
     };
 
     const Modal = ({ title, onClose, children }) => (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
-            <div className="bg-white w-full max-w-xl rounded-[2.5rem] p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">{title}</h3>
+            <div className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
+                    <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">{title}</h3>
                     <button onClick={onClose} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
                         <X size={20} />
                     </button>
@@ -125,13 +125,13 @@ export default function DashboardPage() {
     return (
         <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4">
             {/* Header / Hero Section */}
-            <div className="relative bg-[#1A1A2E] rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl overflow-hidden min-h-[300px] flex flex-col justify-center">
+            <div className="relative bg-[#1A1A2E] rounded-[2.5rem] p-6 sm:p-8 md:p-12 text-white shadow-2xl overflow-hidden min-h-[300px] flex flex-col justify-center">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-10">
                     <div className="space-y-4 max-w-md">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-[#F5A623] text-[10px] font-black uppercase tracking-[0.2em] border border-white/10 backdrop-blur-sm">
                             <ShieldCheck size={12} /> Secure Executive Portal
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-serif font-black tracking-tight leading-tight">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black tracking-tight leading-tight">
                             Ahlan wa Sahlan, <br />
                             <span className="text-[#F5A623]">{user?.name?.split(' ')[0] || 'Brother'}</span>.
                         </h1>
@@ -184,10 +184,10 @@ export default function DashboardPage() {
             {/* Analytics Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Visual Analytics */}
-                <div className="bg-white rounded-[2.5rem] p-10 border border-black/5 shadow-sm space-y-8">
+                <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-black/5 shadow-sm space-y-8">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <h2 className="text-xl font-serif font-black text-[#1A1A2E]">Fiscal Trajectory</h2>
+                            <h2 className="text-lg sm:text-xl font-serif font-black text-[#1A1A2E]">Fiscal Trajectory</h2>
                             <p className="text-xs text-black/30 font-medium uppercase tracking-widest flex items-center gap-2">
                                 <TrendingUp size={12} className="text-emerald-500" /> 6-Month Growth Analysis
                             </p>
@@ -255,10 +255,10 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Audit Log / Recent Transactions */}
-                <div className="bg-white rounded-[2.5rem] p-10 border border-black/5 shadow-sm space-y-8">
+                <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border border-black/5 shadow-sm space-y-8">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <h2 className="text-xl font-serif font-black text-[#1A1A2E]">Registry Audit</h2>
+                            <h2 className="text-lg sm:text-xl font-serif font-black text-[#1A1A2E]">Registry Audit</h2>
                             <p className="text-xs text-black/30 font-medium uppercase tracking-widest flex items-center gap-2">
                                 <Clock size={12} className="text-blue-500" /> Recent Monetary Events
                             </p>
@@ -310,10 +310,10 @@ export default function DashboardPage() {
             {/* Widget Details Modals */}
             {selectedWidget === 'balance' && (
                 <Modal title="Registry Balance Audit" onClose={() => setSelectedWidget(null)}>
-                    <div className="space-y-8">
-                        <div className="p-8 rounded-[2rem] bg-[#FFF8F0] border border-[#E8820C]/10 text-center space-y-2">
+                    <div className="space-y-6 sm:space-y-8">
+                        <div className="p-6 sm:p-8 rounded-[2rem] bg-[#FFF8F0] border border-[#E8820C]/10 text-center space-y-2">
                             <p className="text-[10px] font-black text-[#E8820C] uppercase tracking-widest">Liquid Pool Status</p>
-                            <h4 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">{formatNaira(d.poolBalance)}</h4>
+                            <h4 className="text-4xl sm:text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">{formatNaira(d.poolBalance)}</h4>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-6 rounded-[1.5rem] bg-emerald-50/50 border border-emerald-100 flex flex-col items-center gap-2">
@@ -345,18 +345,18 @@ export default function DashboardPage() {
 
             {selectedWidget === 'goal' && (
                 <Modal title="Goal Trajectory Analysis" onClose={() => setSelectedWidget(null)}>
-                    <div className="space-y-8">
+                    <div className="space-y-6 sm:space-y-8">
                         <div className="flex items-center justify-between p-2">
                             <div className="space-y-1">
                                 <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">Mission Target</p>
-                                <p className="text-3xl font-serif font-black text-[#1A1A2E]">{formatNaira(d.savingsGoal)}</p>
+                                <p className="text-2xl sm:text-3xl font-serif font-black text-[#1A1A2E]">{formatNaira(d.savingsGoal)}</p>
                             </div>
                             <div className="text-right space-y-1">
                                 <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">Progression</p>
-                                <p className="text-3xl font-serif font-black text-[#E8820C]">{goalPct}%</p>
+                                <p className="text-2xl sm:text-3xl font-serif font-black text-[#E8820C]">{goalPct}%</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-6 p-8 rounded-[2rem] bg-[#1A1A2E] text-white border border-white/10 shadow-xl overflow-hidden relative">
+                        <div className="flex items-center gap-4 sm:gap-6 p-6 sm:p-8 rounded-[2rem] bg-[#1A1A2E] text-white border border-white/10 shadow-xl overflow-hidden relative">
                             <div className="w-16 h-16 rounded-[1.5rem] bg-[#F5A623] flex items-center justify-center text-[#1A1A2E] relative z-10 shadow-lg">
                                 <Clock size={32} strokeWidth={2.5} />
                             </div>
@@ -391,10 +391,10 @@ export default function DashboardPage() {
 
             {selectedWidget === 'attendance' && (
                 <Modal title="Collection Status: Week 12" onClose={() => setSelectedWidget(null)}>
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="p-8 rounded-[2rem] bg-emerald-50 border border-emerald-100 text-center space-y-1 shadow-sm">
-                                <p className="text-5xl font-serif font-black text-emerald-700">{d.totalPaid}</p>
+                    <div className="space-y-6 sm:space-y-8">
+                        <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                            <div className="p-6 sm:p-8 rounded-[2rem] bg-emerald-50 border border-emerald-100 text-center space-y-1 shadow-sm">
+                                <p className="text-4xl sm:text-5xl font-serif font-black text-emerald-700">{d.totalPaid}</p>
                                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Verified Dues</p>
                             </div>
                             <div className="p-8 rounded-[2rem] bg-rose-50 border border-rose-100 text-center space-y-1 shadow-sm">
@@ -428,14 +428,14 @@ export default function DashboardPage() {
 
             {selectedTx && (
                 <Modal title="Registry Entry Protocol" onClose={() => setSelectedTx(null)}>
-                    <div className="space-y-8">
-                        <div className="flex flex-col items-center text-center space-y-4 pb-8 border-b border-black/5 relative overflow-hidden p-6">
-                            <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 transition-transform duration-500 hover:rotate-6 ${selectedTx.type === 'contribution' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                {selectedTx.type === 'contribution' ? <ArrowUpRight size={48} strokeWidth={2.5} /> : <ArrowDownLeft size={48} strokeWidth={2.5} />}
+                    <div className="space-y-6 sm:space-y-8">
+                        <div className="flex flex-col items-center text-center space-y-4 pb-6 sm:pb-8 border-b border-black/5 relative overflow-hidden p-4 sm:p-6">
+                            <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 transition-transform duration-500 hover:rotate-6 ${selectedTx.type === 'contribution' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                {selectedTx.type === 'contribution' ? <ArrowUpRight size={40} strokeWidth={2.5} className="sm:w-12 sm:h-12" /> : <ArrowDownLeft size={40} strokeWidth={2.5} className="sm:w-12 sm:h-12" />}
                             </div>
                             <div className="relative z-10 space-y-1">
                                 <p className="text-[10px] font-black text-black/30 uppercase tracking-[0.3em]">{selectedTx.type.replace('_', ' ')}</p>
-                                <h4 className="text-4xl font-serif font-black text-[#1A1A2E] tracking-tight">{formatNaira(selectedTx.amount)}</h4>
+                                <h4 className="text-3xl sm:text-4xl font-serif font-black text-[#1A1A2E] tracking-tight">{formatNaira(selectedTx.amount)}</h4>
                             </div>
                             <Activity className="absolute bottom-[-20%] right-[-10%] text-black/5" size={150} />
                         </div>

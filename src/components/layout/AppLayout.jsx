@@ -18,7 +18,7 @@ const pageTitles = {
 };
 
 export default function AppLayout() {
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth < 1024);
     const location = useLocation();
 
     const path = '/' + location.pathname.split('/')[1];
