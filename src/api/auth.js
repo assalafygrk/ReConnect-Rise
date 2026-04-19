@@ -43,3 +43,24 @@ export async function apiLogin(email, password) {
         }, 800);
     });
 }
+
+export async function apiRegister(userData) {
+    // MOCK REGISTER SINCE BACKEND IS NOT YET CONNECTED
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const role = 'member'; // Default role for new users
+            const fullName = [userData.firstName, userData.middleName, userData.lastName].filter(Boolean).join(' ');
+
+            const token = generateMockJwt({
+                id: Date.now(),
+                name: fullName,
+                email: userData.email,
+                phone: userData.phone,
+                role,
+                exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 24 hours
+            });
+
+            resolve({ token, user: { name: fullName, email: userData.email, phone: userData.phone, role } });
+        }, 800);
+    });
+}

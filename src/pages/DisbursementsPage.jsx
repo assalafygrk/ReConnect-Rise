@@ -12,6 +12,7 @@ import { useReactToPrint } from 'react-to-print';
 import TransactionReceipt from '../components/TransactionReceipt';
 import { fetchDisbursements, addDisbursement } from '../api/disbursements';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
@@ -26,6 +27,7 @@ const MOCK = [
 
 export default function DisbursementsPage() {
     const { hasRole } = useAuth();
+    const { config } = usePageConfig('disbursements');
     const isTreasurer = hasRole('treasurer');
     const canManage = hasRole('treasurer', 'group_leader');
 
@@ -141,11 +143,11 @@ export default function DisbursementsPage() {
                         </div>
                         <div>
                             <h1 className="text-4xl font-serif font-black tracking-tight flex items-center gap-3">
-                                Disbursement Ledger
+                                {config.pageHeadline}
                                 <Fingerprint size={24} className="text-white/20" />
                             </h1>
                             <p className="text-white/40 text-sm font-medium mt-2 max-w-md">
-                                Formal record of all authorized support payments, financial outgoings, and brotherhood welfare disbursements.
+                                {config.pageSubtitle}
                             </p>
                         </div>
                     </div>
@@ -167,6 +169,16 @@ export default function DisbursementsPage() {
                     </div>
                 </div>
             </div>
+
+            {config.approvalNotice && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600" />
+                    <p className="text-sm font-bold text-blue-800">
+                        {config.approvalNotice}
+                    </p>
+                </div>
+            )
+            }
 
             {/* Financial Insights */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -271,196 +283,201 @@ export default function DisbursementsPage() {
 
             {/* Meticulous Modals */}
             {/* Record Form Modal */}
-            {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowForm(false)} />
-                    <div className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
-                            <div className="space-y-1">
-                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">New Financial Outlay</h3>
-                                <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                    <ShieldCheck size={12} className="text-[#E8820C]" /> Registry Entry Mode
-                                </p>
-                            </div>
-                            <button onClick={() => setShowForm(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleAdd} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Recipient/Beneficiary</label>
-                                    <div className="relative group">
-                                        <Plus size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" />
-                                        <input
-                                            required
-                                            value={form.member}
-                                            onChange={(e) => setForm({ ...form, member: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-12 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                            placeholder="Enter full name"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Requested Amount</label>
-                                    <div className="relative group">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 text-xs">₦</span>
-                                        <input
-                                            required
-                                            type="number"
-                                            min="100"
-                                            value={form.amount}
-                                            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                            placeholder="Min: 100"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Verified Purpose/Reason</label>
-                                <textarea
-                                    required
-                                    value={form.reason}
-                                    onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-[2rem] px-6 py-5 text-xs font-bold outline-none transition-all resize-none leading-relaxed"
-                                    rows={3}
-                                    placeholder="Provide detailed justification for this disbursement ledger entry..."
-                                />
-                            </div>
-
-                            {Number(form.amount) > 5000 && (
-                                <div className="bg-amber-50 rounded-2xl p-4 flex gap-3 border border-amber-100 items-start">
-                                    <AlertTriangle size={18} className="text-amber-600 flex-shrink-0" />
-                                    <p className="text-[10px] font-bold text-amber-800 leading-normal uppercase">
-                                        Threshold Warning: Requests exceeding ₦5,000 are subject to multi-stage Executive Review beyond the Treasurer.
+            {
+                showForm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowForm(false)} />
+                        <div className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                            <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">New Financial Outlay</h3>
+                                    <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
+                                        <ShieldCheck size={12} className="text-[#E8820C]" /> Registry Entry Mode
                                     </p>
                                 </div>
-                            )}
-
-                            <div className="flex gap-4 pt-4">
-                                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:bg-gray-50 rounded-2xl transition-all">Cancel</button>
-                                <button
-                                    type="submit"
-                                    disabled={actionLoading}
-                                    className="flex-[2] py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                                    style={{ background: '#1A1A2E' }}
-                                >
-                                    {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                    Commit Entry
+                                <button onClick={() => setShowForm(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
+                                    <X size={20} />
                                 </button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
 
-            {/* Transaction Detail & Audit View */}
-            {selectedItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setSelectedItem(null)} />
-                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
-                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
-                            <div className="space-y-1">
-                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Transaction Audit</h3>
-                                <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                    <History size={12} className="text-blue-500" /> Reference #DSB-{String(selectedItem.id).padStart(4, '0')}
-                                </p>
-                            </div>
-                            <button onClick={() => setSelectedItem(null)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-black/[0.03] space-y-4">
-                                <p className="text-[10px] font-black text-black/20 uppercase tracking-widest">Entry Metadata</p>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-black/40">Status:</span>
-                                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${getStatusStyle(selectedItem.status)}`}>
-                                            {selectedItem.status}
+                            <form onSubmit={handleAdd} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Recipient/Beneficiary</label>
+                                        <div className="relative group">
+                                            <Plus size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" />
+                                            <input
+                                                required
+                                                value={form.member}
+                                                onChange={(e) => setForm({ ...form, member: e.target.value })}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-12 pr-5 py-4 text-xs font-bold outline-none transition-all"
+                                                placeholder="Enter full name"
+                                            />
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-black/40">Beneficiary:</span>
-                                        <span className="text-xs font-black text-[#1A1A2E]">{selectedItem.member}</span>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Requested Amount</label>
+                                        <div className="relative group">
+                                            <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 text-xs">₦</span>
+                                            <input
+                                                required
+                                                type="number"
+                                                min="100"
+                                                max={config.maxDisburseAmount || undefined}
+                                                value={form.amount}
+                                                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
+                                                placeholder={`Min: 100 ${config.maxDisburseAmount ? `| Max: ${formatNaira(config.maxDisburseAmount)}` : ''}`}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-black/40">Execute Date:</span>
-                                        <span className="text-xs font-black text-[#1A1A2E]">{dayjs(selectedItem.date).format('DD MMMM YYYY')}</span>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Verified Purpose/Reason</label>
+                                    <textarea
+                                        required
+                                        value={form.reason}
+                                        onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-[2rem] px-6 py-5 text-xs font-bold outline-none transition-all resize-none leading-relaxed"
+                                        rows={3}
+                                        placeholder="Provide detailed justification for this disbursement ledger entry..."
+                                    />
+                                </div>
+
+                                {Number(form.amount) > 5000 && (
+                                    <div className="bg-amber-50 rounded-2xl p-4 flex gap-3 border border-amber-100 items-start">
+                                        <AlertTriangle size={18} className="text-amber-600 flex-shrink-0" />
+                                        <p className="text-[10px] font-bold text-amber-800 leading-normal uppercase">
+                                            Threshold Warning: Requests exceeding ₦5,000 are subject to multi-stage Executive Review beyond the Treasurer.
+                                        </p>
                                     </div>
-                                </div>
-                            </div>
-                            <div className="bg-[#1A1A2E] p-6 rounded-[2rem] text-white flex flex-col justify-center items-center text-center space-y-2">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Audited Amount</p>
-                                <h2 className="text-3xl font-serif font-black">{formatNaira(selectedItem.amount)}</h2>
-                                <div className="flex items-center gap-1.5 py-1.5 px-4 bg-white/5 rounded-full mt-2">
-                                    <BadgeCheck size={12} className="text-emerald-400" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Vault Cleared</span>
-                                </div>
-                            </div>
-                        </div>
+                                )}
 
-                        <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-black/5 space-y-4 mb-8">
-                            <h4 className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1 flex items-center gap-2">
-                                <FileText size={14} className="text-[#E8820C]" /> Purpose Log
-                            </h4>
-                            <p className="text-sm font-medium text-black/70 italic leading-relaxed">
-                                "{selectedItem.reason}"
-                            </p>
-                        </div>
-
-                        <div className="space-y-4 pt-4">
-                            {selectedItem.status === 'pending' && isTreasurer && (
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="flex gap-4 pt-4">
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:bg-gray-50 rounded-2xl transition-all">Cancel</button>
                                     <button
-                                        onClick={() => handleApproval(selectedItem.id, 'approved')}
+                                        type="submit"
                                         disabled={actionLoading}
-                                        className="py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/10 hover:opacity-90 active:scale-95 transition-all"
+                                        className="flex-[2] py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        style={{ background: '#1A1A2E' }}
                                     >
-                                        {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                                        Authorize Outlay
-                                    </button>
-                                    <button
-                                        onClick={() => handleApproval(selectedItem.id, 'declined')}
-                                        disabled={actionLoading}
-                                        className="py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-red-900/10 hover:opacity-90 active:scale-95 transition-all"
-                                    >
-                                        <XCircle size={16} /> Veto Entry
+                                        {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                                        Commit Entry
                                     </button>
                                 </div>
-                            )}
-
-                            {selectedItem.status === 'approved' && (
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={handlePrint}
-                                        className="flex-1 py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:opacity-90 active:scale-95 transition-all"
-                                    >
-                                        <Printer size={16} /> Official Receipt
-                                    </button>
-                                    <button
-                                        onClick={() => toast.success('Dispatching audit report...')}
-                                        className="flex-1 py-4 border-2 border-[#1A1A2E] text-[#1A1A2E] rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
-                                    >
-                                        <Download size={16} /> Audit Export
-                                    </button>
-                                </div>
-                            )}
-
-                            <button onClick={() => setSelectedItem(null)} className="w-full text-center py-2 text-[10px] font-black text-black/20 uppercase tracking-widest hover:text-black transition-colors">Close Audit View</button>
+                            </form>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+
+            {/* Transaction Detail & Audit View */}
+            {
+                selectedItem && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setSelectedItem(null)} />
+                        <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
+                            <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Transaction Audit</h3>
+                                    <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
+                                        <History size={12} className="text-blue-500" /> Reference #DSB-{String(selectedItem.id).padStart(4, '0')}
+                                    </p>
+                                </div>
+                                <button onClick={() => setSelectedItem(null)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                                <div className="bg-gray-50 p-6 rounded-[2rem] border border-black/[0.03] space-y-4">
+                                    <p className="text-[10px] font-black text-black/20 uppercase tracking-widest">Entry Metadata</p>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-black/40">Status:</span>
+                                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${getStatusStyle(selectedItem.status)}`}>
+                                                {selectedItem.status}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-black/40">Beneficiary:</span>
+                                            <span className="text-xs font-black text-[#1A1A2E]">{selectedItem.member}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-black/40">Execute Date:</span>
+                                            <span className="text-xs font-black text-[#1A1A2E]">{dayjs(selectedItem.date).format('DD MMMM YYYY')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-[#1A1A2E] p-6 rounded-[2rem] text-white flex flex-col justify-center items-center text-center space-y-2">
+                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Audited Amount</p>
+                                    <h2 className="text-3xl font-serif font-black">{formatNaira(selectedItem.amount)}</h2>
+                                    <div className="flex items-center gap-1.5 py-1.5 px-4 bg-white/5 rounded-full mt-2">
+                                        <BadgeCheck size={12} className="text-emerald-400" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Vault Cleared</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-black/5 space-y-4 mb-8">
+                                <h4 className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                    <FileText size={14} className="text-[#E8820C]" /> Purpose Log
+                                </h4>
+                                <p className="text-sm font-medium text-black/70 italic leading-relaxed">
+                                    "{selectedItem.reason}"
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 pt-4">
+                                {selectedItem.status === 'pending' && isTreasurer && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            onClick={() => handleApproval(selectedItem.id, 'approved')}
+                                            disabled={actionLoading}
+                                            className="py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/10 hover:opacity-90 active:scale-95 transition-all"
+                                        >
+                                            {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                                            Authorize Outlay
+                                        </button>
+                                        <button
+                                            onClick={() => handleApproval(selectedItem.id, 'declined')}
+                                            disabled={actionLoading}
+                                            className="py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-red-900/10 hover:opacity-90 active:scale-95 transition-all"
+                                        >
+                                            <XCircle size={16} /> Veto Entry
+                                        </button>
+                                    </div>
+                                )}
+
+                                {selectedItem.status === 'approved' && (
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={handlePrint}
+                                            className="flex-1 py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:opacity-90 active:scale-95 transition-all"
+                                        >
+                                            <Printer size={16} /> Official Receipt
+                                        </button>
+                                        <button
+                                            onClick={() => toast.success('Dispatching audit report...')}
+                                            className="flex-1 py-4 border-2 border-[#1A1A2E] text-[#1A1A2E] rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
+                                        >
+                                            <Download size={16} /> Audit Export
+                                        </button>
+                                    </div>
+                                )}
+
+                                <button onClick={() => setSelectedItem(null)} className="w-full text-center py-2 text-[10px] font-black text-black/20 uppercase tracking-widest hover:text-black transition-colors">Close Audit View</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
             {/* Hidden Print Wrapper */}
             <div className="hidden">
                 <TransactionReceipt ref={printRef} data={selectedItem} type="disbursement" />
             </div>
-        </div>
+        </div >
     );
 }

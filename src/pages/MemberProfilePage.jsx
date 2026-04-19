@@ -198,7 +198,7 @@ export default function MemberProfilePage() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead>
+                        <thead className="whitespace-nowrap">
                             <tr className="bg-[#1A1A2E]/[0.02] border-b border-[#1A1A2E]/5 text-left">
                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E]/40">Billing Cycle</th>
                                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E]/40 text-center">Fulfillment Status</th>
@@ -207,7 +207,7 @@ export default function MemberProfilePage() {
                                 <th className="th-8 pr-8"></th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#1A1A2E]/5">
+                        <tbody className="divide-y divide-[#1A1A2E]/5 whitespace-nowrap md:whitespace-normal">
                             {(m.history || []).map((row, i) => (
                                 <tr key={i} className="hover:bg-[#FDFCFB] transition-colors group">
                                     <td className="px-8 py-6 font-bold text-[#1A1A2E]">{dayjs(row.week).format('DD MMMM YYYY')}</td>
@@ -243,9 +243,9 @@ export default function MemberProfilePage() {
 
             {/* Edit Form Modal */}
             {showEditForm && form && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#1A1A2E]/60 backdrop-blur-xl transition-all duration-500">
-                    <div className="w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl bg-white border border-white/20 relative animate-in fade-in zoom-in duration-300">
-                        <div className="flex items-center justify-between mb-8">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A1A2E]/60 backdrop-blur-xl transition-all duration-500 overflow-y-auto">
+                    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 md:p-10 shadow-2xl bg-white border border-white/20 relative animate-in fade-in zoom-in duration-300">
+                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-2">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-2xl bg-[#E8820C]/10 text-[#E8820C] flex items-center justify-center">
                                     <ShieldCheck size={24} />

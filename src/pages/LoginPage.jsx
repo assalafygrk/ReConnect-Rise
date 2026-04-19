@@ -1,14 +1,18 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useBrand } from '../context/BrandContext';
+import { usePageConfig } from '../context/PageConfigContext';
 import { apiLogin } from '../api/auth';
 import TransactionReceipt from '../components/TransactionReceipt';
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { brand } = useBrand();
+    const { config } = usePageConfig('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -54,57 +58,16 @@ export default function LoginPage() {
                     <div>
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8820C]/20 border border-[#E8820C]/30 text-[#F5A623] text-[10px] font-bold uppercase tracking-widest mb-4">
                             <ShieldCheck size={12} />
-                            Secured Brotherhood Portal
+                            {config.badgeText}
                         </div>
                         <h1 className="text-6xl font-black text-white leading-tight mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-                            Unity, Growth & <span className="text-[#E8820C]">Support.</span>
+                            {config.pageHeadline}
                         </h1>
                         <p className="text-white/50 text-lg max-w-md leading-relaxed">
-                            A private space for the 20 brothers to manage contributions, support one another, and grow together in faith and prosperity.
+                            {config.pageSubtitle}
                         </p>
                     </div>
 
-                    {/* Transparency Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between pr-4">
-                            <h3 className="text-white/80 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
-                                <span className="w-8 h-px bg-[#E8820C]"></span>
-                                Recent Transparency Proofs
-                            </h3>
-                            <span className="text-[10px] text-white/30 font-medium">SCROLL TO VIEW RECEIPTS</span>
-                        </div>
-
-                        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide snap-x">
-                            {mockReceipts.map(receipt => (
-                                <div key={receipt.id} className="flex-shrink-0 w-80 snap-start active:cursor-grabbing">
-                                    <div className="bg-white rounded-xl shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform duration-300 origin-top">
-                                        {/* Mini Receipt Preview */}
-                                        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded bg-[#1A1A2E] text-white flex items-center justify-center font-bold text-[8px]">R&R</div>
-                                                <span className="text-[10px] font-black text-[#1A1A2E] uppercase">Receipt Preview</span>
-                                            </div>
-                                            <span className="text-[8px] font-bold text-[#E8820C] uppercase tracking-tighter">REF #{Math.random().toString(36).substr(2, 6).toUpperCase()}</span>
-                                        </div>
-                                        <div className="p-6 space-y-3">
-                                            <div>
-                                                <p className="text-[8px] text-black/30 font-bold uppercase tracking-widest leading-none mb-1">Beneficiary</p>
-                                                <p className="text-sm font-bold text-[#1A1A2E]">{receipt.name}</p>
-                                            </div>
-                                            <div className="flex justify-between items-end">
-                                                <div>
-                                                    <p className="text-[8px] text-black/30 font-bold uppercase tracking-widest leading-none mb-1">Amount</p>
-                                                    <p className="text-lg font-black text-[#1A1A2E]">₦{receipt.amount.toLocaleString()}</p>
-                                                </div>
-                                                <p className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase tracking-tighter italic">Verified</p>
-                                            </div>
-                                        </div>
-                                        <div className="h-1 bg-gradient-to-r from-[#E8820C] to-[#F5A623]"></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
 
                 {/* Right Side: Login Form */}
@@ -117,14 +80,14 @@ export default function LoginPage() {
 
                         {/* Mobile Header (Hidden on LG) */}
                         <div className="lg:hidden text-center mb-10">
-                            <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>Reconnect & Rise</h1>
-                            <p className="text-white/40 text-xs uppercase tracking-widest font-bold">Brotherhood Unity Portal</p>
+                            <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>{brand.orgName}</h1>
+                            <p className="text-white/40 text-xs uppercase tracking-widest font-bold">{brand.orgSlogan}</p>
                         </div>
 
                         <div className="text-center mb-10">
                             <div className="inline-flex p-1 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6">
                                 <div className="w-20 h-20 rounded-xl overflow-hidden shadow-2xl">
-                                    <img src="/logo.jpg" alt="Reconnect & Rise Logo" className="w-full h-full object-cover" />
+                                    <img src={brand.logoUrl} alt={brand.orgName + ' Logo'} className="w-full h-full object-cover" />
                                 </div>
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -199,9 +162,18 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        <div className="mt-10 flex items-center justify-center gap-4 text-white/30 text-[10px] font-bold uppercase tracking-widest">
+                        {config.registrationEnabled !== false && (
+                            <div className="mt-8 text-center text-white/60 text-sm">
+                                Need an identity?{' '}
+                                <Link to="/register" className="text-[#F5A623] hover:text-white font-bold transition-colors">
+                                    {config.registrationLinkText}
+                                </Link>
+                            </div>
+                        )}
+
+                        <div className="mt-8 flex items-center justify-center gap-4 text-white/30 text-[10px] font-bold uppercase tracking-widest">
                             <span className="w-10 h-px bg-white/10"></span>
-                            20 Brothers Only
+                            {config.footerNote}
                             <span className="w-10 h-px bg-white/10"></span>
                         </div>
                     </div>

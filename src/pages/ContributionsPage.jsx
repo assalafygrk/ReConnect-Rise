@@ -11,6 +11,7 @@ import { useReactToPrint } from 'react-to-print';
 import WeeklyReportTemplate from '../components/WeeklyReportTemplate';
 import { fetchContributions } from '../api/contributions';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 const MOCK_MEMBERS = Array.from({ length: 20 }, (_, i) => ({
     id: i + 1,
@@ -25,6 +26,7 @@ const MOCK_MEMBERS = Array.from({ length: 20 }, (_, i) => ({
 
 export default function ContributionsPage() {
     const { hasRole, user } = useAuth();
+    const { config } = usePageConfig('contributions');
     const isTreasurer = hasRole('treasurer');
     const isLeader = hasRole('group_leader');
 
@@ -147,8 +149,8 @@ export default function ContributionsPage() {
             {/* Serious Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-serif font-black text-[#1A1A2E] tracking-tight">Treasury Management</h1>
-                    <p className="text-sm text-black/40 font-medium">Internal Financial Ledger & Compliance Records</p>
+                    <h1 className="text-3xl font-serif font-black text-[#1A1A2E] tracking-tight">{config.pageHeadline}</h1>
+                    <p className="text-sm text-black/40 font-medium">{config.pageSubtitle}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="relative group">
@@ -159,9 +161,9 @@ export default function ContributionsPage() {
                             className="appearance-none pl-12 pr-10 py-3 bg-white border border-black/5 rounded-2xl text-sm font-bold text-[#1A1A2E] shadow-sm hover:shadow-md transition-all outline-none focus:ring-2 focus:ring-[#E8820C]/20"
                         >
                             <option value="current">Current Period (Active)</option>
-                            <option value="2026-03-10">Week: 10 – 16 Mar 2026</option>
-                            <option value="2026-03-03">Week: 03 – 09 Mar 2026</option>
-                            <option value="2026-02-24">Week: 24 Feb – 02 Mar 2026</option>
+                            <option value="2026-03-10">{config.weekLabel}: 10 – 16 Mar 2026</option>
+                            <option value="2026-03-03">{config.weekLabel}: 03 – 09 Mar 2026</option>
+                            <option value="2026-02-24">{config.weekLabel}: 24 Feb – 02 Mar 2026</option>
                         </select>
                     </div>
                     {canEdit && (
@@ -198,12 +200,27 @@ export default function ContributionsPage() {
                 ))}
             </div>
 
-            {isHistorical && (
+            {isHistorical ? (
                 <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                     <AlertCircle size={20} className="text-amber-600" />
                     <p className="text-sm font-bold text-amber-800">
                         Historical Record: This ledger is finalized and locked. Editing is restricted for audit integrity.
                     </p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {config.reminderText && (
+                        <div className="bg-[#E8820C]/10 border border-[#E8820C]/20 p-4 rounded-2xl flex items-center gap-3">
+                            <AlertCircle size={20} className="text-[#E8820C]" />
+                            <p className="text-sm font-bold text-[#1A1A2E]">{config.reminderText}</p>
+                        </div>
+                    )}
+                    {config.lateFeeNotice && (
+                        <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3">
+                            <TrendingDown size={20} className="text-rose-600" />
+                            <p className="text-sm font-bold text-rose-800">{config.lateFeeNotice}</p>
+                        </div>
+                    )}
                 </div>
             )}
 

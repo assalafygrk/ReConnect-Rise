@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Hexagon background -->
+  <polygon points="60,4 108,30 108,90 60,116 12,90 12,30" fill="#1A1A2E"/>
+  <!-- Orange glow ring -->
+  <polygon points="60,10 102,33 102,87 60,110 18,87 18,33" fill="none" stroke="#E8820C" stroke-width="2.5" opacity="0.7"/>
+  <!-- Upward arrow -->
+  <polygon points="60,28 75,52 67,52 67,76 53,76 53,52 45,52" fill="url(#orangeGrad)"/>
+  <!-- Left connection circle -->
+  <circle cx="38" cy="82" r="10" fill="none" stroke="url(#orangeGrad)" stroke-width="3"/>
+  <!-- Right connection circle -->
+  <circle cx="82" cy="82" r="10" fill="none" stroke="url(#orangeGrad)" stroke-width="3"/>
+  <!-- Connecting line -->
+  <line x1="48" y1="82" x2="72" y2="82" stroke="url(#orangeGrad)" stroke-width="3"/>
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8820C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F5A623;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

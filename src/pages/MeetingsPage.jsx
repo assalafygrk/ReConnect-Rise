@@ -8,6 +8,7 @@ import {
 import dayjs from 'dayjs';
 import { fetchMeetings, addMeeting } from '../api/meetings';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 const MOCK = [
     {
@@ -26,6 +27,7 @@ const MOCK = [
 
 export default function MeetingsPage() {
     const { hasRole } = useAuth();
+    const { config } = usePageConfig('meetings');
     const canAdd = hasRole('treasurer', 'group_leader', 'meeting organizer', 'admin');
     const [meetings, setMeetings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -104,9 +106,9 @@ export default function MeetingsPage() {
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.4em] mb-2">
                         <Calendar size={14} /> Assembly & Summits
                     </div>
-                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">The Registry</h1>
+                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">{config.pageHeadline}</h1>
                     <p className="text-sm text-black/40 font-medium max-w-xl leading-relaxed">
-                        Official schedule of administrative assemblies. Documenting collective progression and spiritual governance.
+                        {config.pageSubtitle}
                     </p>
                 </div>
 
@@ -123,6 +125,15 @@ export default function MeetingsPage() {
                     </button>
                 )}
             </div>
+
+            {config.attendanceRequirement && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600 shrink-0" />
+                    <p className="text-sm font-bold text-blue-800">
+                        {config.attendanceRequirement}
+                    </p>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
@@ -191,7 +202,7 @@ export default function MeetingsPage() {
                                                     <span className="flex items-center gap-2"><MapPin size={14} className="text-[#E8820C]" /> {m.venue}</span>
                                                 </div>
                                             </div>
-                                            {m.zoomLink && (
+                                            {m.zoomLink && config.allowZoomLinks && (
                                                 <a href={m.zoomLink} target="_blank" rel="noopener noreferrer"
                                                     className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
                                                     <Video size={20} />

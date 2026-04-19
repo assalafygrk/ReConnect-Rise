@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, ListChecks, Users, Wallet, HandCoins,
-    FileQuestion, Vote, CalendarDays, Settings, LogOut, Menu, X,
-    ChevronRight, MessageSquare, UserCircle, FileText
+    FileQuestion, Vote, CalendarDays, Settings, LogOut, X,
+    ChevronRight, MessageSquare, UserCircle, FileText,
+    Shield, Lock, LockOpen, ChevronDown, ChevronUp,
+    ToggleLeft, ToggleRight, Zap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useBrand } from '../../context/BrandContext';
 import { toast } from 'react-hot-toast';
+import AdminAuthGate from '../admin/AdminAuthGate';
 
 const navGroups = [
     {
@@ -44,9 +49,35 @@ const navGroups = [
     },
 ];
 
+const modulePages = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'contributions', label: 'Contributions' },
+    { id: 'disbursements', label: 'Disbursements' },
+    { id: 'loans', label: 'Loans' },
+    { id: 'wallet', label: 'Wallet' },
+    { id: 'members', label: 'Members' },
+    { id: 'requests', label: 'Requests' },
+    { id: 'votes', label: 'Votes' },
+    { id: 'meetings', label: 'Meetings' },
+    { id: 'chat', label: 'Chat' },
+    { id: 'documentary', label: 'Documentary' },
+    { id: 'advice', label: 'Advice Room' },
+    { id: 'login', label: 'Login Page' },
+    { id: 'register', label: 'Registration' },
+    { id: 'id_card', label: 'ID Card Access' },
+];
+
 export default function Sidebar({ collapsed, onToggle }) {
-    const { user, logout, hasRole, isPageEnabled, activeRole, switchActiveRole } = useAuth();
+    const {
+        user, logout, hasRole, isPageEnabled,
+        activeRole, enabledPages, togglePage,
+        adminPanelUnlocked, lockAdminPanel,
+    } = useAuth();
+    const { brand } = useBrand();
     const navigate = useNavigate();
+
+    const [showGate, setShowGate] = useState(false);
+    const [adminExpanded, setAdminExpanded] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -54,12 +85,22 @@ export default function Sidebar({ collapsed, onToggle }) {
         navigate('/login');
     };
 
-    const roles = [
-        { id: 'admin', label: 'Super Admin' },
-        { id: 'treasurer', label: 'Treasurer' },
-        { id: 'group_leader', label: 'Group Leader' },
-        { id: 'official_member', label: 'Official Member' },
-    ];
+    const handleAdminSectionClick = () => {
+        if (collapsed) return; // Don't handle when sidebar is icon-only
+        if (!adminPanelUnlocked) {
+            setShowGate(true);
+        } else {
+            setAdminExpanded(prev => !prev);
+        }
+    };
+
+    const handleGateSuccess = () => {
+        setShowGate(false);
+        setAdminExpanded(true);
+        toast.success('Admin Control Panel unlocked');
+    };
+
+    const enabledCount = Object.values(enabledPages).filter(Boolean).length;
 
     return (
         <>
@@ -78,16 +119,16 @@ export default function Sidebar({ collapsed, onToggle }) {
             >
                 {/* Header */}
                 <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
-                    <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-white">
-                        <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+                    <div className="flex-shrink-0 w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-[#252545]">
+                        <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-contain" />
                     </div>
                     {!collapsed && (
                         <div className="overflow-hidden">
                             <p className="text-white font-semibold text-sm leading-tight truncate"
                                 style={{ fontFamily: "'Playfair Display', serif" }}>
-                                Reconnect & Rise
+                                {brand.orgName}
                             </p>
-                            <p className="text-white/40 text-xs truncate">Brotherhood Portal</p>
+                            <p className="text-white/40 text-xs truncate">{brand.orgSlogan}</p>
                         </div>
                     )}
                     <button
@@ -119,6 +160,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                                             <NavLink
                                                 to={to}
                                                 title={collapsed ? label : undefined}
+                                                onClick={() => { if (window.innerWidth < 1024) onToggle?.(); }}
                                                 className={({ isActive }) =>
                                                     `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group
                                                     ${isActive ? 'text-white font-medium' : 'text-white/50 hover:text-white hover:bg-white/5'}`
@@ -136,24 +178,134 @@ export default function Sidebar({ collapsed, onToggle }) {
                             </div>
                         );
                     })}
+
+                    {/* Admin Control Section */}
+                    {hasRole('admin') && !collapsed && (
+                        <div className="pt-2">
+                            {/* Section header / lock button */}
+                            <button
+                                onClick={handleAdminSectionClick}
+                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group
+                                    ${adminPanelUnlocked
+                                        ? 'bg-[#E8820C]/10 border border-[#E8820C]/20 hover:bg-[#E8820C]/15'
+                                        : 'bg-white/3 border border-white/5 hover:bg-white/8 hover:border-white/10'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all
+                                        ${adminPanelUnlocked ? 'bg-[#E8820C]/20 text-[#E8820C]' : 'bg-white/5 text-white/30'}`}>
+                                        {adminPanelUnlocked ? <LockOpen size={14} /> : <Lock size={14} />}
+                                    </div>
+                                    <div className="text-left">
+                                        <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${adminPanelUnlocked ? 'text-[#F5A623]' : 'text-white/30'}`}>
+                                            Admin Control
+                                        </p>
+                                        {!adminPanelUnlocked && (
+                                            <p className="text-[9px] text-white/20 font-medium">Click to authenticate</p>
+                                        )}
+                                    </div>
+                                </div>
+                                {adminPanelUnlocked
+                                    ? (adminExpanded ? <ChevronUp size={14} className="text-[#E8820C]/60" /> : <ChevronDown size={14} className="text-[#E8820C]/60" />)
+                                    : <Shield size={14} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                                }
+                            </button>
+
+                            {/* Expanded admin panel */}
+                            {adminPanelUnlocked && adminExpanded && (
+                                <div className="mt-2 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                                    {/* Quick stats strip */}
+                                    <div className="grid grid-cols-2 gap-2 px-1">
+                                        <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                            <p className="text-[#F5A623] text-lg font-black leading-none">{enabledCount}</p>
+                                            <p className="text-white/30 text-[9px] font-bold uppercase tracking-wide mt-1">Modules On</p>
+                                        </div>
+                                        <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                            <p className="text-emerald-400 text-lg font-black leading-none flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                                                Live
+                                            </p>
+                                            <p className="text-white/30 text-[9px] font-bold uppercase tracking-wide mt-1">System</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Module toggles */}
+                                    <div className="px-1">
+                                        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-white/20 mb-2 ml-1">
+                                            Module Toggles
+                                        </p>
+                                        <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-hide">
+                                            {modulePages.map(page => {
+                                                const on = !!enabledPages[page.id];
+                                                return (
+                                                    <button
+                                                        key={page.id}
+                                                        onClick={() => togglePage(page.id)}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all text-left
+                                                            ${on ? 'bg-white/5 hover:bg-white/8' : 'bg-white/[0.02] opacity-50 hover:opacity-80'}`}
+                                                    >
+                                                        <span className={`text-[11px] font-bold ${on ? 'text-white/70' : 'text-white/30'}`}>
+                                                            {page.label}
+                                                        </span>
+                                                        {on
+                                                            ? <ToggleRight size={16} className="text-[#E8820C] shrink-0" />
+                                                            : <ToggleLeft size={16} className="text-white/20 shrink-0" />
+                                                        }
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Quick nav to nexus and settings */}
+                                    <div className="space-y-2">
+                                        <NavLink
+                                            to="/nexus"
+                                            onClick={() => { if (window.innerWidth < 1024) onToggle?.(); }}
+                                            className="flex items-center gap-2 px-3 py-2.5 w-full rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 transition-all border border-indigo-500/15 group"
+                                        >
+                                            <Zap size={14} className="text-indigo-400 group-hover:animate-pulse" />
+                                            <span className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] truncate">Module Nexus</span>
+                                        </NavLink>
+                                        <NavLink
+                                            to="/settings"
+                                            onClick={() => { if (window.innerWidth < 1024) onToggle?.(); }}
+                                            className="flex items-center gap-2 px-3 py-2.5 w-full rounded-xl bg-[#E8820C]/10 hover:bg-[#E8820C]/20 transition-all border border-[#E8820C]/15 group"
+                                        >
+                                            <Settings size={14} className="text-[#E8820C] group-hover:animate-spin" />
+                                            <span className="text-[11px] font-black text-[#F5A623] uppercase tracking-[0.2em] truncate">Full Settings</span>
+                                        </NavLink>
+                                    </div>
+
+                                    {/* Lock button */}
+                                    <button
+                                        onClick={() => { lockAdminPanel(); setAdminExpanded(false); toast.success('Admin panel locked'); }}
+                                        className="flex items-center gap-2 px-3 py-2 w-full rounded-xl hover:bg-red-500/10 transition-all group"
+                                    >
+                                        <Lock size={13} className="text-red-400/50 group-hover:text-red-400 transition-colors" />
+                                        <span className="text-[10px] font-black text-red-400/40 group-hover:text-red-400 uppercase tracking-[0.2em] transition-colors">
+                                            Lock Panel
+                                        </span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Admin lock icon (collapsed mode) */}
+                    {hasRole('admin') && collapsed && (
+                        <button
+                            onClick={() => setShowGate(true)}
+                            title="Admin Control"
+                            className={`flex items-center justify-center w-full py-2.5 rounded-xl transition-all
+                                ${adminPanelUnlocked ? 'text-[#E8820C] bg-[#E8820C]/10' : 'text-white/20 hover:text-white/50 hover:bg-white/5'}`}
+                        >
+                            {adminPanelUnlocked ? <LockOpen size={18} /> : <Lock size={18} />}
+                        </button>
+                    )}
                 </nav>
 
                 {/* User footer */}
                 <div className="border-t border-white/10 p-3 space-y-2">
-                    {user?.role === 'admin' && !collapsed && (
-                        <div className="px-3 mb-3">
-                            <p className="text-[9px] text-white/30 uppercase tracking-widest font-bold mb-2">Switch Active Role</p>
-                            <select
-                                value={activeRole}
-                                onChange={(e) => switchActiveRole(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-lg text-[11px] text-white px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#E8820C]"
-                            >
-                                {roles.map(r => (
-                                    <option key={r.id} value={r.id} className="bg-[#1A1A2E]">{r.label}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
                     {!collapsed && (
                         <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/5">
                             <p className="text-white text-sm font-medium truncate">{user?.name || user?.email}</p>
@@ -170,6 +322,14 @@ export default function Sidebar({ collapsed, onToggle }) {
                     </button>
                 </div>
             </aside>
+
+            {/* Auth Gate Modal */}
+            {showGate && (
+                <AdminAuthGate
+                    onClose={() => setShowGate(false)}
+                    onSuccess={handleGateSuccess}
+                />
+            )}
         </>
     );
 }

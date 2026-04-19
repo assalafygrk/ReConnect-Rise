@@ -5,13 +5,14 @@ import dayjs from 'dayjs';
 import { fetchWallet, transferFunds } from '../api/wallet';
 import { fetchMembers } from '../api/members';
 import { useAuth } from '../context/AuthContext';
-
+import { usePageConfig } from '../context/PageConfigContext';
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
 }
 
 export default function WalletPage() {
     const { user } = useAuth();
+    const { config } = usePageConfig('wallet');
     const [data, setData] = useState(null);
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -102,6 +103,15 @@ export default function WalletPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-10">
+            {config.minBalanceNotice && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600 shrink-0" />
+                    <p className="text-sm font-bold text-blue-800">
+                        {config.minBalanceNotice}
+                    </p>
+                </div>
+            )}
+
             {/* Wallet Header & Balance */}
             <div className="relative group overflow-hidden rounded-[3.5rem] p-12 text-white shadow-[0_40px_80px_-20px_rgba(26,26,46,0.4)] bg-[#1A1A2E]">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#E8820C] to-transparent opacity-10 rounded-full -mr-48 -mt-48 blur-[100px] group-hover:opacity-20 transition-opacity duration-1000"></div>
@@ -119,7 +129,7 @@ export default function WalletPage() {
                         <div className="flex flex-wrap items-center gap-4 pt-4">
                             <div className="px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl flex items-center gap-3">
                                 <Wallet size={16} className="text-[#E8820C]" />
-                                <span className="text-xs font-bold text-white/60 tracking-wider font-mono">**** **** {user?.id?.toString()?.slice(-4).toUpperCase() || '8820'}</span>
+                                <span className="text-xs font-bold text-white/60 tracking-wider font-mono">**** **** {user?.id?.toString()?.slice(-4)?.toUpperCase() || '8820'}</span>
                             </div>
                             <div className="px-5 py-2.5 rounded-2xl bg-green-500/10 border border-green-500/20 backdrop-blur-xl flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
@@ -129,16 +139,18 @@ export default function WalletPage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 lg:justify-end">
-                        <button
-                            onClick={() => setShowTransfer(true)}
-                            className="group/btn relative px-10 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] transition-all bg-[#E8820C] hover:bg-[#F5A623] hover:-translate-y-1 shadow-[0_25px_50px_-12px_rgba(232,130,12,0.4)] overflow-hidden"
-                        >
-                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500"></div>
-                            <span className="relative flex items-center gap-4">
-                                <Send size={24} strokeWidth={3} className="group-hover/btn:rotate-12 transition-transform" />
-                                Gift a Brother
-                            </span>
-                        </button>
+                        {config.transfersEnabled !== false && (
+                            <button
+                                onClick={() => setShowTransfer(true)}
+                                className="group/btn relative px-10 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] transition-all bg-[#E8820C] hover:bg-[#F5A623] hover:-translate-y-1 shadow-[0_25px_50px_-12px_rgba(232,130,12,0.4)] overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500"></div>
+                                <span className="relative flex items-center gap-4">
+                                    <Send size={24} strokeWidth={3} className="group-hover/btn:rotate-12 transition-transform" />
+                                    Gift a Brother
+                                </span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -294,12 +306,14 @@ export default function WalletPage() {
                     <p className="text-xs text-[#1A1A2E]/60 leading-relaxed font-medium">
                         Unity is built through mutual support. No fees on brotherhood transfers. Let your kindness reach a brother today.
                     </p>
-                    <button
-                        onClick={() => setShowTransfer(true)}
-                        className="w-full mt-6 py-4 rounded-2xl bg-white text-[#E8820C] font-black text-[10px] uppercase tracking-widest border border-[#E8820C]/20 hover:bg-[#E8820C] hover:text-white transition-all shadow-sm"
-                    >
-                        Initiate Transfer
-                    </button>
+                    {config.transfersEnabled !== false && (
+                        <button
+                            onClick={() => setShowTransfer(true)}
+                            className="w-full mt-6 py-4 rounded-2xl bg-white text-[#E8820C] font-black text-[10px] uppercase tracking-widest border border-[#E8820C]/20 hover:bg-[#E8820C] hover:text-white transition-all shadow-sm"
+                        >
+                            Initiate Transfer
+                        </button>
+                    )}
                 </div>
 
                 <div className="rounded-[2.5rem] bg-white p-8 border border-black/5 shadow-sm space-y-6">
@@ -319,11 +333,11 @@ export default function WalletPage() {
 
             {/* Transfer Modal */}
             {showTransfer && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 backdrop-blur-md bg-black/40">
-                    <div className="w-full max-w-lg rounded-[3rem] p-10 shadow-2xl bg-white border border-black/5 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8820C]/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/40 overflow-y-auto">
+                    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[3rem] p-6 md:p-10 shadow-2xl bg-white border border-black/5 relative">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8820C]/5 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none"></div>
 
-                        <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center justify-between mb-8 md:mb-10 sticky top-0 bg-white z-20 py-2">
                             <div>
                                 <h3 className="font-black text-3xl font-serif text-[#1A1A2E]" style={{ fontFamily: "'Playfair Display', serif" }}>Gift a Brother</h3>
                                 <div className="flex items-center gap-2 mt-2">

@@ -7,6 +7,7 @@ import {
     Calendar, User, Tag, Info, ChevronLeft, ChevronRight, Maximize2,
     Database, ShieldCheck, HardDrive, Archive, Loader2, Fingerprint
 } from 'lucide-react';
+import { usePageConfig } from '../context/PageConfigContext';
 
 const MOCK_GALLERY = [
     {
@@ -59,6 +60,7 @@ const MOCK_FILES = [
 ];
 
 export default function DocumentaryPage() {
+    const { config } = usePageConfig('documentary');
     const [searchTerm, setSearchTerm] = useState('');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedMedia, setSelectedMedia] = useState(null);
@@ -125,9 +127,11 @@ export default function DocumentaryPage() {
                         <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C]">
                             <Archive size={14} /> Institutional Memory Node
                         </div>
-                        <h2 className="text-5xl md:text-6xl font-black font-serif text-white leading-tight tracking-tight">Archives & <br />Documentation</h2>
-                        <p className="text-white/40 text-xl font-serif italic max-w-2xl leading-relaxed">
-                            "Preserving our collective journey is the prerequisite for strategic sovereignty. This vault documents the evolution of our brotherhood."
+                        <h2 className="text-5xl md:text-6xl font-black font-serif text-white leading-tight tracking-tight mt-4 whitespace-pre-line">
+                            {config.pageHeadline || 'Archives &\nDocumentation'}
+                        </h2>
+                        <p className="text-white/40 text-xl font-serif italic max-w-2xl leading-relaxed mt-4 whitespace-pre-line">
+                            {config.pageSubtitle || '"Preserving our collective journey is the prerequisite for strategic sovereignty. This vault documents the evolution of our brotherhood."'}
                         </p>
                     </div>
                     <div className="flex flex-col gap-4">

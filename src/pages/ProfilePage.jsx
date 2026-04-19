@@ -2,29 +2,22 @@ import { useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import {
     Phone, Mail, CheckCircle, XCircle, Edit, ShieldCheck, User, Calendar,
-    Camera, Briefcase, MessageCircle, AlertTriangle,
-    ExternalLink, Globe, Save, Database, Loader2, Award,
-    ChevronRight, MapPin, Fingerprint, Lock
+    Camera, Briefcase, AlertTriangle, Database, Loader2, MapPin, Fingerprint, Lock, Home, Users
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useAuth } from '../context/AuthContext';
+import IdCard from '../components/IdCard';
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
 }
 
-const MOCK_DATA = {
-    totalContributions: 5200,
-    totalBonus: 400,
-    totalLoans: 0,
-    joinedYear: 2023,
-    history: [
-        { week: '2024-03-24', paid: true, bonus: 100, amount: 200 },
-        { week: '2024-03-17', paid: true, bonus: 0, amount: 100 },
-        { week: '2024-03-10', paid: false, bonus: 0, amount: 0 },
-        { week: '2024-03-03', paid: true, bonus: 100, amount: 200 },
-    ]
-};
+const MOCK_LEDGER = [
+    { week: '2024-03-24', paid: true, bonus: 100, amount: 200 },
+    { week: '2024-03-17', paid: true, bonus: 0, amount: 100 },
+    { week: '2024-03-10', paid: false, bonus: 0, amount: 0 },
+    { week: '2024-03-03', paid: true, bonus: 100, amount: 200 },
+];
 
 export default function ProfilePage() {
     const { user, updateUser } = useAuth();
@@ -37,12 +30,13 @@ export default function ProfilePage() {
         name: user?.name || '',
         email: user?.email || '',
         phone: user?.phone || '08030000000',
-        bio: user?.bio || 'Dedicated brother of the ReConnect & Rise community.',
+        dateOfBirth: user?.dateOfBirth || '',
+        stateOfOrigin: user?.stateOfOrigin || '',
+        residentialAddress: user?.residentialAddress || '',
         occupation: user?.occupation || 'Software Engineer',
-        whatsapp: user?.whatsapp || '08030000000',
-        linkedin: user?.linkedin || '',
-        website: user?.website || '',
-        emergencyContact: user?.emergencyContact || 'Jane Doe (08012345678)',
+        nextOfKinName: user?.nextOfKinName || '',
+        nextOfKinPhone: user?.nextOfKinPhone || '',
+        nextOfKinRelation: user?.nextOfKinRelation || 'Sibling',
     });
 
     const handleImageChange = (e) => {
@@ -51,7 +45,7 @@ export default function ProfilePage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreviewImage(reader.result);
-                toast.success('Biometric profile updated');
+                toast.success('Profile photo updated.');
             };
             reader.readAsDataURL(file);
         }
@@ -60,289 +54,249 @@ export default function ProfilePage() {
     const handleUpdate = async (e) => {
         e.preventDefault();
         setSaving(true);
-        // Simulate API call
         await new Promise(r => setTimeout(r, 1500));
         updateUser({ ...formData, photoURL: previewImage });
         setIsEditing(false);
         setSaving(false);
-        toast.success('Dossier Synchronized Successfully');
+        toast.success('Profile Details Saved Successfully');
     };
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 pb-24 px-4">
-            {/* Header Section: The Identity */}
-            <div className="relative bg-[#1A1A2E] rounded-[3.5rem] p-8 md:p-16 overflow-hidden shadow-2xl group border border-white/5">
-                <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-br from-[#E8820C] to-[#F5A623] rounded-full blur-[150px] opacity-5 group-hover:opacity-10 transition-opacity duration-1000"></div>
-                <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px]"></div>
+            {/* Header Section */}
+            <div className="relative bg-[#1A1A2E] rounded-[3.5rem] p-8 md:p-12 overflow-hidden shadow-2xl border border-white/5 flex flex-col md:flex-row items-center gap-10">
+                <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-br from-[#E8820C] to-[transparent] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
 
-                <div className="relative flex flex-col md:flex-row items-center gap-12">
-                    {/* Biometric Avatar */}
-                    <div className="relative group/avatar">
-                        <div className="w-48 h-48 rounded-[3rem] bg-white/5 border-[10px] border-white/10 shadow-2xl flex items-center justify-center text-6xl font-black font-serif text-white overflow-hidden backdrop-blur-md">
-                            {previewImage ? (
-                                <img src={previewImage} alt="Dossier Profile" className="w-full h-full object-cover grayscale group-hover/avatar:grayscale-0 transition-all duration-700" />
-                            ) : (
-                                (user?.name || '').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() || <Fingerprint size={64} className="text-white/20" />
-                            )}
-                        </div>
-                        {isEditing && (
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="absolute inset-0 bg-[#E8820C]/80 backdrop-blur-sm rounded-[3rem] flex flex-col items-center justify-center text-white opacity-0 group-hover/avatar:opacity-100 transition-all duration-500 shadow-2xl"
-                            >
-                                <Camera size={32} />
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] mt-3">Refit Biometrics</span>
-                            </button>
+                {/* Profile Photo */}
+                <div className="relative group shrink-0">
+                    <div className="w-40 h-40 rounded-[2.5rem] bg-white/5 border-[6px] border-white/10 shadow-xl flex items-center justify-center text-4xl font-black text-white overflow-hidden backdrop-blur-md">
+                        {previewImage ? (
+                            <img src={previewImage} alt="Profile" className="w-full h-full object-cover transition-all" />
+                        ) : (
+                            <User size={48} className="text-white/20" />
                         )}
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                        <div className="absolute -bottom-4 -right-4 p-4 bg-[#E8820C] text-white rounded-2xl shadow-xl border-4 border-[#1A1A2E]">
-                            <Award size={20} />
-                        </div>
                     </div>
-
-                    <div className="flex-1 text-center md:text-left space-y-6">
-                        <div className="space-y-4">
-                            <div className="flex flex-col md:flex-row md:items-end gap-5">
-                                <h1 className="text-5xl md:text-6xl font-black text-white tracking-tighter font-serif leading-none">
-                                    {formData.name || 'Registry Member'}
-                                </h1>
-                                <span className="px-5 py-2 rounded-xl bg-white/10 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-[#F5A623] backdrop-blur-md mb-1">
-                                    {user?.role?.replace('_', ' ')}
-                                </span>
-                            </div>
-                            <p className="text-xl text-white/40 font-serif italic leading-relaxed max-w-2xl">
-                                "{formData.bio}"
-                            </p>
-                        </div>
-
-                        <div className="flex flex-wrap justify-center md:justify-start gap-8">
-                            {[
-                                { icon: Mail, label: formData.email },
-                                { icon: Briefcase, label: formData.occupation },
-                                { icon: Calendar, label: `Enrolled ${MOCK_DATA.joinedYear}` },
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.25em] text-white/30">
-                                    <item.icon size={16} className="text-[#E8820C]" /> {item.label}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => setIsEditing(!isEditing)}
-                        className={`px-10 py-6 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 transition-all shadow-2xl active:scale-95 ${isEditing ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20' : 'bg-[#E8820C] text-white hover:bg-[#F5A623]'
-                            }`}
-                    >
-                        {isEditing ? <XCircle size={20} /> : <Edit size={20} />}
-                        {isEditing ? 'Cancel Deployment' : 'Edit Dossier'}
-                    </button>
+                    {isEditing && (
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 bg-[#E8820C]/80 backdrop-blur-sm rounded-[2.5rem] flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                        >
+                            <Camera size={28} />
+                            <span className="text-[10px] font-bold uppercase tracking-widest mt-2">Upload Photo</span>
+                        </button>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                 </div>
+
+                <div className="flex-1 text-center md:text-left space-y-4">
+                    <h1 className="text-4xl md:text-5xl font-black text-white font-serif">{formData.name || 'Member Profile'}</h1>
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+                        <span className="px-4 py-2 rounded-xl bg-white/10 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md">
+                            Role: {user?.role?.replace('_', ' ') || 'Official Member'}
+                        </span>
+                        <span className="px-4 py-2 flex items-center gap-2 rounded-xl bg-emerald-500/10 text-[10px] font-bold uppercase tracking-widest text-emerald-400 backdrop-blur-md">
+                            <CheckCircle size={12} /> Account Active
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className={`px-8 py-5 rounded-3xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95 shrink-0
+                        ${isEditing ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-[#E8820C] text-white hover:bg-[#F5A623]'}`}
+                >
+                    {isEditing ? <XCircle size={18} /> : <Edit size={18} />}
+                    {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+                </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                {/* Main Content Area */}
-                <div className="lg:col-span-2 space-y-12">
-                    {/* The Dossier Form/Info */}
-                    <div className="bg-white rounded-[3.5rem] p-12 shadow-xl border border-black/5 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-12 text-black/[0.02]">
-                            <Fingerprint size={160} />
-                        </div>
-
-                        <div className="flex items-center justify-between mb-12 border-b border-black/5 pb-8">
-                            <div className="space-y-1">
-                                <h3 className="text-3xl font-black font-serif text-[#1A1A2E]">Authentication Data</h3>
-                                <p className="text-[10px] font-black text-[#E8820C] uppercase tracking-[0.3em]">Official Member Record</p>
-                            </div>
-                            <Lock size={20} className="text-black/10" />
-                        </div>
-
-                        {isEditing ? (
-                            <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="md:col-span-2">
-                                    <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.3em] mb-3 block">Professional Bio</label>
-                                    <textarea
-                                        value={formData.bio}
-                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-3xl px-8 py-6 text-sm font-medium outline-none transition-all resize-none shadow-inner"
-                                        rows={3}
-                                    />
-                                </div>
-                                {[
-                                    { label: 'Official Identity', key: 'name', icon: User },
-                                    { label: 'Current Designation', key: 'occupation', icon: Briefcase },
-                                    { label: 'Direct Comms (WA)', key: 'whatsapp', icon: MessageCircle },
-                                    { label: 'Professional Link', key: 'linkedin', icon: ExternalLink },
-                                    { label: 'Digital Domain', key: 'website', icon: Globe },
-                                    { label: 'Emergency Protocol', key: 'emergencyContact', icon: AlertTriangle },
-                                ].map((field) => (
-                                    <div key={field.key} className="space-y-3">
-                                        <label className="text-[10px] font-black text-black/30 uppercase tracking-[0.3em] flex items-center gap-2">
-                                            <field.icon size={12} className="text-[#E8820C]" /> {field.label}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData[field.key]}
-                                            onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl px-6 py-4 text-sm font-black outline-none transition-all shadow-sm"
-                                        />
-                                    </div>
-                                ))}
-                                <div className="md:col-span-2 pt-8">
-                                    <button
-                                        type="submit"
-                                        disabled={saving}
-                                        className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] text-white font-black text-[10px] uppercase tracking-[0.4em] shadow-2xl hover:shadow-[#1A1A2E]/20 transition-all flex items-center justify-center gap-4 group active:scale-95 disabled:opacity-50"
-                                    >
-                                        {saving ? <Loader2 size={18} className="animate-spin text-[#E8820C]" /> : <Save size={18} className="group-hover:translate-x-1 transition-transform" />}
-                                        {saving ? 'Synchronizing Archive...' : 'Commit Dossier Updates'}
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {[
-                                    { label: 'Primary Transmission', value: formData.phone, icon: Phone },
-                                    { label: 'Secure Comms', value: formData.whatsapp, icon: MessageCircle },
-                                    { label: 'Digital Ledger', value: formData.linkedin || 'Not linked', icon: ExternalLink },
-                                    { label: 'Operational Hub', value: formData.website || 'No site listed', icon: Globe },
-                                    { label: 'Protocol Override', value: formData.emergencyContact, icon: AlertTriangle },
-                                    { label: 'Registry Token', value: user?.id ? `ARCH-RR-${user.id.toString().padStart(6, '0')}` : 'ARCH-RR-000000', icon: ShieldCheck },
-                                ].map((info, i) => (
-                                    <div key={i} className="group p-8 bg-gray-50/50 rounded-[2.5rem] border border-black/5 hover:bg-white hover:shadow-2xl transition-all duration-500">
-                                        <div className="flex items-center gap-2 text-[9px] font-black text-[#E8820C] uppercase tracking-[0.3em] mb-3">
-                                            <info.icon size={12} className="group-hover:rotate-12 transition-transform" /> {info.label}
-                                        </div>
-                                        <p className="text-sm font-black text-[#1A1A2E] truncate leading-tight">{info.value}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+            {/* Profile Forms / Viewer */}
+            <div className="bg-white rounded-[3.5rem] p-8 md:p-12 shadow-xl border border-black/5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5">
+                    <div className="space-y-1">
+                        <h3 className="text-3xl font-black font-serif text-[#1A1A2E]">Personal Information</h3>
+                        <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest">Confidential Member Records</p>
                     </div>
-
-                    {/* Financial History Section */}
-                    <div className="bg-white rounded-[3.5rem] shadow-xl border border-black/5 overflow-hidden">
-                        <div className="p-10 border-b border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div>
-                                <h3 className="text-2xl font-black font-serif text-[#1A1A2E]">Financial Sovereignty</h3>
-                                <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em] mt-1">Audit of personal brotherhood equity</p>
-                            </div>
-                            <button className="px-8 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] text-[#E8820C] border-2 border-[#E8820C]/10 hover:bg-[#E8820C]/5 transition-all flex items-center gap-3">
-                                <Database size={14} /> Download Ledger Statement
-                            </button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="bg-gray-50/50">
-                                        <th className="px-10 py-6 text-[10px] font-black uppercase text-black/30 tracking-[0.4em]">Cycle</th>
-                                        <th className="px-10 py-6 text-[10px] font-black uppercase text-black/30 tracking-[0.4em] text-center">Status</th>
-                                        <th className="px-10 py-6 text-[10px] font-black uppercase text-black/30 tracking-[0.4em] text-center">Dividend</th>
-                                        <th className="px-10 py-6 text-[10px] font-black uppercase text-black/30 tracking-[0.4em] text-right">Contribution</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-black/5">
-                                    {MOCK_DATA.history.map((row, i) => (
-                                        <tr key={i} className="hover:bg-[#E8820C]/[0.02] transition-colors group">
-                                            <td className="px-10 py-8">
-                                                <p className="text-sm font-black text-[#1A1A2E]">{dayjs(row.week).format('MMMM D, YYYY')}</p>
-                                                <p className="text-[9px] text-[#E8820C] font-black uppercase tracking-widest mt-1">Registry Record #{8291 - i}</p>
-                                            </td>
-                                            <td className="px-10 py-8 text-center">
-                                                {row.paid ? (
-                                                    <span className="px-5 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-[0.3em] border border-emerald-100 shadow-sm">
-                                                        Authenticated
-                                                    </span>
-                                                ) : (
-                                                    <span className="px-5 py-2 rounded-xl bg-rose-50 text-rose-600 text-[8px] font-black uppercase tracking-[0.3em] border border-rose-100 shadow-sm">
-                                                        Data Fetching
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-10 py-8 text-center font-black text-sm text-[#F5A623]">
-                                                {row.bonus > 0 ? `+${formatNaira(row.bonus)}` : '0.00'}
-                                            </td>
-                                            <td className="px-10 py-8 text-right font-black text-lg text-[#1A1A2E]">
-                                                {formatNaira(row.amount)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <Lock size={20} className="text-black/10" />
                 </div>
 
-                {/* Sidebar: Analytics & Presence */}
-                <div className="space-y-12">
-                    {/* Equity Card */}
-                    <div className="bg-[#1A1A2E] rounded-[3.5rem] p-10 text-white space-y-12 shadow-2xl relative overflow-hidden group border border-white/5">
-                        <div className="absolute top-0 right-0 w-56 h-56 bg-[#E8820C]/10 rounded-full blur-[60px] group-hover:scale-125 transition-transform duration-1000"></div>
-                        <div className="flex items-center justify-between relative z-10">
-                            <h3 className="text-[10px] uppercase font-black tracking-[0.4em] text-white/30">Registry Equity</h3>
-                            <div className="p-3 bg-white/5 rounded-2xl text-[#E8820C]">
-                                <Database size={20} />
+                {isEditing ? (
+                    <form onSubmit={handleUpdate} className="space-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {[
+                                { label: 'Full Name', key: 'name', icon: User, type: 'text' },
+                                { label: 'Email Address', key: 'email', icon: Mail, type: 'email' },
+                                { label: 'Phone Number', key: 'phone', icon: Phone, type: 'tel' },
+                                { label: 'Date of Birth', key: 'dateOfBirth', icon: Calendar, type: 'date' },
+                                { label: 'State of Origin', key: 'stateOfOrigin', icon: MapPin, type: 'text' },
+                                { label: 'Occupation', key: 'occupation', icon: Briefcase, type: 'text' },
+                            ].map((field) => (
+                                <div key={field.key} className="space-y-3">
+                                    <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest flex items-center gap-2">
+                                        <field.icon size={14} className="text-[#E8820C]" /> {field.label}
+                                    </label>
+                                    <input
+                                        type={field.type}
+                                        value={formData[field.key]}
+                                        onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C]/30 focus:bg-white rounded-2xl px-6 py-4 text-sm font-semibold outline-none transition-all"
+                                    />
+                                </div>
+                            ))}
+                            <div className="md:col-span-2 space-y-3">
+                                <label className="text-[11px] font-bold text-black/40 uppercase tracking-widest flex items-center gap-2">
+                                    <Home size={14} className="text-[#E8820C]" /> Residential Address
+                                </label>
+                                <textarea
+                                    value={formData.residentialAddress}
+                                    onChange={(e) => setFormData({ ...formData, residentialAddress: e.target.value })}
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C]/30 focus:bg-white rounded-2xl px-6 py-4 text-sm font-semibold outline-none transition-all resize-none"
+                                    rows={2}
+                                />
                             </div>
                         </div>
 
-                        <div className="space-y-12 relative z-10">
-                            <div className="space-y-3">
-                                <p className="text-[10px] uppercase font-black text-white/20 tracking-[0.3em]">Aggregate Balance</p>
-                                <p className="text-6xl font-black text-[#F5A623] tracking-tighter font-serif">
-                                    {formatNaira(MOCK_DATA.totalContributions)}
+                        <div className="pt-6 border-t border-black/5">
+                            <h4 className="text-lg font-bold text-[#1A1A2E] mb-6 flex items-center gap-3">
+                                <Users size={20} className="text-[#E8820C]" /> Next of Kin
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold text-black/40 uppercase tracking-widest">Full Name</label>
+                                    <input type="text" value={formData.nextOfKinName} onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl px-6 py-4 text-sm font-semibold outline-none transition-all" />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold text-black/40 uppercase tracking-widest">Phone Number</label>
+                                    <input type="tel" value={formData.nextOfKinPhone} onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl px-6 py-4 text-sm font-semibold outline-none transition-all" />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold text-black/40 uppercase tracking-widest">Relationship</label>
+                                    <input type="text" value={formData.nextOfKinRelation} onChange={(e) => setFormData({ ...formData, nextOfKinRelation: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl px-6 py-4 text-sm font-semibold outline-none transition-all" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-8">
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] text-white font-bold text-[12px] uppercase tracking-[0.2em] shadow-xl hover:shadow-[#1A1A2E]/20 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 size={18} className="animate-spin text-[#E8820C]" /> : <CheckCircle size={18} className="text-[#E8820C]" />}
+                                {saving ? 'Saving Records...' : 'Save Profile Changes'}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="space-y-12">
+                        {/* ID Card Section */}
+                        <div className="flex flex-col items-center bg-gray-50 rounded-[2rem] p-8 border border-black/5">
+                            <h4 className="text-[12px] font-bold text-[#E8820C] uppercase tracking-widest mb-6">Official Member ID Card</h4>
+                            <div className="transform scale-95 md:scale-100 origin-center">
+                                <IdCard member={{
+                                    name: formData.name,
+                                    photo: previewImage,
+                                    occupation: formData.occupation,
+                                    idNo: user?.id ? `RR-MEM-${user.id.toString().padStart(4, '0')}` : 'RR-MEM-0000',
+                                    role: user?.role?.replace('_', ' ') || 'Official Member'
+                                }} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[
+                                { label: 'Email', value: formData.email || 'None Provided', icon: Mail },
+                                { label: 'Phone', value: formData.phone || 'None Provided', icon: Phone },
+                                { label: 'Date of Birth', value: formData.dateOfBirth || 'None Provided', icon: Calendar },
+                                { label: 'State of Origin', value: formData.stateOfOrigin || 'None Provided', icon: MapPin },
+                                { label: 'Occupation', value: formData.occupation || 'None Provided', icon: Briefcase },
+                                { label: 'Account ID', value: user?.id ? `RR-MEM-${user.id.toString().padStart(6, '0')}` : 'RR-MEM-000000', icon: ShieldCheck },
+                            ].map((info, i) => (
+                                <div key={i} className="p-6 bg-gray-50 rounded-[2rem] border border-black/5 hover:bg-white hover:shadow-lg transition-all">
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-[#E8820C] uppercase tracking-widest mb-2">
+                                        <info.icon size={14} /> {info.label}
+                                    </div>
+                                    <p className="text-base font-bold text-[#1A1A2E] truncate">{info.value}</p>
+                                </div>
+                            ))}
+                            <div className="sm:col-span-2 lg:col-span-3 p-6 bg-gray-50 rounded-[2rem] border border-black/5">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-[#E8820C] uppercase tracking-widest mb-2">
+                                    <Home size={14} /> Residential Address
+                                </div>
+                                <p className="text-base font-bold text-[#1A1A2E] bg-white rounded-xl p-4 border border-black/5 min-h-[4rem]">
+                                    {formData.residentialAddress || 'No address registered.'}
                                 </p>
                             </div>
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-8 pt-10 border-t border-white/5">
-                                <div className="space-y-2">
-                                    <p className="text-[9px] uppercase font-black text-white/20 tracking-widest">Growth</p>
-                                    <p className="text-2xl font-black text-emerald-400 font-serif leading-none">+{formatNaira(MOCK_DATA.totalBonus)}</p>
+                        <div className="pt-8 border-t border-black/5">
+                            <h4 className="text-[12px] font-bold text-black/40 tracking-widest uppercase mb-6 flex items-center gap-2">
+                                <AlertTriangle size={16} /> Next of Kin Details
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div className="p-5 bg-orange-50/50 rounded-2xl border border-orange-100">
+                                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Name</p>
+                                    <p className="text-sm font-bold text-[#1A1A2E]">{formData.nextOfKinName || 'N/A'}</p>
                                 </div>
-                                <div className="space-y-2 text-right">
-                                    <p className="text-[9px] uppercase font-black text-white/20 tracking-widest">Leverage</p>
-                                    <p className="text-2xl font-black text-rose-400 font-serif leading-none">{formatNaira(MOCK_DATA.totalLoans)}</p>
+                                <div className="p-5 bg-orange-50/50 rounded-2xl border border-orange-100">
+                                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Phone</p>
+                                    <p className="text-sm font-bold text-[#1A1A2E]">{formData.nextOfKinPhone || 'N/A'}</p>
+                                </div>
+                                <div className="p-5 bg-orange-50/50 rounded-2xl border border-orange-100">
+                                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Relationship</p>
+                                    <p className="text-sm font-bold text-[#1A1A2E]">{formData.nextOfKinRelation || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+                )}
+            </div>
 
-                    {/* Social/Digital Nexus */}
-                    <div className="bg-white rounded-[3.5rem] p-10 shadow-xl border border-black/5 space-y-10">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-2xl font-black font-serif text-[#1A1A2E]">Digital Nexus</h3>
-                            <Globe size={20} className="text-[#E8820C]" />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-5">
-                            {[
-                                { icon: ExternalLink, label: 'LinkedIn', color: '#0077b5', href: formData.linkedin },
-                                { icon: MessageCircle, label: 'WhatsApp', color: '#25D366', href: `https://wa.me/${formData.whatsapp}` },
-                                { icon: Globe, label: 'Website', color: '#1A1A2E', href: formData.website },
-                                { icon: Mail, label: 'Outlook', color: '#EA4335', href: `mailto:${formData.email}` },
-                            ].map((social, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => social.href && window.open(social.href, '_blank')}
-                                    disabled={!social.href}
-                                    className={`group flex flex-col items-center gap-3 p-5 rounded-3xl transition-all hover:-translate-y-2 active:scale-95 disabled:opacity-20 disabled:grayscale disabled:hover:translate-y-0 border border-black/5 hover:border-[#E8820C]/30 hover:shadow-xl`}
-                                >
-                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg transition-all" style={{ background: social.color }}>
-                                        <social.icon size={24} />
-                                    </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-black/30 group-hover:text-[#1A1A2E]">{social.label}</span>
-                                </button>
+            {/* Contribution Ledger */}
+            <div className="bg-white rounded-[3.5rem] shadow-xl border border-black/5 overflow-hidden">
+                <div className="p-10 border-b border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h3 className="text-2xl font-black font-serif text-[#1A1A2E]">Contribution Ledger</h3>
+                        <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest mt-1">Personal financial compliance history</p>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="whitespace-nowrap">
+                            <tr className="bg-gray-50/50">
+                                <th className="px-10 py-6 text-[10px] font-bold uppercase text-black/40 tracking-widest">Cycle Date</th>
+                                <th className="px-10 py-6 text-[10px] font-bold uppercase text-black/40 tracking-widest text-center">Status</th>
+                                <th className="px-10 py-6 text-[10px] font-bold uppercase text-black/40 tracking-widest text-center">Dividends</th>
+                                <th className="px-10 py-6 text-[10px] font-bold uppercase text-black/40 tracking-widest text-right">Contribution Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-black/5 whitespace-nowrap md:whitespace-normal">
+                            {MOCK_LEDGER.map((row, i) => (
+                                <tr key={i} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-10 py-6">
+                                        <p className="text-sm font-bold text-[#1A1A2E]">{dayjs(row.week).format('MMMM D, YYYY')}</p>
+                                    </td>
+                                    <td className="px-10 py-6 text-center">
+                                        {row.paid ? (
+                                            <span className="px-4 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-widest border border-emerald-100">
+                                                Paid
+                                            </span>
+                                        ) : (
+                                            <span className="px-4 py-1.5 rounded-lg bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest border border-red-100">
+                                                Pending
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-10 py-6 text-center font-bold text-sm text-[#F5A623]">
+                                        {row.bonus > 0 ? `+${formatNaira(row.bonus)}` : '-'}
+                                    </td>
+                                    <td className="px-10 py-6 text-right font-black text-lg text-[#1A1A2E]">
+                                        {formatNaira(row.amount)}
+                                    </td>
+                                </tr>
                             ))}
-                        </div>
-
-                        <div className="p-8 bg-gray-50 rounded-[2.5rem] border border-black/5 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-5">
-                                <Award size={48} />
-                            </div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E8820C] mb-3">Institutional Note</p>
-                            <p className="text-[11px] text-[#1A1A2E]/60 font-medium leading-relaxed italic">
-                                Professional identities are verified and cataloged for strategic inter-brotherhood networking.
-                            </p>
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

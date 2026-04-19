@@ -11,6 +11,7 @@ import {
 import dayjs from 'dayjs';
 import { fetchRequests, submitRequest, updateRequestStatus } from '../api/requests';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 import { fetchMembers } from '../api/members';
 import WeeklyReportTemplate from '../components/WeeklyReportTemplate';
 import { useReactToPrint } from 'react-to-print';
@@ -34,6 +35,7 @@ const statusStyles = {
 
 export default function RequestsPage() {
     const { user, hasRole } = useAuth();
+    const { config } = usePageConfig('requests');
     const canReview = hasRole('welfare', 'group_leader', 'treasurer');
 
     const [requests, setRequests] = useState([]);
@@ -64,6 +66,7 @@ export default function RequestsPage() {
             setRequests(reqs);
             setMembers(mems);
         } catch (err) {
+            console.error('Data load error:', err);
             setRequests(MOCK);
             setMembers([]);
         } finally {
@@ -96,6 +99,7 @@ export default function RequestsPage() {
             toast.success(`Request formalized as ${status}`);
             if (status !== 'pending') setSelectedRequest(null);
         } catch (err) {
+            console.error('Update err:', err);
             toast.error('Record update failed');
         } finally {
             setActionLoading(false);
@@ -117,7 +121,15 @@ export default function RequestsPage() {
     });
 
     const pendingCount = requests.filter(r => r.status === 'pending').length;
+    const myPendingCount = requests.filter(r => r.submittedBy === (user?.name || user?.id) && r.status === 'pending').length;
+    const canApply = !config.maxPendingPerMember || myPendingCount < Number(config.maxPendingPerMember);
     const totalDisbursed = requests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0);
+
+    const requestCategories = Array.isArray(config.customCategories)
+        ? config.customCategories
+        : (typeof config.customCategories === 'string'
+            ? config.customCategories.split(',').map(c => c.trim())
+            : ['Medical', 'Emergency', 'Education', 'Bereavement', 'Other']);
 
     const stats = [
         { label: 'Review Queue', value: pendingCount, icon: Inbox, color: 'text-amber-600', bg: 'bg-amber-50', isMoney: false },
@@ -160,7 +172,13 @@ export default function RequestsPage() {
                             </button>
                         )}
                         <button
-                            onClick={() => setShowForm(true)}
+                            onClick={() => {
+                                if (!canApply) {
+                                    toast.error(`You have reached the limit of ${config.maxPendingPerMember} pending requests.`);
+                                    return;
+                                }
+                                setShowForm(true);
+                            }}
                             className="bg-[#E8820C] text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-[#E8820C]/20"
                         >
                             <Plus size={14} /> New Application
@@ -308,7 +326,7 @@ export default function RequestsPage() {
                                         onChange={(e) => setForm({ ...form, type: e.target.value })}
                                         className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl px-5 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer"
                                     >
-                                        {['Medical', 'Emergency', 'Education', 'Bereavement', 'Other'].map((t) => (
+                                        {requestCategories.map((t) => (
                                             <option key={t} value={t}>{t}</option>
                                         ))}
                                     </select>

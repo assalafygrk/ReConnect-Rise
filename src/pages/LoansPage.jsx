@@ -13,6 +13,7 @@ import { useReactToPrint } from 'react-to-print';
 import TransactionReceipt from '../components/TransactionReceipt';
 import { fetchLoans, addLoan, recordRepayment } from '../api/loans';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
@@ -29,9 +30,10 @@ const VAULT_BALANCE = 120000;
 
 export default function LoansPage() {
     const { hasRole, user } = useAuth();
+    const { config } = usePageConfig('loans');
     const isTreasurer = hasRole('treasurer');
     const isLeader = hasRole('group_leader');
-    const isMemberOnly = !isTreasurer && !isLeader;
+    const isMemberOnly = !isTreasurer && !isLeader && config.loansEnabled;
 
     // States
     const [loans, setLoans] = useState([]);
@@ -179,11 +181,11 @@ export default function LoansPage() {
                         </div>
                         <div>
                             <h1 className="text-4xl font-serif font-black tracking-tight flex items-center gap-3">
-                                Loan Registry
+                                {config.pageHeadline}
                                 <Fingerprint size={24} className="text-white/20" />
                             </h1>
                             <p className="text-white/40 text-sm font-medium mt-2 max-w-md">
-                                Meticulous tracking of interest-free brotherhood loans, repayment progress, and institutional credit balance.
+                                {config.pageSubtitle}
                             </p>
                         </div>
                     </div>
@@ -203,6 +205,15 @@ export default function LoansPage() {
                     </div>
                 </div>
             </div>
+
+            {config.loanRulesNotice && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600" />
+                    <p className="text-sm font-bold text-blue-800">
+                        {config.loanRulesNotice}
+                    </p>
+                </div>
+            )}
 
             {/* Financial Insights */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -351,17 +362,26 @@ export default function LoansPage() {
                                             required
                                             type="number"
                                             min="1000"
+                                            max={config.maxLoanAmount || undefined}
                                             value={form.amount}
                                             onChange={(e) => setForm({ ...form, amount: e.target.value })}
                                             className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                            placeholder="Min: 1000"
+                                            placeholder={`Min: 1000 ${config.maxLoanAmount ? `| Max: ${formatNaira(config.maxLoanAmount)}` : ''}`}
                                         />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Proposed Repayment Plan</label>
+                                <label className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">
+                                    Proposed Repayment Plan
+                                    {config.repaymentPeriodLabel && (
+                                        <span className="text-[#E8820C]">({config.repaymentPeriodLabel})</span>
+                                    )}
+                                    {config.interestRate > 0 && (
+                                        <span className="text-red-500">({config.interestRate}% Interest)</span>
+                                    )}
+                                </label>
                                 <textarea
                                     required
                                     value={form.plan}

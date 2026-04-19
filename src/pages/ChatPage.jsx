@@ -9,9 +9,11 @@ import {
 } from 'lucide-react';
 import { fetchMessages, sendMessage } from '../api/chat';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 export default function ChatPage() {
     const { user } = useAuth();
+    const { config } = usePageConfig('chat');
     const [activeTab, setActiveTab] = useState('public'); // 'public' or brotherId
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
@@ -102,7 +104,7 @@ export default function ChatPage() {
     const currentBrother = brothers.find(b => b.id === activeTab);
 
     return (
-        <div className="flex h-[calc(100vh-140px)] rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 bg-white relative">
+        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 bg-white relative">
             {/* Sidebar Toggle Overlay (Mobile) */}
             {showSidebar && (
                 <div
@@ -116,7 +118,7 @@ export default function ChatPage() {
                 <div className="p-8 border-b border-black/5 bg-white/80">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-3xl font-black font-serif text-[#1A1A2E] leading-none">Registry</h2>
+                            <h2 className="text-3xl font-black font-serif text-[#1A1A2E] leading-none">{config.channelName || 'Registry'}</h2>
                             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] mt-2">Active Comms Nodes</p>
                         </div>
                         <button onClick={() => setShowSidebar(false)} className="md:hidden text-black/20 hover:text-black/60"><X size={20} /></button>
@@ -128,6 +130,16 @@ export default function ChatPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto py-6 scrollbar-hide px-4">
+                    {/* Configured Announcement */}
+                    {config.pinnedAnnouncement && (
+                        <div className="mb-6">
+                            <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-start gap-3">
+                                <ShieldAlert size={16} className="text-blue-600 shrink-0 mt-0.5" />
+                                <p className="text-xs font-bold text-blue-800">{config.pinnedAnnouncement}</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Pinned Section */}
                     {pinnedChats.length > 0 && (
                         <div className="mb-8">
@@ -188,8 +200,8 @@ export default function ChatPage() {
             {/* Main Chat Area: Tactical Interface */}
             <div className="flex-1 flex flex-col bg-white relative">
                 {/* Chat Header: Current Focus */}
-                <div className="h-28 px-10 border-b border-black/5 flex items-center justify-between bg-white/90 backdrop-blur-xl z-20">
-                    <div className="flex items-center gap-6">
+                <div className="h-20 md:h-28 px-4 md:px-10 border-b border-black/5 flex items-center justify-between bg-white/90 backdrop-blur-xl z-20">
+                    <div className="flex items-center gap-4 md:gap-6">
                         <button
                             onClick={() => setShowSidebar(true)}
                             className="md:hidden p-4 -ml-4 bg-gray-100 rounded-2xl text-[#1A1A2E] hover:bg-[#E8820C] hover:text-white transition-all shadow-sm"
@@ -250,7 +262,7 @@ export default function ChatPage() {
 
                 {/* Messages Container: The Relay */}
                 <div className="flex-1 flex overflow-hidden relative">
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-16 space-y-12 bg-gray-50/20 scroll-smooth relative z-10">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-16 space-y-6 md:space-y-12 bg-gray-50/20 scroll-smooth relative z-10">
                         {loading ? (
                             <div className="flex h-full items-center justify-center flex-col gap-6">
                                 <div className="w-16 h-16 border-4 border-[#E8820C]/10 border-t-[#E8820C] rounded-full animate-spin"></div>
@@ -269,9 +281,9 @@ export default function ChatPage() {
                                         <div className={`max-w-[85%] sm:max-w-xl flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
                                             {showAvatar && <p className="text-[9px] font-black text-[#E8820C] mb-3 uppercase tracking-[0.4em] ml-2">{msg.sender}</p>}
 
-                                            <div className={`p-6 md:p-8 text-sm leading-relaxed shadow-xl transition-all hover:shadow-2xl relative overflow-hidden group/bubble ${msg.isMe
-                                                ? 'bg-[#1A1A2E] text-white rounded-[3rem] rounded-br-none border border-white/5'
-                                                : 'bg-white border border-black/5 text-[#1A1A2E] rounded-[3rem] rounded-bl-none'
+                                            <div className={`p-4 md:p-8 text-sm md:text-base leading-relaxed shadow-xl transition-all hover:shadow-2xl relative overflow-hidden group/bubble ${msg.isMe
+                                                ? 'bg-[#1A1A2E] text-white rounded-[2rem] md:rounded-[3rem] rounded-br-none border border-white/5'
+                                                : 'bg-white border border-black/5 text-[#1A1A2E] rounded-[2rem] md:rounded-[3rem] rounded-bl-none'
                                                 }`}>
 
                                                 {msg.isMe && <div className="absolute top-0 right-0 p-8 text-white/[0.03] group-hover/bubble:text-white/10 transition-colors"><Fingerprint size={100} /></div>}
@@ -397,10 +409,10 @@ export default function ChatPage() {
                 </div>
 
                 {/* Message Input: Transmission Uplink */}
-                <div className="p-10 bg-white border-t border-black/5 relative z-30">
+                <div className="p-3 md:p-10 bg-white border-t border-black/5 relative z-30">
                     {/* Multi-functional Attachment Menu */}
                     {showAttachments && (
-                        <div className="absolute bottom-[100%] left-10 right-10 mb-8 p-8 bg-white/90 backdrop-blur-2xl rounded-[4rem] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] border border-black/5 animate-in slide-in-from-bottom-12 grid grid-cols-5 md:grid-cols-10 gap-6 z-50">
+                        <div className="absolute bottom-[100%] left-2 right-2 md:left-10 md:right-10 mb-4 md:mb-8 p-4 md:p-8 bg-white/90 backdrop-blur-2xl rounded-[2rem] md:rounded-[4rem] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] border border-black/5 animate-in slide-in-from-bottom-12 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2 sm:gap-3 md:gap-6 z-50">
                             {[
                                 { id: 'voice', icon: Mic, label: 'Voice', color: '#E8820C' },
                                 { id: 'image', icon: Image, label: 'Visual', color: '#1A1A2E' },
@@ -434,24 +446,24 @@ export default function ChatPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowAttachments(!showAttachments)}
-                                className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all shadow-lg active:scale-90 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] text-white hover:bg-[#252545]'}`}
+                                className={`w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-[1.5rem] flex items-center justify-center transition-all shadow-lg active:scale-90 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] text-white hover:bg-[#252545]'}`}
                             >
-                                <Plus size={28} />
+                                <Plus size={24} />
                             </button>
 
                             <input
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="flex-1 bg-transparent border-0 outline-none text-lg font-serif italic py-4 px-6 text-[#1A1A2E] placeholder:text-black/10"
-                                placeholder={activeTab === 'public' ? "Draft strategy for the room..." : `Private uplink with Brother ${currentBrother?.name?.split(' ')[0]}...`}
+                                className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm md:text-lg font-serif italic py-3 px-4 md:px-6 text-[#1A1A2E] placeholder:text-black/10"
+                                placeholder={activeTab === 'public' ? "Draft strategy..." : `Uplink with ${currentBrother?.name?.split(' ')[0]}...`}
                             />
 
                             <button
                                 type="submit"
                                 disabled={!inputText.trim() || sending}
-                                className="w-16 h-16 rounded-[1.5rem] bg-[#E8820C] text-white shadow-2xl shadow-[#E8820C]/40 hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-20 disabled:scale-100 disabled:shadow-none flex items-center justify-center"
+                                className={`w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-[1.5rem] bg-[#E8820C] text-white shadow-2xl shadow-[#E8820C]/40 hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-20 flex items-center justify-center`}
                             >
-                                {sending ? <Loader2 size={28} className="animate-spin" /> : <Send size={28} strokeWidth={3} />}
+                                {sending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} strokeWidth={3} />}
                             </button>
                         </div>
                     </form>

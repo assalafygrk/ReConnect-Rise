@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { fetchMembers } from '../api/members';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 const MOCK_MEMBERS = Array.from({ length: 20 }, (_, i) => ({
     id: i + 1,
@@ -33,6 +34,7 @@ const roleBadge = {
 
 export default function MembersPage() {
     const { hasRole } = useAuth();
+    const { config } = usePageConfig('members');
     const canManage = hasRole('treasurer', 'group_leader', 'admin');
     const [members, setMembers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -86,10 +88,10 @@ export default function MembersPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.3em] mb-2">
-                        <Users size={14} /> Brotherhood Directory
+                        <Users size={14} /> Brotherhood Directory ({filteredMembers.length}{config.memberCap ? ` / ${config.memberCap}` : ''})
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-serif font-black text-[#1A1A2E] tracking-tight">The Registry</h1>
-                    <p className="text-sm text-black/40 font-medium">Formal archive of all verified members and active leadership.</p>
+                    <h1 className="text-3xl sm:text-4xl font-serif font-black text-[#1A1A2E] tracking-tight">{config.pageHeadline}</h1>
+                    <p className="text-sm text-black/40 font-medium">{config.pageSubtitle}</p>
                 </div>
 
                 {canManage && (
@@ -104,6 +106,24 @@ export default function MembersPage() {
                     </button>
                 )}
             </div>
+
+            {/* Configured Notices */}
+            {(config.welcomeMessage || config.inductionNote) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {config.welcomeMessage && (
+                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center gap-3">
+                            <ShieldCheck size={20} className="text-emerald-600 shrink-0" />
+                            <p className="text-sm font-bold text-emerald-800">{config.welcomeMessage}</p>
+                        </div>
+                    )}
+                    {config.inductionNote && (
+                        <div className="bg-[#E8820C]/5 border border-[#E8820C]/10 p-4 rounded-2xl flex items-center gap-3">
+                            <Star size={20} className="text-[#E8820C] shrink-0" />
+                            <p className="text-sm font-bold text-[#E8820C]">{config.inductionNote}</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Filter Hub */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

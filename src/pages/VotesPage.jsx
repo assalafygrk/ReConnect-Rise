@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { fetchVotes, castVote, createVote, closeVote } from '../api/votes';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 import VoteCard from '../components/VoteCard';
 import CreateVoteModal from '../components/CreateVoteModal';
 
@@ -50,6 +51,7 @@ const MOCK = [
 
 export default function VotesPage() {
     const { user, hasRole } = useAuth();
+    const { config } = usePageConfig('votes');
     const canManage = hasRole('treasurer', 'group_leader', 'admin');
     const [votes, setVotes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -144,9 +146,9 @@ export default function VotesPage() {
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.4em] mb-2">
                         <VoteIcon size={14} /> Governance & Decisions
                     </div>
-                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">The Ballot</h1>
+                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">{config.pageHeadline}</h1>
                     <p className="text-sm text-black/40 font-medium max-w-xl leading-relaxed">
-                        Collective authority center for Reconnect & Rise. Participatory leadership through verified administrative polls.
+                        {config.pageSubtitle}
                     </p>
                 </div>
 
@@ -164,13 +166,22 @@ export default function VotesPage() {
                 )}
             </div>
 
+            {config.abstentionPolicy && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600 shrink-0" />
+                    <p className="text-sm font-bold text-blue-800">
+                        {config.abstentionPolicy}
+                    </p>
+                </div>
+            )}
+
             {/* Registry Insights Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                     { label: 'Active Polls', value: votes.filter(v => v.status === 'open').length, icon: Activity, color: 'text-[#E8820C]', bg: 'bg-[#E8820C]/5' },
                     { label: 'Participation', value: '86%', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
                     { label: 'Finalized', value: votes.filter(v => v.status === 'closed').length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Quorum Status', value: 'Healthy', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+                    { label: config.quorumLabel || 'Quorum Status', value: `Min ${config.quorumThreshold}%`, icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-[2rem] border border-black/5 shadow-sm space-y-4 group hover:shadow-xl transition-all duration-500">
                         <div className="flex items-center justify-between">
