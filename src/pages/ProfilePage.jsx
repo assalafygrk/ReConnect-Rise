@@ -20,11 +20,14 @@ const MOCK_LEDGER = [
 ];
 
 export default function ProfilePage() {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, switchActiveRole, activeRole, ROLE_HIERARCHY, ROLES } = useAuth();
     const fileInputRef = useRef(null);
     const [isEditing, setIsEditing] = useState(false);
     const [previewImage, setPreviewImage] = useState(user?.photoURL || null);
     const [saving, setSaving] = useState(false);
+
+    // Get current role details from hierarchy
+    const roleDetails = ROLE_HIERARCHY[activeRole] || { class: 'Unknown', label: activeRole };
 
     const [formData, setFormData] = useState({
         name: user?.name || '',
@@ -63,13 +66,14 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 pb-24 px-4">
+
             {/* Header Section */}
-            <div className="relative bg-[#1A1A2E] rounded-[3.5rem] p-8 md:p-12 overflow-hidden shadow-2xl border border-white/5 flex flex-col md:flex-row items-center gap-10">
+            <div className="relative bg-[#1A1A2E] rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-12 overflow-hidden shadow-2xl border border-white/5 flex flex-col md:flex-row items-center gap-6 md:gap-10">
                 <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-br from-[#E8820C] to-[transparent] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
 
                 {/* Profile Photo */}
                 <div className="relative group shrink-0">
-                    <div className="w-40 h-40 rounded-[2.5rem] bg-white/5 border-[6px] border-white/10 shadow-xl flex items-center justify-center text-4xl font-black text-white overflow-hidden backdrop-blur-md">
+                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] bg-white/5 border-[6px] border-white/10 shadow-xl flex items-center justify-center text-4xl font-black text-white overflow-hidden backdrop-blur-md">
                         {previewImage ? (
                             <img src={previewImage} alt="Profile" className="w-full h-full object-cover transition-all" />
                         ) : (
@@ -92,7 +96,7 @@ export default function ProfilePage() {
                     <h1 className="text-4xl md:text-5xl font-black text-white font-serif">{formData.name || 'Member Profile'}</h1>
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                         <span className="px-4 py-2 rounded-xl bg-white/10 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md">
-                            Role: {user?.role?.replace('_', ' ') || 'Official Member'}
+                            Class {roleDetails.class} — {roleDetails.label}
                         </span>
                         <span className="px-4 py-2 flex items-center gap-2 rounded-xl bg-emerald-500/10 text-[10px] font-bold uppercase tracking-widest text-emerald-400 backdrop-blur-md">
                             <CheckCircle size={12} /> Account Active
@@ -102,7 +106,7 @@ export default function ProfilePage() {
 
                 <button
                     onClick={() => setIsEditing(!isEditing)}
-                    className={`px-8 py-5 rounded-3xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95 shrink-0
+                    className={`w-full md:w-auto justify-center px-8 py-5 mt-4 md:mt-0 rounded-3xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 transition-all active:scale-95 shrink-0
                         ${isEditing ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-[#E8820C] text-white hover:bg-[#F5A623]'}`}
                 >
                     {isEditing ? <XCircle size={18} /> : <Edit size={18} />}
@@ -110,13 +114,15 @@ export default function ProfilePage() {
                 </button>
             </div>
 
+
             {/* Profile Forms / Viewer */}
-            <div className="bg-white rounded-[3.5rem] p-8 md:p-12 shadow-xl border border-black/5 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5">
+            <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-12 shadow-xl border border-black/5 relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-black/5">
                     <div className="space-y-1">
-                        <h3 className="text-3xl font-black font-serif text-[#1A1A2E]">Personal Information</h3>
-                        <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest">Confidential Member Records</p>
+                        <h3 className="text-2xl md:text-3xl font-black font-serif text-[#1A1A2E]">Personal Information</h3>
+                        <p className="text-[10px] md:text-[11px] font-bold text-black/40 uppercase tracking-widest">Confidential Member Records</p>
                     </div>
+
                     <Lock size={20} className="text-black/10" />
                 </div>
 
@@ -190,18 +196,21 @@ export default function ProfilePage() {
                 ) : (
                     <div className="space-y-12">
                         {/* ID Card Section */}
-                        <div className="flex flex-col items-center bg-gray-50 rounded-[2rem] p-8 border border-black/5">
-                            <h4 className="text-[12px] font-bold text-[#E8820C] uppercase tracking-widest mb-6">Official Member ID Card</h4>
-                            <div className="transform scale-95 md:scale-100 origin-center">
-                                <IdCard member={{
-                                    name: formData.name,
-                                    photo: previewImage,
-                                    occupation: formData.occupation,
-                                    idNo: user?.id ? `RR-MEM-${user.id.toString().padStart(4, '0')}` : 'RR-MEM-0000',
-                                    role: user?.role?.replace('_', ' ') || 'Official Member'
-                                }} />
+                        <div className="flex flex-col items-center bg-gray-50 rounded-[2rem] p-4 md:p-8 border border-black/5 overflow-hidden">
+                            <h4 className="text-[10px] md:text-[12px] font-bold text-[#E8820C] uppercase tracking-widest mb-6">Official Member ID Card</h4>
+                            <div className="w-full overflow-x-auto pb-4 flex justify-center scrollbar-hide">
+                                <div className="transform scale-[0.65] sm:scale-95 md:scale-100 origin-center min-w-[380px]">
+                                    <IdCard member={{
+                                        name: formData.name,
+                                        photo: previewImage,
+                                        occupation: formData.occupation,
+                                        idNo: user?.id ? `RR-MEM-${user.id.toString().padStart(4, '0')}` : 'RR-MEM-0000',
+                                        role: user?.role?.replace('_', ' ') || 'Official Member'
+                                    }} />
+                                </div>
                             </div>
                         </div>
+
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {[
@@ -253,8 +262,8 @@ export default function ProfilePage() {
             </div>
 
             {/* Contribution Ledger */}
-            <div className="bg-white rounded-[3.5rem] shadow-xl border border-black/5 overflow-hidden">
-                <div className="p-10 border-b border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] shadow-xl border border-black/5 overflow-hidden mt-8 md:mt-0">
+                <div className="p-6 md:p-10 border-b border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h3 className="text-2xl font-black font-serif text-[#1A1A2E]">Contribution Ledger</h3>
                         <p className="text-[10px] font-bold text-black/40 uppercase tracking-widest mt-1">Personal financial compliance history</p>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, ListChecks, Users, Wallet, HandCoins,
-    FileQuestion, Vote, CalendarDays, Settings, LogOut, X,
+    HeartHandshake, FileQuestion, Vote, CalendarDays, Settings, LogOut, X,
     ChevronRight, MessageSquare, UserCircle, FileText,
     Shield, Lock, LockOpen, ChevronDown, ChevronUp,
     ToggleLeft, ToggleRight, Zap
@@ -19,7 +19,7 @@ const navGroups = [
             { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
             { to: '/contributions', icon: ListChecks, label: 'Contributions' },
             { to: '/disbursements', icon: Wallet, label: 'Disbursements' },
-            { to: '/loans', icon: HandCoins, label: 'Loans', roles: ['treasurer', 'group_leader', 'official_member'] },
+            { to: '/loans', icon: HandCoins, label: 'Loans' },
             { to: '/wallet', icon: Wallet, label: 'My Wallet' },
         ],
     },
@@ -27,9 +27,10 @@ const navGroups = [
         label: 'People',
         items: [
             { to: '/members', icon: Users, label: 'Members' },
-            { to: '/requests', icon: FileQuestion, label: 'Requests' },
+            { id: 'requests', to: '/welfare', icon: HeartHandshake, label: 'Welfare' },
         ],
     },
+
     {
         label: 'Group',
         items: [
@@ -40,6 +41,7 @@ const navGroups = [
             { to: '/advice', icon: MessageSquare, label: 'Advice Room' },
         ],
     },
+
     {
         label: 'Account',
         items: [
@@ -49,6 +51,7 @@ const navGroups = [
     },
 ];
 
+
 const modulePages = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'contributions', label: 'Contributions' },
@@ -56,7 +59,8 @@ const modulePages = [
     { id: 'loans', label: 'Loans' },
     { id: 'wallet', label: 'Wallet' },
     { id: 'members', label: 'Members' },
-    { id: 'requests', label: 'Requests' },
+    { id: 'requests', label: 'Welfare' },
+
     { id: 'votes', label: 'Votes' },
     { id: 'meetings', label: 'Meetings' },
     { id: 'chat', label: 'Chat' },
@@ -143,9 +147,10 @@ export default function Sidebar({ collapsed, onToggle }) {
                 <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-6">
                     {navGroups.map((group) => {
                         const visibleItems = group.items.filter((item) => {
-                            const id = item.to.replace('/', '') || 'dashboard';
+                            const id = item.id || item.to.replace('/', '') || 'dashboard';
                             return (!item.roles || hasRole(...item.roles)) && isPageEnabled(id);
                         });
+
                         if (!visibleItems.length) return null;
                         return (
                             <div key={group.label}>

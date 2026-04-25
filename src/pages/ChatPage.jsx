@@ -104,7 +104,8 @@ export default function ChatPage() {
     const currentBrother = brothers.find(b => b.id === activeTab);
 
     return (
-        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 bg-white relative">
+        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 bg-white relative mx-2 md:mx-0">
+
             {/* Sidebar Toggle Overlay (Mobile) */}
             {showSidebar && (
                 <div
@@ -200,34 +201,37 @@ export default function ChatPage() {
             {/* Main Chat Area: Tactical Interface */}
             <div className="flex-1 flex flex-col bg-white relative">
                 {/* Chat Header: Current Focus */}
-                <div className="h-20 md:h-28 px-4 md:px-10 border-b border-black/5 flex items-center justify-between bg-white/90 backdrop-blur-xl z-20">
-                    <div className="flex items-center gap-4 md:gap-6">
+                <div className="h-20 md:h-28 px-2 md:px-10 border-b border-black/5 flex items-center justify-between bg-white/90 backdrop-blur-xl z-20 overflow-hidden">
+                    <div className="flex items-center gap-2 md:gap-6 min-w-0">
                         <button
                             onClick={() => setShowSidebar(true)}
-                            className="md:hidden p-4 -ml-4 bg-gray-100 rounded-2xl text-[#1A1A2E] hover:bg-[#E8820C] hover:text-white transition-all shadow-sm"
+                            className="md:hidden p-2.5 bg-gray-100 rounded-xl text-[#1A1A2E] hover:bg-[#E8820C] hover:text-white transition-all shadow-sm shrink-0"
                         >
-                            <Menu size={20} />
+                            <Menu size={18} />
                         </button>
+
                         <div className="relative group">
-                            <div className="w-16 h-16 rounded-[2rem] bg-[#1A1A2E] flex items-center justify-center text-white shadow-2xl relative z-10 group-hover:scale-105 transition-transform">
-                                {activeTab === 'public' ? <Signal size={32} className="text-[#E8820C]" /> : <User size={32} />}
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-[2rem] bg-[#1A1A2E] flex items-center justify-center text-white shadow-2xl relative z-10 group-hover:scale-105 transition-transform">
+                                {activeTab === 'public' ? <Signal size={24} className="text-[#E8820C] md:size-8" /> : <User size={24} className="md:size-8" />}
                             </div>
-                            <div className="absolute -inset-3 bg-[#E8820C]/10 rounded-[2.5rem] blur opacity-50 group-hover:opacity-80 transition-opacity"></div>
+                            <div className="absolute -inset-2 md:-inset-3 bg-[#E8820C]/10 rounded-2xl md:rounded-[2.5rem] blur opacity-50 group-hover:opacity-80 transition-opacity"></div>
                         </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-3">
-                                <h3 className="text-2xl font-black text-[#1A1A2E] tracking-tight truncate font-serif">
+
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-base md:text-2xl font-black text-[#1A1A2E] tracking-tight truncate font-serif">
                                     {activeTab === 'public' ? 'Strategic Room' : currentBrother?.name}
                                 </h3>
-                                <button onClick={() => togglePin(activeTab)} className={`p-1.5 rounded-xl transition-all ${pinnedChats.includes(activeTab) ? 'text-[#E8820C] bg-[#E8820C]/10 shadow-inner' : 'text-black/10 hover:text-black/30'}`}>
-                                    <ShieldAlert size={16} />
+                                <button onClick={() => togglePin(activeTab)} className={`p-1 rounded-lg md:rounded-xl transition-all ${pinnedChats.includes(activeTab) ? 'text-[#E8820C] bg-[#E8820C]/10 shadow-inner' : 'text-black/10 hover:text-black/30'}`}>
+                                    <ShieldAlert size={14} className="md:size-4" />
                                 </button>
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
-                                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.25em]">Channel Synchronized</p>
+                            <div className="flex items-center gap-1.5 mt-0.5 md:mt-1">
+                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
+                                <p className="text-[8px] md:text-[10px] text-emerald-600 font-black uppercase tracking-[0.2em] md:tracking-[0.25em]">Channel Synchronized</p>
                             </div>
                         </div>
+
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -262,7 +266,8 @@ export default function ChatPage() {
 
                 {/* Messages Container: The Relay */}
                 <div className="flex-1 flex overflow-hidden relative">
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-16 space-y-6 md:space-y-12 bg-gray-50/20 scroll-smooth relative z-10">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 md:p-16 space-y-6 md:space-y-12 bg-gray-50/20 scroll-smooth relative z-10">
+
                         {loading ? (
                             <div className="flex h-full items-center justify-center flex-col gap-6">
                                 <div className="w-16 h-16 border-4 border-[#E8820C]/10 border-t-[#E8820C] rounded-full animate-spin"></div>
@@ -272,25 +277,31 @@ export default function ChatPage() {
                             filteredMessages.map((msg, i) => {
                                 const showAvatar = !msg.isMe && activeTab === 'public' && (i === 0 || filteredMessages[i - 1]?.sender !== msg.sender);
                                 return (
-                                    <div key={msg.id} className={`flex items-end gap-5 ${msg.isMe ? 'justify-end' : 'justify-start'} ${!showAvatar && !msg.isMe ? 'ml-19' : ''}`}>
+                                    <div key={msg.id} className={`flex items-end gap-2 md:gap-5 ${msg.isMe ? 'justify-end' : 'justify-start'} ${!showAvatar && !msg.isMe ? 'ml-12 md:ml-[76px]' : ''}`}>
                                         {showAvatar && (
-                                            <div className="w-14 h-14 rounded-2xl bg-[#1A1A2E] text-white flex items-center justify-center text-[12px] font-black shadow-2xl mb-8 shrink-0 border-2 border-white">
+                                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#1A1A2E] text-white flex items-center justify-center text-[10px] md:text-[12px] font-black shadow-2xl mb-8 shrink-0 border-2 border-white">
                                                 {msg.sender?.split(' ').map(n => n[0]).join('')}
                                             </div>
                                         )}
-                                        <div className={`max-w-[85%] sm:max-w-xl flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                                            {showAvatar && <p className="text-[9px] font-black text-[#E8820C] mb-3 uppercase tracking-[0.4em] ml-2">{msg.sender}</p>}
 
-                                            <div className={`p-4 md:p-8 text-sm md:text-base leading-relaxed shadow-xl transition-all hover:shadow-2xl relative overflow-hidden group/bubble ${msg.isMe
-                                                ? 'bg-[#1A1A2E] text-white rounded-[2rem] md:rounded-[3rem] rounded-br-none border border-white/5'
-                                                : 'bg-white border border-black/5 text-[#1A1A2E] rounded-[2rem] md:rounded-[3rem] rounded-bl-none'
+
+                                        <div className={`max-w-[80%] md:max-w-xl flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
+                                            {showAvatar && <p className="text-[9px] font-black text-[#E8820C] mb-2 uppercase tracking-[0.4em] ml-2">{msg.sender}</p>}
+
+
+
+                                            <div className={`p-3 md:p-8 text-sm md:text-base leading-relaxed shadow-xl transition-all hover:shadow-2xl relative overflow-hidden group/bubble ${msg.isMe
+                                                ? 'bg-[#1A1A2E] text-white rounded-2xl md:rounded-[3rem] rounded-br-none border border-white/5'
+                                                : 'bg-white border border-black/5 text-[#1A1A2E] rounded-2xl md:rounded-[3rem] rounded-bl-none'
                                                 }`}>
+
 
                                                 {msg.isMe && <div className="absolute top-0 right-0 p-8 text-white/[0.03] group-hover/bubble:text-white/10 transition-colors"><Fingerprint size={100} /></div>}
 
                                                 {/* Render content based on type */}
                                                 {!msg.type || msg.type === 'text' ? (
-                                                    <p className="relative z-10 font-serif text-lg leading-relaxed">{msg.text}</p>
+                                                    <p className="relative z-10 font-serif text-sm md:text-lg leading-relaxed">{msg.text}</p>
+
                                                 ) : msg.type === 'image' ? (
                                                     <div className="space-y-4 relative z-10">
                                                         <img src={msg.content?.url} alt="Shared" className="rounded-[2.5rem] w-full h-auto max-h-80 object-cover shadow-2xl border border-white/10 group-hover/bubble:scale-[1.02] transition-transform duration-700" />
@@ -314,8 +325,9 @@ export default function ChatPage() {
                                                     <div className="space-y-6 relative z-10 min-w-[250px]">
                                                         <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-2">
                                                             <BarChart3 size={20} className="text-[#E8820C]" />
-                                                            <p className="font-black text-lg font-serif">{msg.text}</p>
+                                                            <p className="font-black text-sm md:text-lg font-serif">{msg.text}</p>
                                                         </div>
+
                                                         {msg.content?.options?.map((opt, idx) => {
                                                             const votes = msg.content?.votes?.[idx] || 0;
                                                             const total = msg.content?.votes?.reduce((a, b) => a + b, 0) || 1;
@@ -348,7 +360,8 @@ export default function ChatPage() {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <p className="relative z-10 font-serif text-lg leading-relaxed">{msg.text}</p>
+                                                    <p className="relative z-10 font-serif text-sm md:text-lg leading-relaxed">{msg.text}</p>
+
                                                 )}
                                             </div>
 
@@ -409,7 +422,8 @@ export default function ChatPage() {
                 </div>
 
                 {/* Message Input: Transmission Uplink */}
-                <div className="p-3 md:p-10 bg-white border-t border-black/5 relative z-30">
+                <div className="p-4 md:p-10 bg-white border-t border-black/5 relative z-30">
+
                     {/* Multi-functional Attachment Menu */}
                     {showAttachments && (
                         <div className="absolute bottom-[100%] left-2 right-2 md:left-10 md:right-10 mb-4 md:mb-8 p-4 md:p-8 bg-white/90 backdrop-blur-2xl rounded-[2rem] md:rounded-[4rem] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] border border-black/5 animate-in slide-in-from-bottom-12 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2 sm:gap-3 md:gap-6 z-50">
@@ -442,32 +456,35 @@ export default function ChatPage() {
 
                     <form onSubmit={(e) => handleSend(e)} className="relative group max-w-6xl mx-auto">
                         <div className="absolute -inset-1.5 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[3rem] blur opacity-5 group-focus-within:opacity-20 transition duration-700"></div>
-                        <div className="relative bg-gray-50 border-2 border-transparent focus-within:border-[#E8820C]/20 rounded-[2.5rem] p-3 flex items-center gap-2 transition-all focus-within:bg-white focus-within:shadow-2xl">
+                        <div className="relative bg-gray-50 border-2 border-transparent focus-within:border-[#E8820C]/20 rounded-[1.5rem] md:rounded-[2.5rem] p-1.5 md:p-3 flex items-center gap-1.5 md:gap-2 transition-all focus-within:bg-white focus-within:shadow-2xl">
                             <button
                                 type="button"
                                 onClick={() => setShowAttachments(!showAttachments)}
-                                className={`w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-[1.5rem] flex items-center justify-center transition-all shadow-lg active:scale-90 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] text-white hover:bg-[#252545]'}`}
+                                className={`w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-xl md:rounded-[1.5rem] flex items-center justify-center transition-all shadow-lg active:scale-90 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] text-white hover:bg-[#252545]'}`}
                             >
-                                <Plus size={24} />
+                                <Plus size={20} className="md:size-6" />
                             </button>
+
 
                             <input
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm md:text-lg font-serif italic py-3 px-4 md:px-6 text-[#1A1A2E] placeholder:text-black/10"
+                                className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[12px] md:text-lg font-serif italic py-2 md:py-3 px-2 md:px-6 text-[#1A1A2E] placeholder:text-black/10"
                                 placeholder={activeTab === 'public' ? "Draft strategy..." : `Uplink with ${currentBrother?.name?.split(' ')[0]}...`}
                             />
+
 
                             <button
                                 type="submit"
                                 disabled={!inputText.trim() || sending}
-                                className={`w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-[1.5rem] bg-[#E8820C] text-white shadow-2xl shadow-[#E8820C]/40 hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-20 flex items-center justify-center`}
+                                className={`w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-xl md:rounded-[1.5rem] bg-[#E8820C] text-white shadow-2xl shadow-[#E8820C]/40 hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-20 flex items-center justify-center`}
                             >
-                                {sending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} strokeWidth={3} />}
+                                {sending ? <Loader2 size={18} className="animate-spin md:size-6" /> : <Send size={18} strokeWidth={3} className="md:size-6" />}
                             </button>
+
                         </div>
                     </form>
-                    <div className="flex items-center justify-center gap-6 mt-6">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-6">
                         <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-black/20 italic">
                             <Lock size={10} /> End-to-End Encryption Active
                         </div>

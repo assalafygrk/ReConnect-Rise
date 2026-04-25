@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { addLog } from '../api/auditLog';
+import { ROLES, ROLE_CLASSES, ROLE_HIERARCHY } from '../constants/roles';
 
 const AuthContext = createContext(null);
 
@@ -38,7 +39,7 @@ export function AuthProvider({ children }) {
                 disbursements: true, loans: true, requests: true,
                 votes: true, meetings: true, chat: true, wallet: true,
                 settings: true, profile: true, documentary: true, advice: true,
-                login: true, register: true, id_card: true
+                login: true, register: true, id_card: true, nexus: true
             };
         } catch {
             return {
@@ -46,7 +47,7 @@ export function AuthProvider({ children }) {
                 disbursements: true, loans: true, requests: true,
                 votes: true, meetings: true, chat: true, wallet: true,
                 settings: true, profile: true, documentary: true, advice: true,
-                login: true, register: true, id_card: true
+                login: true, register: true, id_card: true, nexus: true
             };
         }
     });
@@ -86,9 +87,16 @@ export function AuthProvider({ children }) {
             }
         } else {
             // TEMPORARY: force a mock user for testing without backend
-            const mockUser = { id: 1, name: 'Super Admin', email: 'admin@rrgroup.com', role: 'admin' };
+            // Check if there's a stored role for development
+            const savedRole = localStorage.getItem('rr_mock_role') || ROLES.ADMIN;
+            const mockUser = { 
+                id: 1, 
+                name: 'System Authority', 
+                email: 'authority@rrgroup.com', 
+                role: savedRole 
+            };
             setUser(mockUser);
-            setActiveRole('admin');
+            setActiveRole(savedRole);
         }
         setLoading(false);
     }, []);
@@ -109,10 +117,11 @@ export function AuthProvider({ children }) {
 
     const logout = () => {
         localStorage.removeItem('rr_token');
+        localStorage.removeItem('rr_mock_role');
         setUser(null);
         setActiveRole(null);
         setAdminPanelUnlocked(false);
-        addLog('System', 'Session Terminated', 'Admin logged out', 'security');
+        addLog('System', 'Session Terminated', 'User logged out', 'security');
     };
 
     const updateUser = (data) => {
@@ -122,6 +131,8 @@ export function AuthProvider({ children }) {
 
     const switchActiveRole = (role) => {
         setActiveRole(role);
+        localStorage.setItem('rr_mock_role', role);
+        toast.success(`Active Role Switched to: ${ROLE_CLASSES[role]?.label || role}`);
     };
 
     const togglePage = (pageId) => {
@@ -137,12 +148,15 @@ export function AuthProvider({ children }) {
         });
     };
 
-    const isPageEnabled = (pageId) => user?.role === 'admin' || enabledPages[pageId];
+    const isPageEnabled = (pageId) => {
+        if (activeRole === ROLES.ADMIN) return true;
+        return enabledPages[pageId];
+    };
 
     const hasRole = (...roles) => {
         if (!user) return false;
         const effective = activeRole || user.role;
-        if (effective === 'admin') return true;
+        if (effective === ROLES.ADMIN) return true;
         return roles.includes(effective);
     };
 
@@ -219,7 +233,11 @@ export function AuthProvider({ children }) {
             setAdminSecurityMode,
             setAdminPanelPassword,
             getAdmin2FACode,
+            ROLES,
+            ROLE_CLASSES,
+            ROLE_HIERARCHY
         }}>
+
             {children}
         </AuthContext.Provider>
     );
@@ -230,3 +248,4 @@ export function useAuth() {
     if (!ctx) throw new Error('useAuth must be used within AuthProvider');
     return ctx;
 }
+

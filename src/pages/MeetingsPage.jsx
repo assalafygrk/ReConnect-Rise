@@ -26,9 +26,10 @@ const MOCK = [
 ];
 
 export default function MeetingsPage() {
-    const { hasRole } = useAuth();
+    const { hasRole, ROLES } = useAuth();
     const { config } = usePageConfig('meetings');
-    const canAdd = hasRole('treasurer', 'group_leader', 'meeting organizer', 'admin');
+    const canAdd = hasRole(ROLES.MEETING_ORGANIZER, ROLES.GROUP_LEADER, ROLES.ADMIN);
+
     const [meetings, setMeetings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);

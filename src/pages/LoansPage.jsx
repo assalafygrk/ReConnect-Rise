@@ -29,11 +29,12 @@ const MOCK = [
 const VAULT_BALANCE = 120000;
 
 export default function LoansPage() {
-    const { hasRole, user } = useAuth();
+    const { hasRole, ROLES, user } = useAuth();
     const { config } = usePageConfig('loans');
-    const isTreasurer = hasRole('treasurer');
-    const isLeader = hasRole('group_leader');
+    const isTreasurer = hasRole(ROLES.TREASURER, ROLES.ADMIN);
+    const isLeader = hasRole(ROLES.GROUP_LEADER, ROLES.ADMIN);
     const isMemberOnly = !isTreasurer && !isLeader && config.loansEnabled;
+
 
     // States
     const [loans, setLoans] = useState([]);
@@ -80,9 +81,10 @@ export default function LoansPage() {
         e.preventDefault();
         setActionLoading(true);
         try {
-            let initialStatus = 'pending_leader';
-            if (isLeader) initialStatus = 'pending_treasurer';
-            if (isTreasurer) initialStatus = 'active';
+            let initialStatus = 'pending_treasurer';
+            if (isTreasurer) initialStatus = 'pending_leader';
+            if (isLeader && isTreasurer) initialStatus = 'active'; // Admin or dual role
+
 
             const data = await addLoan({ ...form, status: initialStatus });
             setLoans((prev) => [data, ...prev]);
@@ -142,8 +144,10 @@ export default function LoansPage() {
     const filteredLoans = loans.filter(l => {
         const matchesSearch = l.member.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === 'all' || l.status === filterStatus;
-        return matchesSearch && matchesFilter;
+        const matchesRole = isTreasurer || isLeader || l.member === (user?.name || user?.id);
+        return matchesSearch && matchesFilter && matchesRole;
     });
+
 
     const totalLoaned = loans.filter(l => l.status !== 'declined').reduce((sum, l) => sum + l.amount, 0);
     const activeBalance = loans.filter(l => l.status === 'active').reduce((sum, l) => sum + l.balance, 0);
@@ -465,12 +469,37 @@ export default function LoansPage() {
                             </div>
                         </div>
 
-                        {/* Leader Review Checklist */}
+                        {/* Treasurer Review - Verification Phase */}
+                        {selectedLoan.status === 'pending_treasurer' && isTreasurer && (
+                            <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 space-y-6 mb-8 text-center">
+                                <h4 className="text-[10px] font-black text-emerald-800 uppercase tracking-widest flex items-center justify-center gap-2">
+                                    <UserCheck size={14} /> Treasury Verification
+                                </h4>
+                                <p className="text-xs font-bold text-emerald-700/60 uppercase tracking-wide">Validate member eligibility and vault capacity.</p>
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={() => handleApproval(selectedLoan.id, 'pending_leader')}
+                                        className="flex-1 py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        <BadgeCheck size={16} /> Verify & Pass to Leader
+                                    </button>
+                                    <button
+                                        onClick={() => handleApproval(selectedLoan.id, 'declined')}
+                                        className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Leader Review - Final Approval Phase */}
                         {selectedLoan.status === 'pending_leader' && isLeader && (
                             <div className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-100 space-y-6 mb-8">
                                 <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest flex items-center gap-2">
-                                    <ShieldCheck size={14} /> Executive Audit Checklist
+                                    <ShieldCheck size={14} /> Final Executive Authorization
                                 </h4>
+                                <p className="text-xs font-bold text-amber-700/60 uppercase tracking-wide text-center">Treasurer verification complete. Secure final approval.</p>
                                 <div className="space-y-4">
                                     {[
                                         { id: 'amountVerified', label: 'Requested amount is proportionate to member earnings' },
@@ -490,10 +519,10 @@ export default function LoansPage() {
                                 <div className="flex gap-4 pt-4">
                                     <button
                                         disabled={!leaderChecks.amountVerified || !leaderChecks.repaymentPlanVerified || !leaderChecks.memberStandingVerified}
-                                        onClick={() => handleApproval(selectedLoan.id, 'pending_treasurer')}
+                                        onClick={() => handleApproval(selectedLoan.id, 'active')}
                                         className="flex-1 py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg disabled:opacity-30 disabled:grayscale transition-all active:scale-95"
                                     >
-                                        Pass to Treasurer
+                                        Authorize & Disburse
                                     </button>
                                     <button
                                         onClick={() => handleApproval(selectedLoan.id, 'declined')}
@@ -505,29 +534,6 @@ export default function LoansPage() {
                             </div>
                         )}
 
-                        {/* Treasurer Review */}
-                        {selectedLoan.status === 'pending_treasurer' && isTreasurer && (
-                            <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 space-y-6 mb-8 text-center">
-                                <h4 className="text-[10px] font-black text-emerald-800 uppercase tracking-widest flex items-center justify-center gap-2">
-                                    <UserCheck size={14} /> Final Authorization
-                                </h4>
-                                <p className="text-xs font-bold text-emerald-700/60 uppercase tracking-wide">Leader Approval Secured. Confirm Treasury Disbursement.</p>
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => handleApproval(selectedLoan.id, 'active')}
-                                        className="flex-1 py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
-                                    >
-                                        <BadgeCheck size={16} /> Authorize & Release
-                                    </button>
-                                    <button
-                                        onClick={() => handleApproval(selectedLoan.id, 'declined')}
-                                        className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
-                        )}
 
                         {/* Purpose/Plan Log */}
                         <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-black/5 space-y-4 mb-8">

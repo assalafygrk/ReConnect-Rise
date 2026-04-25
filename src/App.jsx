@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BrandProvider } from './context/BrandContext';
+import { PageConfigProvider } from './context/PageConfigContext';
 import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
@@ -16,7 +17,7 @@ const MembersPage = lazy(() => import('./pages/MembersPage'));
 const MemberProfilePage = lazy(() => import('./pages/MemberProfilePage'));
 const DisbursementsPage = lazy(() => import('./pages/DisbursementsPage'));
 const LoansPage = lazy(() => import('./pages/LoansPage'));
-const RequestsPage = lazy(() => import('./pages/RequestsPage'));
+const WelfarePage = lazy(() => import('./pages/WelfarePage'));
 const VotesPage = lazy(() => import('./pages/VotesPage'));
 const MeetingsPage = lazy(() => import('./pages/MeetingsPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
@@ -47,128 +48,129 @@ function PageGuard({ children, id }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <BrandProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <Toaster
-              position="top-right"
-              containerStyle={{ zIndex: 99999 }}
-              toastOptions={{
-                style: {
-                  fontFamily: "'DM Sans', sans-serif",
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                },
-                success: { iconTheme: { primary: '#15803D', secondary: '#fff' } },
-                error: { iconTheme: { primary: '#B91C1C', secondary: '#fff' } },
-              }}
-            />
+      <PageConfigProvider>
+        <BrandProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <Toaster
+                position="top-right"
+                containerStyle={{ zIndex: 99999 }}
+                toastOptions={{
+                  style: {
+                    fontFamily: "'DM Sans', sans-serif",
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                  },
+                  success: { iconTheme: { primary: '#15803D', secondary: '#fff' } },
+                  error: { iconTheme: { primary: '#B91C1C', secondary: '#fff' } },
+                }}
+              />
 
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegistrationPage />} />
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Public */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegistrationPage />} />
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                {/* Protected — inside layout */}
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/contributions" element={
-                    <PageGuard id="contributions">
-                      <ContributionsPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/members" element={
-                    <PageGuard id="members">
-                      <MembersPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/members/:id" element={
-                    <PageGuard id="members">
-                      <MemberProfilePage />
-                    </PageGuard>
-                  } />
-                  <Route path="/disbursements" element={
-                    <PageGuard id="disbursements">
-                      <DisbursementsPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/wallet" element={
-                    <PageGuard id="wallet">
-                      <WalletPage />
-                    </PageGuard>
-                  } />
+                  {/* Protected — inside layout */}
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/contributions" element={
+                      <PageGuard id="contributions">
+                        <ContributionsPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/members" element={
+                      <PageGuard id="members">
+                        <MembersPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/members/:id" element={
+                      <PageGuard id="members">
+                        <MemberProfilePage />
+                      </PageGuard>
+                    } />
+                    <Route path="/disbursements" element={
+                      <PageGuard id="disbursements">
+                        <DisbursementsPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/wallet" element={
+                      <PageGuard id="wallet">
+                        <WalletPage />
+                      </PageGuard>
+                    } />
 
-                  {/* Treasurer + Leader only */}
-                  <Route path="/loans" element={
-                    <ProtectedRoute roles={['treasurer', 'group_leader', 'official_member']}>
+                    <Route path="/loans" element={
                       <PageGuard id="loans">
                         <LoansPage />
                       </PageGuard>
-                    </ProtectedRoute>
-                  } />
+                    } />
 
-                  <Route path="/requests" element={
-                    <PageGuard id="requests">
-                      <RequestsPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/votes" element={
-                    <PageGuard id="votes">
-                      <VotesPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/meetings" element={
-                    <PageGuard id="meetings">
-                      <MeetingsPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/chat" element={
-                    <PageGuard id="chat">
-                      <ChatPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/documentary" element={
-                    <PageGuard id="documentary">
-                      <DocumentaryPage />
-                    </PageGuard>
-                  } />
-                  <Route path="/advice" element={
-                    <PageGuard id="advice">
-                      <AdviceRoomPage />
-                    </PageGuard>
-                  } />
 
-                  {/* Admin Only Routing (Nexus) */}
-                  <Route path="/nexus" element={
-                    <ProtectedRoute roles={['admin']}>
-                      <ModuleNexusPage />
-                    </ProtectedRoute>
-                  } />
+                    <Route path="/welfare" element={
+                      <PageGuard id="requests">
 
-                  {/* Settings available to all roles */}
-                  <Route path="/settings" element={
-                    <PageGuard id="settings">
-                      <SettingsPage />
-                    </PageGuard>
-                  } />
-                </Route>
+                        <WelfarePage />
+                      </PageGuard>
+                    } />
+                    <Route path="/votes" element={
+                      <PageGuard id="votes">
+                        <VotesPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/meetings" element={
+                      <PageGuard id="meetings">
+                        <MeetingsPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/chat" element={
+                      <PageGuard id="chat">
+                        <ChatPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/documentary" element={
+                      <PageGuard id="documentary">
+                        <DocumentaryPage />
+                      </PageGuard>
+                    } />
+                    <Route path="/advice" element={
+                      <PageGuard id="advice">
+                        <AdviceRoomPage />
+                      </PageGuard>
+                    } />
 
-                {/* Catch all */}
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-              </Routes>
-            </Suspense>
-          </NotificationProvider>
-        </AuthProvider>
-      </BrandProvider>
+                    {/* Admin Only Routing (Nexus) */}
+                    <Route path="/nexus" element={
+                      <ProtectedRoute roles={['admin']}>
+                        <ModuleNexusPage />
+                      </ProtectedRoute>
+                    } />
+
+                    {/* Settings available to all roles */}
+                    <Route path="/settings" element={
+                      <PageGuard id="settings">
+                        <SettingsPage />
+                      </PageGuard>
+                    } />
+                  </Route>
+
+                  {/* Catch all */}
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </Suspense>
+            </NotificationProvider>
+          </AuthProvider>
+        </BrandProvider>
+      </PageConfigProvider>
     </BrowserRouter>
   );
 }

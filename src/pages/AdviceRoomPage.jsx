@@ -8,7 +8,9 @@ import {
     MoreVertical, Loader2, Fingerprint, Lock, Compass
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
+
 
 const MOCK_CATEGORIES = [
     { id: 'all', label: 'Universal Visions', icon: Sparkles },
@@ -27,7 +29,8 @@ const MOCK_IDEAS = [
         type: 'text',
         category: 'community',
         upvotes: 24,
-        date: '2026-03-28'
+        date: '2026-03-28',
+        status: 'published'
     },
     {
         id: 2,
@@ -38,7 +41,8 @@ const MOCK_IDEAS = [
         category: 'finance',
         duration: '0:45',
         upvotes: 42,
-        date: '2026-03-25'
+        date: '2026-03-25',
+        status: 'published'
     },
     {
         id: 3,
@@ -47,17 +51,23 @@ const MOCK_IDEAS = [
         type: 'text',
         category: 'operations',
         upvotes: 15,
-        date: '2026-03-20'
+        date: '2026-03-20',
+        status: 'published'
     },
 ];
 
 export default function AdviceRoomPage() {
-    const { config } = usePageConfig('adviceroom');
+    const { user, hasRole, ROLES } = useAuth();
+    const { config } = usePageConfig('advice');
+    const isAdvisor = hasRole(ROLES.SPECIAL_ADVISOR, ROLES.ADMIN);
+
+
     const [ideas, setIdeas] = useState(MOCK_IDEAS);
     const [inputText, setInputText] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showProposalModal, setShowProposalModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState('published'); // 'published' | 'pending'
 
     // WhatsApp-style Recording States
     const [isRecording, setIsRecording] = useState(false);
@@ -78,10 +88,12 @@ export default function AdviceRoomPage() {
         const matchesSearch = (idea.content?.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (idea.author.toLowerCase().includes(searchTerm.toLowerCase()));
         const matchesCategory = selectedCategory === 'all' || idea.category === selectedCategory;
-        return matchesSearch && matchesCategory;
+        const matchesStatus = isAdvisor ? (idea.status === activeTab) : (idea.status === 'published');
+        return matchesSearch && matchesCategory && matchesStatus;
     });
 
-    const trendingIdeas = [...ideas].sort((a, b) => b.upvotes - a.upvotes).slice(0, 3);
+    const pendingCount = ideas.filter(i => i.status === 'pending').length;
+    const trendingIdeas = [...ideas].filter(i => i.status === 'published').sort((a, b) => b.upvotes - a.upvotes).slice(0, 3);
 
     useEffect(() => {
         if (isRecording) {
@@ -167,26 +179,39 @@ export default function AdviceRoomPage() {
             await new Promise(r => setTimeout(r, 1500)); // Simulate processing
             const newIdea = {
                 id: Date.now(),
-                author: 'Institutional Admin',
+                author: user?.name || 'Institutional Member',
                 content: inputText || null,
                 audioUrl: recordedAudio?.url || null,
                 duration: recordedAudio?.duration || null,
                 type: recordedAudio ? 'voice' : 'text',
                 category: activeSubmissionCategory,
                 upvotes: 0,
-                date: dayjs().format('YYYY-MM-DD')
+                date: dayjs().format('YYYY-MM-DD'),
+                status: 'pending' // Proposals go to pending first
             };
 
             setIdeas([newIdea, ...ideas]);
             setInputText('');
             setRecordedAudio(null);
             setShowProposalModal(false);
-            toast.success('Vision Synchronized to Oracle');
+            toast.success('Vision transmitted to Special Advisor for verification.');
         } catch (err) {
             toast.error('Synchronizing Failure');
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handlePublish = (id) => {
+        setIdeas(prev => prev.map(idea => 
+            idea.id === id ? { ...idea, status: 'published' } : idea
+        ));
+        toast.success('Vision verified and published to the site.');
+    };
+
+    const handleReject = (id) => {
+        setIdeas(prev => prev.filter(idea => idea.id !== id));
+        toast.error('Vision rejected and purged from registry.');
     };
 
     const handleUpvote = (id) => {
@@ -195,6 +220,7 @@ export default function AdviceRoomPage() {
         ));
         toast.success('Alignment Registered');
     };
+
 
     return (
         <div className="max-w-7xl mx-auto space-y-16 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 p-4 md:p-8">
@@ -482,6 +508,24 @@ export default function AdviceRoomPage() {
                                 </button>
                             ))}
                         </div>
+
+                        {isAdvisor && (
+                            <div className="flex items-center gap-2 p-1.5 bg-gray-100 rounded-[2rem] w-fit border border-black/5">
+                                <button
+                                    onClick={() => setActiveTab('published')}
+                                    className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === 'published' ? 'bg-white text-[#1A1A2E] shadow-lg' : 'text-black/30 hover:text-black/60'}`}
+                                >
+                                    Site Visions
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('pending')}
+                                    className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${activeTab === 'pending' ? 'bg-[#1A1A2E] text-[#F5A623] shadow-lg' : 'text-black/30 hover:text-black/60'}`}
+                                >
+                                    Verification Queue
+                                    {pendingCount > 0 && <span className="w-5 h-5 bg-[#E8820C] text-white rounded-full flex items-center justify-center text-[8px] animate-pulse">{pendingCount}</span>}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Ideas List: The Ledger of Minds */}
@@ -509,7 +553,8 @@ export default function AdviceRoomPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <h4 className="text-3xl font-black text-[#1A1A2E] font-serif tracking-tight leading-none group-hover:text-[#E8820C] transition-colors">{idea.author}</h4>
+                                            <h4 className="text-xl md:text-3xl font-black text-[#1A1A2E] font-serif tracking-tight leading-none group-hover:text-[#E8820C] transition-colors">{idea.author}</h4>
+
                                             <div className="flex items-center gap-4 mt-3">
                                                 <p className="text-[10px] text-black/30 font-black uppercase tracking-[0.3em] flex items-center gap-2">
                                                     <Calendar size={14} className="text-[#E8820C]" /> {dayjs(idea.date).format('DD MMM YYYY')}
@@ -531,12 +576,13 @@ export default function AdviceRoomPage() {
 
                                 <div className="flex-1 mb-16 relative z-10">
                                     {idea.type === 'text' ? (
-                                        <div className="relative pl-12">
-                                            <span className="absolute left-0 top-0 text-9xl text-[#E8820C]/5 font-serif -translate-y-8 select-none">"</span>
-                                            <p className="text-3xl font-serif italic text-black/70 leading-[1.6] relative z-10 group-hover:text-[#1A1A2E] transition-colors duration-500">
+                                        <div className="relative pl-10 md:pl-12">
+                                            <span className="absolute left-0 top-0 text-7xl md:text-9xl text-[#E8820C]/5 font-serif -translate-y-6 md:-translate-y-8 select-none">"</span>
+                                            <p className="text-lg md:text-3xl font-serif italic text-black/70 leading-relaxed md:leading-[1.6] relative z-10 group-hover:text-[#1A1A2E] transition-colors duration-500">
                                                 {idea.content}
                                             </p>
                                         </div>
+
                                     ) : (
                                         <div className="space-y-8">
                                             <div className="flex items-center gap-10 bg-gray-50/50 p-10 rounded-[3.5rem] border-2 border-black/5 group/player relative overflow-hidden shadow-inner hover:bg-white hover:border-[#E8820C]/20 transition-all duration-700">
@@ -593,19 +639,39 @@ export default function AdviceRoomPage() {
                                         </div>
                                     </button>
                                     <div className="flex gap-4 w-full md:w-auto">
-                                        <button
-                                            onClick={() => toast('Discussion thread accessing...')}
-                                            className="flex-1 md:flex-none px-6 sm:px-10 py-5 bg-gray-50 text-[11px] font-black uppercase tracking-[0.3em] text-black/40 rounded-[2rem] hover:bg-[#1A1A2E] hover:text-white transition-all border-2 border-transparent hover:border-white/10 shadow-inner group/msg flex items-center justify-center whitespace-nowrap"
-                                        >
-                                            Interrogate Node <span className="text-[#F5A623] ml-2 group-hover:scale-110">(12)</span>
-                                        </button>
-                                        <button
-                                            onClick={() => toast('Contextual analysis initializing...')}
-                                            className="p-5 bg-gray-50 text-black/10 hover:text-[#E8820C] hover:bg-white rounded-[2rem] transition-all border-2 border-black/5 hover:border-[#E8820C]/20 shadow-inner group/ser flex items-center justify-center"
-                                        >
-                                            <Search size={22} className="group-hover/ser:scale-110 transition-transform" />
-                                        </button>
+                                        {isAdvisor && idea.status === 'pending' ? (
+                                            <>
+                                                <button
+                                                    onClick={() => handlePublish(idea.id)}
+                                                    className="flex-1 md:flex-none px-8 py-5 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2"
+                                                >
+                                                    <CheckCircle2 size={18} /> Verify & Publish
+                                                </button>
+                                                <button
+                                                    onClick={() => handleReject(idea.id)}
+                                                    className="px-6 py-5 bg-red-50 text-red-600 text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] hover:bg-red-600 hover:text-white transition-all flex items-center justify-center"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => toast('Discussion thread accessing...')}
+                                                    className="flex-1 md:flex-none px-6 sm:px-10 py-5 bg-gray-50 text-[11px] font-black uppercase tracking-[0.3em] text-black/40 rounded-[2rem] hover:bg-[#1A1A2E] hover:text-white transition-all border-2 border-transparent hover:border-white/10 shadow-inner group/msg flex items-center justify-center whitespace-nowrap"
+                                                >
+                                                    Interrogate Node <span className="text-[#F5A623] ml-2 group-hover:scale-110">(12)</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => toast('Contextual analysis initializing...')}
+                                                    className="p-5 bg-gray-50 text-black/10 hover:text-[#E8820C] hover:bg-white rounded-[2rem] transition-all border-2 border-black/5 hover:border-[#E8820C]/20 shadow-inner group/ser flex items-center justify-center"
+                                                >
+                                                    <Search size={22} className="group-hover/ser:scale-110 transition-transform" />
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
+
                                 </div>
                             </div>
                         ))}

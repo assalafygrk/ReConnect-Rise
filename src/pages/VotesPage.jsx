@@ -50,9 +50,16 @@ const MOCK = [
 ];
 
 export default function VotesPage() {
-    const { user, hasRole } = useAuth();
+    const { user, hasRole, ROLES } = useAuth();
     const { config } = usePageConfig('votes');
-    const canManage = hasRole('treasurer', 'group_leader', 'admin');
+    
+    // Group Leader only manages specific types: decision, budget, multiple choice
+    const isGroupLeader = hasRole(ROLES.GROUP_LEADER);
+    const isTreasurer = hasRole(ROLES.TREASURER);
+    const isAdmin = hasRole(ROLES.ADMIN);
+    
+    const canManage = isAdmin || isGroupLeader || isTreasurer;
+
     const [votes, setVotes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [casting, setCasting] = useState({});

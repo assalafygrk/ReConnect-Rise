@@ -14,8 +14,8 @@ export async function apiLogin(email, password) {
                 return reject(new Error('Invalid password. Use "rr2026" for testing.'));
             }
 
-            let role = 'official_member';
-            let name = 'Official Member';
+            let role = 'member';
+            let name = 'New Member';
 
             if (email.includes('admin')) {
                 role = 'admin';
@@ -24,11 +24,20 @@ export async function apiLogin(email, password) {
                 role = 'treasurer';
                 name = 'Test Treasurer';
             } else if (email.includes('leader')) {
-                role = 'group_leader';
+                role = 'groupleader';
                 name = 'Test Group Leader';
             } else if (email.includes('welfare')) {
                 role = 'welfare';
                 name = 'Test Welfare Officer';
+            } else if (email.includes('advisor')) {
+                role = 'special-advisor';
+                name = 'Test Advisor';
+            } else if (email.includes('organizer')) {
+                role = 'meeting-organizer';
+                name = 'Test Organizer';
+            } else if (email.includes('official')) {
+                role = 'official-member';
+                name = 'Official Member';
             }
 
             const token = generateMockJwt({

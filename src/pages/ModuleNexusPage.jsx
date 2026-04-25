@@ -42,12 +42,12 @@ export default function ModuleNexusPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 pb-24 space-y-12">
-            <div className="bg-[#0f172a] p-10 md:p-14 rounded-[2rem] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] space-y-12 relative overflow-hidden group mt-6">
+            <div className="bg-[#0f172a] p-6 md:p-14 rounded-[2rem] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] space-y-12 relative overflow-hidden group mt-6">
                 <div className="absolute top-0 right-0 p-12 text-white/[0.02] -mr-8 -mt-8 pointer-events-none">
                     <Globe size={300} />
                 </div>
 
-                <div className="flex items-center justify-between relative z-10 border-b border-slate-800 pb-8 mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between relative z-10 border-b border-slate-800 pb-8 mb-8 gap-6">
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
                             <Zap size={32} className="animate-pulse" />
@@ -92,7 +92,7 @@ export default function ModuleNexusPage() {
                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Granular Page Controls</span>
                         <div className="h-px flex-1 bg-slate-800" />
                     </div>
-                    <div className="bg-slate-800/20 rounded-[1.5rem] p-8 md:p-10 border border-slate-800/50 relative z-10 w-full max-w-4xl mx-auto">
+                    <div className="bg-slate-800/20 rounded-[1.5rem] p-4 sm:p-8 md:p-10 border border-slate-800/50 relative z-10 w-full max-w-4xl mx-auto">
                         <PageConfigPanel />
                     </div>
                 </div>

@@ -33,9 +33,10 @@ const roleBadge = {
 };
 
 export default function MembersPage() {
-    const { hasRole } = useAuth();
+    const { hasRole, ROLES } = useAuth();
     const { config } = usePageConfig('members');
-    const canManage = hasRole('treasurer', 'group_leader', 'admin');
+    const canManage = hasRole(ROLES.GROUP_LEADER, ROLES.ADMIN);
+
     const [members, setMembers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');

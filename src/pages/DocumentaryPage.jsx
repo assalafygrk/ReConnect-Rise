@@ -117,7 +117,7 @@ export default function DocumentaryPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 p-4 md:p-8">
             {/* Serious System Header */}
-            <div className="relative bg-[#1A1A2E] rounded-[3.5rem] p-10 md:p-16 overflow-hidden shadow-2xl group border border-white/5">
+            <div className="relative bg-[#1A1A2E] rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-16 overflow-hidden shadow-2xl group border border-white/5">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#E8820C] to-[#F5A623] rounded-full blur-[150px] opacity-5 group-hover:opacity-15 transition-opacity duration-1000"></div>
                 <div className="absolute -bottom-20 -left-20 text-white/[0.02] -rotate-12 select-none group-hover:text-white/[0.05] transition-colors duration-1000">
                     <Fingerprint size={400} />
@@ -127,7 +127,7 @@ export default function DocumentaryPage() {
                         <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C]">
                             <Archive size={14} /> Institutional Memory Node
                         </div>
-                        <h2 className="text-5xl md:text-6xl font-black font-serif text-white leading-tight tracking-tight mt-4 whitespace-pre-line">
+                        <h2 className="text-3xl md:text-6xl font-black font-serif text-white leading-tight tracking-tight mt-4 whitespace-pre-line">
                             {config.pageHeadline || 'Archives &\nDocumentation'}
                         </h2>
                         <p className="text-white/40 text-xl font-serif italic max-w-2xl leading-relaxed mt-4 whitespace-pre-line">
@@ -155,17 +155,17 @@ export default function DocumentaryPage() {
             </div>
 
             {/* Tactical Control Bar */}
-            <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] p-6 shadow-2xl border border-black/5 flex flex-col lg:flex-row items-center gap-8 relative z-40 relative top-4">
-                <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-[2rem] w-full lg:w-auto shadow-inner">
+            <div className="bg-white/80 backdrop-blur-2xl rounded-[3rem] p-6 shadow-2xl border border-black/5 flex flex-col lg:flex-row items-center gap-4 lg:gap-8 relative z-40 relative top-4">
+                <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-[2rem] w-full lg:w-auto shadow-inner overflow-x-auto">
                     <button
                         onClick={() => setActiveTab('gallery')}
-                        className={`flex items-center gap-3 px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === 'gallery' ? 'bg-white text-[#1A1A2E] shadow-xl' : 'text-black/30 hover:text-black/60'}`}
+                        className={`flex items-center justify-center gap-3 px-4 sm:px-8 py-3 sm:py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex-1 sm:flex-none ${activeTab === 'gallery' ? 'bg-white text-[#1A1A2E] shadow-xl' : 'text-black/30 hover:text-black/60'}`}
                     >
                         <ImageIcon size={16} /> Visual Assets
                     </button>
                     <button
                         onClick={() => setActiveTab('files')}
-                        className={`flex items-center gap-3 px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${activeTab === 'files' ? 'bg-white text-[#1A1A2E] shadow-xl' : 'text-black/30 hover:text-black/60'}`}
+                        className={`flex items-center justify-center gap-3 px-4 sm:px-8 py-3 sm:py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex-1 sm:flex-none ${activeTab === 'files' ? 'bg-white text-[#1A1A2E] shadow-xl' : 'text-black/30 hover:text-black/60'}`}
                     >
                         <FileText size={16} /> Tactical Repository
                     </button>
@@ -205,7 +205,7 @@ export default function DocumentaryPage() {
             {/* Vault Display Area */}
             {activeTab === 'gallery' ? (
                 viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
                         {filteredGallery.map((item, idx) => (
                             <div
                                 key={item.id}
@@ -259,14 +259,14 @@ export default function DocumentaryPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white rounded-[3.5rem] border border-black/5 shadow-2xl p-4 overflow-x-auto">
+                    <div className="bg-white rounded-[2rem] md:rounded-[3.5rem] border border-black/5 shadow-2xl p-4 overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="whitespace-nowrap">
                                 <tr className="border-b-2 border-black/5">
-                                    <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Archive Meta</th>
-                                    <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Strategic Narrative</th>
-                                    <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Catalog Agent</th>
-                                    <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 text-right">Protocol</th>
+                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Archive Meta</th>
+                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Strategic Narrative</th>
+                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20">Catalog Agent</th>
+                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 text-right">Protocol</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-black/5 whitespace-nowrap md:whitespace-normal">
@@ -276,7 +276,7 @@ export default function DocumentaryPage() {
                                         onClick={() => setSelectedMedia(item)}
                                         className="hover:bg-gray-50/50 transition-all duration-500 group/row cursor-pointer"
                                     >
-                                        <td className="px-10 py-10">
+                                        <td className="px-6 md:px-10 py-6 md:py-10">
                                             <div className="w-24 h-24 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl relative rotate-3 group-hover/row:rotate-0 transition-transform duration-700">
                                                 <img src={item.url} alt="" className="w-full h-full object-cover grayscale group-hover/row:grayscale-0 transition-all duration-1000" />
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-opacity">
@@ -284,11 +284,11 @@ export default function DocumentaryPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-10 py-10 max-w-xl">
+                                        <td className="px-6 md:px-10 py-6 md:py-10 max-w-xl">
                                             <h4 className="font-black text-[#1A1A2E] text-xl font-serif leading-tight group-hover/row:text-[#E8820C] transition-colors">{item.title}</h4>
                                             <p className="text-[13px] text-black/40 mt-3 italic line-clamp-2 leading-relaxed font-serif">"{item.description}"</p>
                                         </td>
-                                        <td className="px-10 py-10">
+                                        <td className="px-6 md:px-10 py-6 md:py-10">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-[#1A1A2E] text-[#F5A623] flex items-center justify-center text-[12px] font-black shadow-lg">
                                                     {item.author[0]}
@@ -299,7 +299,7 @@ export default function DocumentaryPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-10 py-10 text-right">
+                                        <td className="px-6 md:px-10 py-6 md:py-10 text-right">
                                             <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover/row:translate-x-0 group-hover/row:opacity-100 transition-all duration-700">
                                                 <button
                                                     onClick={(e) => e.stopPropagation()}
@@ -322,12 +322,12 @@ export default function DocumentaryPage() {
                     </div>
                 )
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
                     {filteredFiles.map((file, idx) => (
                         <div
                             key={file.id}
                             onClick={() => setSelectedMedia({ ...file, url: null, description: 'Internal document recorded in the brotherhood institutional treasury.' })}
-                            className="group bg-white p-10 rounded-[3.5rem] border border-black/5 shadow-lg hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 transition-all duration-700 cursor-pointer relative overflow-hidden"
+                            className="group bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3.5rem] border border-black/5 shadow-lg hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 transition-all duration-700 cursor-pointer relative overflow-hidden"
                             style={{ animationDelay: `${idx * 100}ms` }}
                         >
                             <div className="absolute top-0 right-0 p-10 text-black/[0.02] group-hover:text-[#E8820C]/5 group-hover:scale-150 transition-all duration-1000">
@@ -486,7 +486,7 @@ export default function DocumentaryPage() {
             {showUploadModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-[#1A1A2E]/90 overflow-hidden">
                     <div className="absolute inset-0" onClick={() => !uploading && setShowUploadModal(false)}></div>
-                    <div className="relative bg-white rounded-[4.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-16 shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500">
+                    <div className="relative bg-white rounded-[2rem] md:rounded-[4.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-16 shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500">
                         <div className="flex items-center justify-between mb-8 md:mb-12 sticky top-0 bg-white z-20 py-2">
                             <div className="space-y-2">
                                 <div className="inline-flex items-center gap-2 px-4 py-1 bg-[#E8820C]/10 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-[#E8820C]">

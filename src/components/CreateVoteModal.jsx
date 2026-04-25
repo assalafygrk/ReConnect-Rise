@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, Info, CheckCircle2, Users, Wallet, CheckSquare, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
 
 const VOTE_TYPES = [
     { id: 'decision', name: 'Decision', icon: CheckSquare, desc: 'Standard Yes/No/Abstain poll' },
@@ -9,9 +11,22 @@ const VOTE_TYPES = [
 ];
 
 export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
+    const { hasRole, ROLES } = useAuth();
+    const isGroupLeader = hasRole(ROLES.GROUP_LEADER);
+    const isAdmin = hasRole(ROLES.ADMIN);
+
+    const allowedTypes = VOTE_TYPES.filter(type => {
+        if (isAdmin) return true;
+        if (isGroupLeader) {
+            return ['decision', 'budget', 'multiple_choice'].includes(type.id);
+        }
+        return false;
+    });
+
     const [step, setStep] = useState(1);
     const [form, setForm] = useState({
-        type: 'decision',
+        type: allowedTypes[0]?.id || 'decision',
+
         question: '',
         description: '',
         deadline: '',
@@ -75,8 +90,9 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
                     <div className="p-6 sm:p-8 space-y-6">
                         {step === 1 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {VOTE_TYPES.map((type) => (
+                                {allowedTypes.map((type) => (
                                     <button
+
                                         key={type.id}
                                         type="button"
                                         onClick={() => {

@@ -26,10 +26,12 @@ const MOCK = [
 ];
 
 export default function DisbursementsPage() {
-    const { hasRole } = useAuth();
+    const { hasRole, ROLES } = useAuth();
     const { config } = usePageConfig('disbursements');
-    const isTreasurer = hasRole('treasurer');
-    const canManage = hasRole('treasurer', 'group_leader');
+    const isTreasurer = hasRole(ROLES.TREASURER, ROLES.ADMIN);
+    const isGroupLeader = hasRole(ROLES.GROUP_LEADER);
+    const canManage = isTreasurer || isGroupLeader;
+
 
     // States
     const [items, setItems] = useState([]);

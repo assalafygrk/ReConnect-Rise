@@ -106,7 +106,7 @@ export default function SettingsPage() {
     return (
         <div className="space-y-12 pb-24 max-w-7xl mx-auto px-4">
             {/* Header: Strategic Command Center */}
-            <div className="relative bg-[#1A1A2E] rounded-[3.5rem] p-10 md:p-16 overflow-hidden shadow-2xl group border border-white/5">
+            <div className="relative bg-[#1A1A2E] rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-16 overflow-hidden shadow-2xl group border border-white/5">
                 <div className="absolute top-0 right-0 w-[45rem] h-[45rem] bg-gradient-to-br from-[#E8820C] to-[#F5A623] rounded-full blur-[180px] opacity-10 group-hover:opacity-15 transition-opacity duration-1000"></div>
 
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
@@ -128,7 +128,7 @@ export default function SettingsPage() {
                         <button
                             onClick={() => handleSave()}
                             disabled={saving}
-                            className="flex items-center gap-4 px-10 py-6 rounded-[2rem] bg-[#E8820C] text-white text-[12px] font-black uppercase tracking-[0.3em] shadow-[0_20px_50px_rgba(232,130,12,0.3)] hover:-translate-y-2 hover:bg-[#F5A623] transition-all active:scale-95 disabled:opacity-50"
+                            className="flex items-center gap-2 sm:gap-4 px-6 sm:px-10 py-4 sm:py-6 rounded-[2rem] bg-[#E8820C] text-white text-[12px] font-black uppercase tracking-[0.3em] shadow-[0_20px_50px_rgba(232,130,12,0.3)] hover:-translate-y-2 hover:bg-[#F5A623] transition-all active:scale-95 disabled:opacity-50"
                         >
                             {saving ? <Loader2 size={20} className="animate-spin text-white" /> : <Save size={20} />}
                             {saving ? 'Syncing...' : 'Deploy Protocols'}
@@ -142,7 +142,7 @@ export default function SettingsPage() {
 
                 {/* ADMIN ONLY: User Role Authority */}
                 {isAdmin && (
-                    <div className="bg-[#0f172a] p-10 md:p-14 rounded-[2rem] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] flex flex-col relative overflow-hidden group">
+                    <div className="bg-[#0f172a] p-6 md:p-14 rounded-[2rem] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] flex flex-col relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-12 text-white/[0.02] -mr-8 -mt-8 pointer-events-none">
                             <ShieldCheck size={200} />
                         </div>
@@ -207,12 +207,12 @@ export default function SettingsPage() {
 
                 {/* TREASURER SECTION: Monetary Statutes */}
                 {isTreasurer && (
-                    <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-2'} bg-slate-900 p-10 md:p-14 rounded-[2rem] border border-slate-700/50 shadow-2xl relative overflow-hidden group`}>
+                    <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-2'} bg-slate-900 p-6 md:p-14 rounded-[2rem] border border-slate-700/50 shadow-2xl relative overflow-hidden group`}>
                         <div className="absolute top-0 right-0 p-8 text-white/[0.02] -mr-8 -mt-8 pointer-events-none">
                             <Database size={200} />
                         </div>
 
-                        <div className="flex items-center justify-between border-b border-slate-800 pb-8 mb-10 relative z-10">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-8 mb-10 relative z-10">
                             <div className="flex items-center gap-5">
                                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20">
                                     <Database size={28} />
@@ -260,7 +260,7 @@ export default function SettingsPage() {
                 )}
 
                 {/* EVERYONE: Personal Security & Experience Center */}
-                <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-2'} bg-[#0f172a] p-10 md:p-14 rounded-[2rem] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] space-y-10 relative overflow-hidden group`}>
+                <div className={`${isAdmin ? 'lg:col-span-1' : 'lg:col-span-2'} bg-[#0f172a] p-6 md:p-14 rounded-[2rem] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] space-y-10 relative overflow-hidden group`}>
                     <div className="absolute top-0 right-0 p-12 text-white/[0.02] -mr-8 -mt-8 pointer-events-none">
                         <SettingsIcon size={200} />
                     </div>
@@ -421,7 +421,7 @@ export default function SettingsPage() {
                     const preview = filtered.slice(0, 6);
                     return (
                         <>
-                            <div className="lg:col-span-2 bg-[#1A1A2E] p-8 md:p-14 rounded-[4.5rem] text-white/90 shadow-2xl relative overflow-hidden border border-white/5">
+                            <div className="lg:col-span-2 bg-[#1A1A2E] p-6 md:p-14 rounded-[2.5rem] md:rounded-[4.5rem] text-white/90 shadow-2xl relative overflow-hidden border border-white/5">
                                 <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-[#F5A623]/5 rounded-full -mr-40 -mt-40 blur-[160px]" />
 
                                 {/* Header */}
@@ -569,7 +569,7 @@ export default function SettingsPage() {
                     <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] md:rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/20 select-none overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
 
                         {/* Dynamic Header */}
-                        <div className="bg-[#1A1A2E] p-8 md:p-10 relative overflow-hidden group">
+                        <div className="bg-[#1A1A2E] p-6 md:p-10 relative overflow-hidden group">
                             <div className="absolute -top-20 -right-20 w-48 h-48 bg-[#E8820C] rounded-full blur-[80px] opacity-20 group-hover:opacity-30 transition-opacity duration-700"></div>
                             <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 hover:rotate-90 rounded-xl flex items-center justify-center text-white transition-all backdrop-blur-md">
                                 <X size={20} />
@@ -596,7 +596,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Modal Forms */}
-                        <div className="p-8 md:p-10 space-y-8 bg-gray-50/50">
+                        <div className="p-6 md:p-10 space-y-8 bg-gray-50/50">
 
                             {/* 1. Change Password */}
                             {activeModal === 'password' && (
