@@ -10,21 +10,6 @@ import { fetchMeetings, addMeeting } from '../api/meetings';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
-const MOCK = [
-    {
-        id: 1, title: 'Monthly Review — March 2026', date: '2026-03-28', time: '18:00',
-        venue: 'Zoom', zoomLink: 'https://zoom.us/j/12345', status: 'upcoming',
-        agenda: ['Review contributions', 'Approve support requests', 'Q&A'],
-        minutes: null,
-    },
-    {
-        id: 2, title: 'Annual General Summit 2026', date: '2026-02-28', time: '18:00',
-        venue: 'Zoom', zoomLink: null, status: 'past',
-        agenda: ['Review savings goal', 'Loan approvals'],
-        minutes: 'All 18 members present. Savings goal affirmed at ₦250,000...',
-    },
-];
-
 export default function MeetingsPage() {
     const { hasRole, ROLES } = useAuth();
     const { config } = usePageConfig('meetings');
@@ -50,9 +35,9 @@ export default function MeetingsPage() {
         setLoading(true);
         try {
             const data = await fetchMeetings();
-            setMeetings(data.length > 0 ? data : MOCK);
+            setMeetings(data);
         } catch (err) {
-            setMeetings(MOCK);
+            toast.error('Failed to load summits');
         } finally {
             setLoading(false);
         }
@@ -62,23 +47,18 @@ export default function MeetingsPage() {
         e.preventDefault();
         setSaving(true);
         try {
-            const data = await addMeeting({ ...form, agenda: agendaItems.filter(i => i.trim()) });
+            const data = await addMeeting({ 
+                ...form, 
+                location: form.venue, // Map venue to location if needed by backend
+                agenda: agendaItems.filter(i => i.trim()) 
+            });
             setMeetings((prev) => [data, ...prev]);
             toast.success('Governance Summit Scheduled');
             setShowForm(false);
             setForm({ title: '', date: '', time: '', venue: 'Zoom', zoomLink: '' });
             setAgendaItems(['']);
         } catch (err) {
-            const mockNew = {
-                ...form,
-                id: Date.now(),
-                status: 'upcoming',
-                agenda: agendaItems.filter(i => i.trim()),
-                minutes: null
-            };
-            setMeetings((prev) => [mockNew, ...prev]);
-            toast.success('Summit Scheduled (Local Archive)');
-            setShowForm(false);
+            toast.error('Failed to schedule summit');
         } finally {
             setSaving(false);
         }
@@ -92,13 +72,13 @@ export default function MeetingsPage() {
     );
 
     const filteredMeetings = meetings.filter(m => {
-        const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (m.title || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = activeFilter === 'all' || m.status === activeFilter;
         return matchesSearch && matchesFilter;
     });
 
-    const upcoming = filteredMeetings.filter((m) => m.status === 'upcoming');
-    const past = filteredMeetings.filter((m) => m.status === 'past');
+    const upcoming = filteredMeetings.filter((m) => m.status === 'scheduled' || m.status === 'upcoming');
+    const past = filteredMeetings.filter((m) => m.status === 'completed' || m.status === 'past');
 
     return (
         <div className="max-w-7xl mx-auto pb-20 space-y-12 px-4">
@@ -126,15 +106,6 @@ export default function MeetingsPage() {
                     </button>
                 )}
             </div>
-
-            {config.attendanceRequirement && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <ShieldCheck size={20} className="text-blue-600 shrink-0" />
-                    <p className="text-sm font-bold text-blue-800">
-                        {config.attendanceRequirement}
-                    </p>
-                </div>
-            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
@@ -185,14 +156,14 @@ export default function MeetingsPage() {
             </div>
 
             <div className="space-y-10">
-                {upcoming.length > 0 && (
+                {upcoming.length > 0 ? (
                     <div className="space-y-6">
                         <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C] ml-2 flex items-center gap-3">
                             <Zap size={14} className="animate-pulse" /> Pending Assemblies
                         </h2>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {upcoming.map((m) => (
-                                <div key={m.id} className="group bg-white rounded-[2.5rem] p-8 border-2 border-[#E8820C]/10 shadow-sm hover:shadow-xl hover:border-[#E8820C]/30 transition-all duration-500 relative overflow-hidden">
+                                <div key={m._id} className="group bg-white rounded-[2.5rem] p-8 border-2 border-[#E8820C]/10 shadow-sm hover:shadow-xl hover:border-[#E8820C]/30 transition-all duration-500 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8820C]/5 rounded-bl-full translate-x-8 -translate-y-8 group-hover:translate-x-4 group-hover:-translate-y-4 transition-transform" />
                                     <div className="relative z-10 space-y-6">
                                         <div className="flex justify-between items-start gap-4">
@@ -200,15 +171,9 @@ export default function MeetingsPage() {
                                                 <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">{m.title}</h3>
                                                 <div className="flex items-center gap-4 text-xs font-bold text-black/30">
                                                     <span className="flex items-center gap-2"><Clock size={14} className="text-[#E8820C]" /> {dayjs(m.date).format('D MMMM YYYY')}</span>
-                                                    <span className="flex items-center gap-2"><MapPin size={14} className="text-[#E8820C]" /> {m.venue}</span>
+                                                    <span className="flex items-center gap-2"><MapPin size={14} className="text-[#E8820C]" /> {m.location || m.venue}</span>
                                                 </div>
                                             </div>
-                                            {m.zoomLink && config.allowZoomLinks && (
-                                                <a href={m.zoomLink} target="_blank" rel="noopener noreferrer"
-                                                    className="p-4 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm">
-                                                    <Video size={20} />
-                                                </a>
-                                            )}
                                         </div>
 
                                         {m.agenda?.length > 0 && (
@@ -233,6 +198,11 @@ export default function MeetingsPage() {
                             ))}
                         </div>
                     </div>
+                ) : (
+                    <div className="text-center py-20 bg-gray-50 rounded-[3rem] border border-dashed border-black/10">
+                         <Calendar className="mx-auto text-black/10 mb-4" size={48} />
+                         <p className="text-sm font-bold text-black/30 uppercase tracking-widest">No pending assemblies scheduled</p>
+                    </div>
                 )}
 
                 {past.length > 0 && (
@@ -240,7 +210,7 @@ export default function MeetingsPage() {
                         <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-black/30 ml-2">Archived Registry</h2>
                         <div className="grid grid-cols-1 gap-4">
                             {past.map((m) => (
-                                <div key={m.id} className="bg-white rounded-[1.5rem] p-6 border border-black/5 flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-md transition-all">
+                                <div key={m._id} className="bg-white rounded-[1.5rem] p-6 border border-black/5 flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-md transition-all">
                                     <div className="flex items-center gap-6 w-full md:w-auto">
                                         <div className="w-14 h-14 rounded-2xl bg-gray-50 flex flex-col items-center justify-center border border-black/5">
                                             <span className="text-[8px] font-black uppercase text-black/30">{dayjs(m.date).format('MMM')}</span>
@@ -255,14 +225,14 @@ export default function MeetingsPage() {
                                     <div className="flex items-center gap-3 w-full md:w-auto">
                                         {m.minutes ? (
                                             <button
-                                                onClick={() => setExpandedMinutes(expandedMinutes === m.id ? null : m.id)}
+                                                onClick={() => setExpandedMinutes(expandedMinutes === m._id ? null : m._id)}
                                                 className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-[#1A1A2E]/5 text-[#1A1A2E] text-[9px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] hover:text-white transition-all flex items-center gap-2">
-                                                <FileText size={14} /> {expandedMinutes === m.id ? 'Close Minutes' : 'View Minutes'}
+                                                <FileText size={14} /> {expandedMinutes === m._id ? 'Close Minutes' : 'View Minutes'}
                                             </button>
                                         ) : (
                                             canAdd && (
                                                 <button
-                                                    onClick={() => { setMinutesText(''); setShowMinutesModal(m.id); }}
+                                                    onClick={() => { setMinutesText(''); setShowMinutesModal(m._id); }}
                                                     className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-[#E8820C] text-white text-[9px] font-black uppercase tracking-widest hover:opacity-90 shadow-lg shadow-amber-900/20 transition-all flex items-center gap-2">
                                                     <Plus size={14} /> Add Minutes
                                                 </button>
@@ -271,7 +241,7 @@ export default function MeetingsPage() {
                                         <button className="p-3 bg-gray-50 text-black/20 hover:text-black/60 rounded-xl transition-all"><Globe size={18} /></button>
                                     </div>
 
-                                    {expandedMinutes === m.id && m.minutes && (
+                                    {expandedMinutes === m._id && m.minutes && (
                                         <div className="w-full mt-4 p-8 bg-gray-50 rounded-2xl border border-black/5 animate-in slide-in-from-top-4 duration-300">
                                             <div className="flex items-center gap-2 text-[8px] font-black text-[#E8820C] uppercase tracking-widest mb-4">
                                                 <ShieldCheck size={12} /> Official Minutes Entry
@@ -368,9 +338,9 @@ export default function MeetingsPage() {
                                 <button
                                     disabled={!minutesText.trim()}
                                     onClick={() => {
-                                        setMeetings(prev => prev.map(m => m.id === showMinutesModal ? { ...m, minutes: minutesText, status: 'past' } : m));
+                                        // Update logic to be replaced with real API call when minutes endpoint is ready
+                                        toast.error('Minutes endpoint not yet implemented in backend');
                                         setShowMinutesModal(null);
-                                        toast.success('Archive Updated: Minutes Synchronized');
                                     }}
                                     className="flex-[2] py-5 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-30"
                                 >

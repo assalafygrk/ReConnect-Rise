@@ -16,3 +16,13 @@ export async function fetchMember(id) {
     if (!res.ok) throw new Error('Failed to load member');
     return res.json();
 }
+
+export async function updateMemberRole(id, role) {
+    const res = await fetch(`${BASE_URL}/members/${id}/role`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ role })
+    });
+    if (!res.ok) throw new Error('Failed to update member role');
+    return res.json();
+}

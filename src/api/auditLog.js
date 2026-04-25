@@ -1,13 +1,8 @@
-/**
- * Audit Log Utility — localStorage-backed, session-instrumented
- * Max 200 entries (FIFO). Categories: admin | system | member | security
- */
+const BASE_URL = import.meta.env.VITE_API_URL;
 
-const STORAGE_KEY = 'rr_audit_log';
-const MAX_ENTRIES = 200;
-
-function now() {
-    return new Date().toISOString();
+function authHeaders() {
+    const token = localStorage.getItem('rr_token');
+    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
 function formatRelative(isoString) {
@@ -23,43 +18,34 @@ function formatRelative(isoString) {
     return `${d}d ago`;
 }
 
-export function getLogs() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const logs = raw ? JSON.parse(raw) : [];
-        return logs.map(l => ({ ...l, timeDisplay: formatRelative(l.timestamp) }));
-    } catch {
-        return [];
-    }
+export async function fetchAuditLogs() {
+    const res = await fetch(`${BASE_URL}/audit`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('Failed to load logs');
+    const data = await res.json();
+    return data.map(l => ({
+        ...l,
+        id: l._id,
+        timeDisplay: formatRelative(l.timestamp)
+    }));
 }
 
-export function addLog(user = 'System', action = 'Event', detail = '', category = 'system') {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const logs = raw ? JSON.parse(raw) : [];
-        const entry = {
-            id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            user,
-            action,
-            detail,
-            category,   // 'admin' | 'system' | 'member' | 'security'
-            timestamp: now(),
-        };
-        const updated = [entry, ...logs].slice(0, MAX_ENTRIES);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        return entry;
-    } catch {
-        return null;
-    }
+export async function addLog(user = 'System', action = 'Event', detail = '', category = 'system') {
+    const res = await fetch(`${BASE_URL}/audit`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ action, detail, category }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
 }
 
-export function clearLogs() {
-    localStorage.removeItem(STORAGE_KEY);
+export async function clearAuditLogs() {
+    // Backend clear logs endpoint to be implemented if needed
+    console.warn('Clear logs not implemented in backend');
 }
 
-export function exportLogsCSV() {
-    const logs = getLogs();
-    if (!logs.length) return null;
+export function exportLogsCSV(logs) {
+    if (!logs || !logs.length) return null;
     const headers = ['ID', 'User', 'Action', 'Detail', 'Category', 'Timestamp'];
     const rows = logs.map(l => [
         l.id,
