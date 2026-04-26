@@ -19,10 +19,14 @@ const disbursementSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  reason: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
-    enum: ['pending', 'completed', 'failed'],
-    default: 'completed',
+    enum: ['pending', 'approved', 'declined', 'completed'],
+    default: 'pending',
   }
 }, {
   timestamps: true,

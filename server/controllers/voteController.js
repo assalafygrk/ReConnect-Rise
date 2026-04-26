@@ -1,21 +1,64 @@
 const Vote = require('../models/Vote');
 
+// @desc    Get all votes
+// @route   GET /api/votes
+// @access  Private
 const getVotes = async (req, res) => {
   const votes = await Vote.find({}).sort({ createdAt: -1 });
-  res.json(votes);
+  
+  const transformed = votes.map(v => {
+    const resultsObj = {};
+    v.results.forEach((val, key) => { resultsObj[key] = val; });
+    
+    // Check if user has voted
+    let myVote = null;
+    // This requires tracking which choice each user made. 
+    // Currently, Vote model only has a list of voters.
+    // I should probably update the model to track user choices if needed, 
+    // but for now let's just mark if they voted.
+    
+    return {
+      ...v._doc,
+      results: resultsObj,
+      voted: v.voters.includes(req.user._id)
+    };
+  });
+  
+  res.json(transformed);
 };
 
+// @desc    Create a vote
+// @route   POST /api/votes
+// @access  Private/Admin/GroupLeader/Treasurer
 const createVote = async (req, res) => {
-  const { title, description, options } = req.body;
+  const { question, description, options, type, deadline, amount, totalEligible } = req.body;
+  
+  let finalOptions = options;
+  if (!finalOptions || finalOptions.length === 0) {
+    if (type === 'budget' || type === 'decision') {
+      finalOptions = ['Yes', 'No', 'Abstain'];
+    } else {
+      finalOptions = ['Option 1', 'Option 2'];
+    }
+  }
+
   const vote = await Vote.create({
-    title,
+    question,
     description,
-    options,
+    options: finalOptions,
+    type,
+    deadline,
+    amount,
+    totalEligible,
     createdBy: req.user._id,
   });
+
   res.status(201).json(vote);
 };
 
+// @desc    Cast a vote
+// @route   POST /api/votes/:id/cast
+// @access  Private
 const castVote = async (req, res) => {
   const vote = await Vote.findById(req.params.id);
   if (!vote) {
@@ -39,7 +82,15 @@ const castVote = async (req, res) => {
   vote.voters.push(req.user._id);
 
   await vote.save();
-  res.json(vote);
+  
+  const resultsObj = {};
+  vote.results.forEach((val, key) => { resultsObj[key] = val; });
+  
+  res.json({
+    ...vote._doc,
+    results: resultsObj,
+    voted: true
+  });
 };
 
 const closeVote = async (req, res) => {

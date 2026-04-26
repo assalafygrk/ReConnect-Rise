@@ -30,6 +30,13 @@ const contributionSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
   },
+  bonus: {
+    type: Number,
+    default: 0,
+  },
+  note: {
+    type: String,
+  },
   reference: {
     type: String,
   },

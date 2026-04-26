@@ -3,9 +3,20 @@ const Loan = require('../models/Loan');
 // @desc    Get all loans
 // @route   GET /api/loans
 // @access  Private
+// @desc    Get all loans
+// @route   GET /api/loans
+// @access  Private
 const getLoans = async (req, res) => {
-  const loans = await Loan.find({}).populate('user', 'name email');
-  res.json(loans);
+  const loans = await Loan.find({})
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 });
+  
+  const transformed = loans.map(l => ({
+    ...l._doc,
+    member: l.user?.name || 'Unknown',
+  }));
+  
+  res.json(transformed);
 };
 
 // @desc    Request a loan
@@ -23,7 +34,11 @@ const requestLoan = async (req, res) => {
   });
 
   if (loan) {
-    res.status(201).json(loan);
+    const populated = await Loan.findById(loan._id).populate('user', 'name');
+    res.status(201).json({
+      ...populated._doc,
+      member: populated.user?.name || 'Unknown'
+    });
   } else {
     res.status(400);
     throw new Error('Invalid loan data');
@@ -43,7 +58,11 @@ const updateLoanStatus = async (req, res) => {
         loan.repaymentDate = new Date(Date.now() + loan.duration * 30 * 24 * 60 * 60 * 1000);
     }
     const updatedLoan = await loan.save();
-    res.json(updatedLoan);
+    const populated = await Loan.findById(updatedLoan._id).populate('user', 'name');
+    res.json({
+      ...populated._doc,
+      member: populated.user?.name || 'Unknown'
+    });
   } else {
     res.status(404);
     throw new Error('Loan not found');
@@ -67,7 +86,11 @@ const recordRepayment = async (req, res) => {
     }
 
     const updatedLoan = await loan.save();
-    res.json(updatedLoan);
+    const populated = await Loan.findById(updatedLoan._id).populate('user', 'name');
+    res.json({
+      ...populated._doc,
+      member: populated.user?.name || 'Unknown'
+    });
   } else {
     res.status(404);
     throw new Error('Loan not found');

@@ -28,9 +28,11 @@ const meetingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   }],
+  agenda: [String],
+  minutes: String,
   status: {
     type: String,
-    enum: ['scheduled', 'completed', 'cancelled'],
+    enum: ['scheduled', 'upcoming', 'completed', 'past', 'cancelled'],
     default: 'scheduled',
   }
 }, {

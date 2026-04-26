@@ -5,9 +5,9 @@ import { ROLES, ROLE_CLASSES, ROLE_HIERARCHY } from '../constants/roles';
 
 const AuthContext = createContext(null);
 
-const ADMIN_PASS_KEY = 'rr_admin_panel_pass'; 
-const ADMIN_2FA_KEY = 'rr_admin_2fa_code';    
-const ADMIN_SEC_MODE = 'rr_admin_sec_mode';   
+const ADMIN_PASS_KEY = 'rr_admin_panel_pass'; // stores a simple hash
+const ADMIN_2FA_KEY = 'rr_admin_2fa_code';    // stores the mock 6-digit TOTP
+const ADMIN_SEC_MODE = 'rr_admin_sec_mode';   // 'password' | '2fa'
 
 function parseJwt(token) {
     try {
@@ -18,6 +18,7 @@ function parseJwt(token) {
     }
 }
 
+/** Very simple non-cryptographic hash for the mock environment */
 function simpleHash(str) {
     let h = 5381;
     for (let i = 0; i < str.length; i++) {
@@ -51,9 +52,23 @@ export function AuthProvider({ children }) {
         }
     });
     const [loading, setLoading] = useState(true);
+
+    // --- Admin Panel Gate State ---
+    // Session-only — resets on page reload for security
     const [adminPanelUnlocked, setAdminPanelUnlocked] = useState(false);
+
     const [adminSecurityMode, setAdminSecurityModeState] = useState(() => {
         return localStorage.getItem(ADMIN_SEC_MODE) || 'password';
+    });
+
+    // Mock 2FA code (6 digits stored locally; shown to admin when they enable 2FA)
+    const [admin2FACode] = useState(() => {
+        let code = localStorage.getItem(ADMIN_2FA_KEY);
+        if (!code) {
+            code = String(Math.floor(100000 + Math.random() * 900000));
+            localStorage.setItem(ADMIN_2FA_KEY, code);
+        }
+        return code;
     });
 
     useEffect(() => {
@@ -65,41 +80,43 @@ export function AuthProvider({ children }) {
         if (token) {
             const payload = parseJwt(token);
             if (payload && payload.exp * 1000 > Date.now()) {
-                // Get full user object from localStorage if it exists (saved on login)
-                const storedUser = localStorage.getItem('rr_user');
-                if (storedUser) {
-                    const parsed = JSON.parse(storedUser);
-                    setUser(parsed);
-                    setActiveRole(parsed.role);
-                } else {
-                    setUser(payload);
-                    setActiveRole(payload.role);
-                }
+                setUser(payload);
+                setActiveRole(payload.role);
             } else {
                 localStorage.removeItem('rr_token');
-                localStorage.removeItem('rr_user');
             }
+        } else {
+            // TEMPORARY: force a mock user for testing without backend
+            // Check if there's a stored role for development
+            const savedRole = localStorage.getItem('rr_mock_role') || ROLES.ADMIN;
+            const mockUser = { 
+                id: 1, 
+                name: 'System Authority', 
+                email: 'authority@rrgroup.com', 
+                role: savedRole 
+            };
+            setUser(mockUser);
+            setActiveRole(savedRole);
         }
         setLoading(false);
     }, []);
 
+    // Initialise default admin password hash if not set
     useEffect(() => {
         if (!localStorage.getItem(ADMIN_PASS_KEY)) {
             localStorage.setItem(ADMIN_PASS_KEY, simpleHash('rr2026'));
         }
     }, []);
 
-    const login = (data) => {
-        localStorage.setItem('rr_token', data.token);
-        localStorage.setItem('rr_user', JSON.stringify(data.user));
-        setUser(data.user);
-        setActiveRole(data.user.role);
-        toast.success(`Welcome back, ${data.user.name}`);
+    const login = (token) => {
+        localStorage.setItem('rr_token', token);
+        const payload = parseJwt(token);
+        setUser(payload);
+        setActiveRole(payload.role);
     };
 
     const logout = () => {
         localStorage.removeItem('rr_token');
-        localStorage.removeItem('rr_user');
         localStorage.removeItem('rr_mock_role');
         setUser(null);
         setActiveRole(null);
@@ -108,9 +125,7 @@ export function AuthProvider({ children }) {
     };
 
     const updateUser = (data) => {
-        const updated = { ...user, ...data };
-        setUser(updated);
-        localStorage.setItem('rr_user', JSON.stringify(updated));
+        setUser(prev => ({ ...prev, ...data }));
         toast.success('System record updated');
     };
 
@@ -145,6 +160,8 @@ export function AuthProvider({ children }) {
         return roles.includes(effective);
     };
 
+    // ---- Admin Panel Gate ----
+    /** Attempt to unlock admin panel. Returns true on success. */
     const unlockAdminPanel = useCallback((secret) => {
         const mode = adminSecurityMode;
         let valid = false;
@@ -155,6 +172,8 @@ export function AuthProvider({ children }) {
         } else if (mode === '2fa') {
             const stored = localStorage.getItem(ADMIN_2FA_KEY);
             valid = secret.replace(/\s/g, '') === stored;
+        } else if (mode === 'facial') {
+            valid = secret === 'mock-face-scan-success';
         }
 
         if (valid) {
@@ -170,20 +189,28 @@ export function AuthProvider({ children }) {
         addLog(user?.name || 'Admin', 'Admin Panel Locked', '', 'security');
     }, [user]);
 
+    /** Set the security mode and persist it */
     const setAdminSecurityMode = useCallback((mode) => {
         localStorage.setItem(ADMIN_SEC_MODE, mode);
         setAdminSecurityModeState(mode);
         addLog(user?.name || 'Admin', 'Security Mode Changed', `Mode: ${mode}`, 'security');
         let modeName = 'Password';
         if (mode === '2fa') modeName = 'Two-Factor Auth';
+        if (mode === 'facial') modeName = 'Facial Recognition';
         toast.success(`Admin panel now secured via ${modeName}`);
     }, [user]);
 
+    /** Change the stored admin panel password */
     const setAdminPanelPassword = useCallback((newPass) => {
         localStorage.setItem(ADMIN_PASS_KEY, simpleHash(newPass));
         addLog(user?.name || 'Admin', 'Admin Password Updated', '', 'security');
         toast.success('Admin panel password updated');
     }, [user]);
+
+    /** Returns the mock 2FA code (for display in Settings when enabling 2FA) */
+    const getAdmin2FACode = useCallback(() => {
+        return localStorage.getItem(ADMIN_2FA_KEY) || admin2FACode;
+    }, [admin2FACode]);
 
     return (
         <AuthContext.Provider value={{
@@ -198,16 +225,19 @@ export function AuthProvider({ children }) {
             updateUser,
             togglePage,
             isPageEnabled,
+            // Admin panel gate
             adminPanelUnlocked,
             adminSecurityMode,
             unlockAdminPanel,
             lockAdminPanel,
             setAdminSecurityMode,
             setAdminPanelPassword,
+            getAdmin2FACode,
             ROLES,
             ROLE_CLASSES,
             ROLE_HIERARCHY
         }}>
+
             {children}
         </AuthContext.Provider>
     );
@@ -218,3 +248,4 @@ export function useAuth() {
     if (!ctx) throw new Error('useAuth must be used within AuthProvider');
     return ctx;
 }
+

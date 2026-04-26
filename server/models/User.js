@@ -41,6 +41,17 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  firstName: String,
+  lastName: String,
+  middleName: String,
+  dateOfBirth: Date,
+  stateOfOrigin: String,
+  residentialAddress: String,
+  occupation: String,
+  nextOfKinName: String,
+  nextOfKinPhone: String,
+  nextOfKinRelation: String,
+  facialUpload: String, // Base64 or URL
 }, {
   timestamps: true,
 });

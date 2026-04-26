@@ -15,14 +15,16 @@ const getContributions = async (req, res) => {
 // @route   POST /api/contributions
 // @access  Private/Treasurer/Admin
 const recordContribution = async (req, res) => {
-  const { memberId, weekId, type, amount } = req.body;
+  const { memberId, weekId, type, amount, bonus, note } = req.body;
 
   const contribution = await Contribution.create({
     user: memberId,
-    weekId, // Note: I should add this to the model if I haven't
-    type,
+    weekId,
+    type: type || 'welfare',
     amount,
-    status: 'confirmed' // Assuming treasurer recording is auto-confirmed for now
+    bonus: bonus || 0,
+    note,
+    status: 'confirmed'
   });
 
   if (contribution) {
@@ -33,7 +35,58 @@ const recordContribution = async (req, res) => {
   }
 };
 
+// @desc    Record batch contributions
+// @route   POST /api/contributions/batch
+// @access  Private/Treasurer/Admin
+const recordBatchContributions = async (req, res) => {
+  const { weekId, contributions } = req.body;
+
+  if (!weekId || !contributions || !Array.isArray(contributions)) {
+    res.status(400);
+    throw new Error('Invalid batch data');
+  }
+
+  try {
+    const operations = contributions.map(c => ({
+      updateOne: {
+        filter: { user: c.memberId, weekId },
+        update: { 
+          $set: { 
+            amount: c.amount, 
+            bonus: c.bonus, 
+            note: c.note, 
+            status: c.paid ? 'confirmed' : 'pending',
+            type: c.type || 'welfare'
+          } 
+        },
+        upsert: true
+      }
+    }));
+
+    await Contribution.bulkWrite(operations);
+    res.json({ message: 'Ledger synchronized' });
+  } catch (error) {
+    res.status(500);
+    throw new Error('Batch synchronization failed');
+  }
+};
+
+// @desc    Get unique week IDs
+// @route   GET /api/contributions/weeks
+// @access  Private
+const getWeeks = async (req, res) => {
+  try {
+    const weeks = await Contribution.distinct('weekId');
+    res.json(weeks);
+  } catch (error) {
+    res.status(500);
+    throw new Error('Error fetching weeks');
+  }
+};
+
 module.exports = {
   getContributions,
   recordContribution,
+  recordBatchContributions,
+  getWeeks,
 };

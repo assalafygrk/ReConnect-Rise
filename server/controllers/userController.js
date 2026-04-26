@@ -82,6 +82,70 @@ const getUserProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       phone: user.phone,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName,
+      dateOfBirth: user.dateOfBirth,
+      stateOfOrigin: user.stateOfOrigin,
+      residentialAddress: user.residentialAddress,
+      occupation: user.occupation,
+      nextOfKinName: user.nextOfKinName,
+      nextOfKinPhone: user.nextOfKinPhone,
+      nextOfKinRelation: user.nextOfKinRelation,
+      facialUpload: user.facialUpload,
+    });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    user.phone = req.body.phone || user.phone;
+    user.firstName = req.body.firstName || user.firstName;
+    user.lastName = req.body.lastName || user.lastName;
+    user.middleName = req.body.middleName || user.middleName;
+    user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
+    user.stateOfOrigin = req.body.stateOfOrigin || user.stateOfOrigin;
+    user.residentialAddress = req.body.residentialAddress || user.residentialAddress;
+    user.occupation = req.body.occupation || user.occupation;
+    user.nextOfKinName = req.body.nextOfKinName || user.nextOfKinName;
+    user.nextOfKinPhone = req.body.nextOfKinPhone || user.nextOfKinPhone;
+    user.nextOfKinRelation = req.body.nextOfKinRelation || user.nextOfKinRelation;
+    user.facialUpload = req.body.facialUpload || user.facialUpload;
+
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      phone: updatedUser.phone,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      middleName: updatedUser.middleName,
+      dateOfBirth: updatedUser.dateOfBirth,
+      stateOfOrigin: updatedUser.stateOfOrigin,
+      residentialAddress: updatedUser.residentialAddress,
+      occupation: updatedUser.occupation,
+      nextOfKinName: updatedUser.nextOfKinName,
+      nextOfKinPhone: updatedUser.nextOfKinPhone,
+      nextOfKinRelation: updatedUser.nextOfKinRelation,
+      facialUpload: updatedUser.facialUpload,
+      token: generateToken(updatedUser._id),
     });
   } else {
     res.status(404);
@@ -93,4 +157,5 @@ module.exports = {
   authUser,
   registerUser,
   getUserProfile,
+  updateUserProfile,
 };

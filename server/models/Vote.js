@@ -1,12 +1,27 @@
 const mongoose = require('mongoose');
 
 const voteSchema = new mongoose.Schema({
-  title: {
+  question: {
     type: String,
     required: true,
   },
   description: {
     type: String,
+  },
+  type: {
+    type: String,
+    enum: ['decision', 'election', 'budget', 'multiple_choice'],
+    default: 'decision',
+  },
+  deadline: {
+    type: Date,
+  },
+  amount: {
+    type: Number,
+  },
+  totalEligible: {
+    type: Number,
+    default: 20,
   },
   options: [{
     type: String,

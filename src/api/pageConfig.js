@@ -1,4 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+// ─── Per-Page Admin Configuration Store ─────────────────────────────────────
+// Backs every page's configurable content. Uses localStorage for persistence.
+// Admin edits via Settings → Module Nexus → Page Configuration.
+
+const STORAGE_KEY = 'rr_page_configs';
 
 export const PAGE_DEFAULTS = {
     dashboard: {
@@ -27,7 +31,6 @@ export const PAGE_DEFAULTS = {
         pageSubtitle: 'Manage and audit all brotherhood disbursements.',
         approvalNotice: 'All disbursements require dual-authorization from Treasurer and Group Leader.',
         maxDisburseAmount: 500000,
-        disbursementsEnabled: true,
     },
     loans: {
         pageHeadline: 'Credit & Leverage Gateway',
@@ -40,7 +43,7 @@ export const PAGE_DEFAULTS = {
     },
     members: {
         pageHeadline: 'Brotherhood Registry',
-        pageSubtitle: 'The sovereign identity ledger of all brothers.',
+        pageSubtitle: 'The sovereign identity ledger of all 20 brothers.',
         memberCapLabel: 'Maximum membership capacity',
         memberCap: 20,
         welcomeMessage: 'Each member of this brotherhood has taken an oath of commitment, integrity and mutual prosperity.',
@@ -119,57 +122,46 @@ export const PAGE_DEFAULTS = {
     },
 };
 
-function authHeaders() {
-    const token = localStorage.getItem('rr_token');
-    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-}
-
-export async function fetchAllPageConfigs() {
+function load() {
     try {
-        const res = await fetch(`${BASE_URL}/page-configs`);
-        if (!res.ok) throw new Error('Failed to load configs');
-        const overrides = await res.json();
-        
-        const merged = {};
-        Object.keys(PAGE_DEFAULTS).forEach(id => {
-            merged[id] = { ...PAGE_DEFAULTS[id], ...(overrides[id] || {}) };
-        });
-        return merged;
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     } catch {
-        return PAGE_DEFAULTS;
+        return {};
     }
 }
 
-export async function setPageConfig(pageId, patch) {
-    const res = await fetch(`${BASE_URL}/page-configs`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ pageId, config: patch }),
-    });
-    if (!res.ok) throw new Error('Failed to update config');
-    return await res.json();
+function save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// Helper for single page (legacy support if needed)
-export async function getPageConfig(pageId) {
-    const all = await fetchAllPageConfigs();
-    return all[pageId] || PAGE_DEFAULTS[pageId];
+/** Returns merged config for a page (defaults + any admin overrides). */
+export function getPageConfig(pageId) {
+    const overrides = load();
+    return { ...(PAGE_DEFAULTS[pageId] || {}), ...(overrides[pageId] || {}) };
 }
 
-export async function resetPageConfig(pageId) {
-    const res = await fetch(`${BASE_URL}/page-configs/reset/${pageId}`, {
-        method: 'POST',
-        headers: authHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to reset config');
-    return await res.json();
+/** Merges a partial update into a page's config and persists it. */
+export function setPageConfig(pageId, patch) {
+    const all = load();
+    all[pageId] = { ...(all[pageId] || {}), ...patch };
+    save(all);
 }
 
-export async function resetAllPageConfigs() {
-    const res = await fetch(`${BASE_URL}/page-configs/reset-all`, {
-        method: 'POST',
-        headers: authHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to reset configs');
-    return await res.json();
+/** Returns ALL page configs (defaults merged with overrides). */
+export function getAllPageConfigs() {
+    return Object.fromEntries(
+        Object.keys(PAGE_DEFAULTS).map(id => [id, getPageConfig(id)])
+    );
+}
+
+/** Resets a single page config back to defaults. */
+export function resetPageConfig(pageId) {
+    const all = load();
+    delete all[pageId];
+    save(all);
+}
+
+/** Resets ALL page configs back to defaults. */
+export function resetAllPageConfigs() {
+    localStorage.removeItem(STORAGE_KEY);
 }
