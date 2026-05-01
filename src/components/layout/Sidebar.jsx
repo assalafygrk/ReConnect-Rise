@@ -312,9 +312,20 @@ export default function Sidebar({ collapsed, onToggle }) {
                 {/* User footer */}
                 <div className="border-t border-white/10 p-3 space-y-2">
                     {!collapsed && (
-                        <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/5">
-                            <p className="text-white text-sm font-medium truncate">{user?.name || user?.email}</p>
-                            <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace('_', ' ')}</p>
+                        <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
+                            {/* Supreme Admin glow */}
+                            {user?.role === 'super_admin' && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#E8820C]/10 via-[#F5A623]/10 to-[#E8820C]/10 animate-pulse pointer-events-none rounded-xl" />
+                            )}
+                            <p className="text-white text-sm font-medium truncate relative z-10">{user?.name || user?.email}</p>
+                            {user?.role === 'super_admin' ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-pulse" />
+                                    <p className="text-[#F5A623] text-[10px] font-black uppercase tracking-widest">Supreme Admin</p>
+                                </div>
+                            ) : (
+                                <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace(/_/g, ' ')}</p>
+                            )}
                         </div>
                     )}
                     <button

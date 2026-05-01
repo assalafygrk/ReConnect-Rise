@@ -20,3 +20,13 @@ export async function addMeeting(data) {
     if (!res.ok) throw new Error('Failed to add meeting');
     return res.json();
 }
+
+export async function updateMeeting(id, data) {
+    const res = await fetch(`${BASE_URL}/meetings/${id}`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to update meeting');
+    return res.json();
+}

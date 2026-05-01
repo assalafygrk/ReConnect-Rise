@@ -85,18 +85,6 @@ export function AuthProvider({ children }) {
             } else {
                 localStorage.removeItem('rr_token');
             }
-        } else {
-            // TEMPORARY: force a mock user for testing without backend
-            // Check if there's a stored role for development
-            const savedRole = localStorage.getItem('rr_mock_role') || ROLES.ADMIN;
-            const mockUser = { 
-                id: 1, 
-                name: 'System Authority', 
-                email: 'authority@rrgroup.com', 
-                role: savedRole 
-            };
-            setUser(mockUser);
-            setActiveRole(savedRole);
         }
         setLoading(false);
     }, []);
@@ -149,14 +137,16 @@ export function AuthProvider({ children }) {
     };
 
     const isPageEnabled = (pageId) => {
-        if (activeRole === ROLES.ADMIN) return true;
+        // super_admin and admin always have access to all pages
+        if (activeRole === ROLES.SUPER_ADMIN || activeRole === ROLES.ADMIN) return true;
         return enabledPages[pageId];
     };
 
     const hasRole = (...roles) => {
         if (!user) return false;
         const effective = activeRole || user.role;
-        if (effective === ROLES.ADMIN) return true;
+        // super_admin inherits ALL roles automatically
+        if (effective === ROLES.SUPER_ADMIN || effective === ROLES.ADMIN) return true;
         return roles.includes(effective);
     };
 
@@ -174,6 +164,12 @@ export function AuthProvider({ children }) {
             valid = secret.replace(/\s/g, '') === stored;
         } else if (mode === 'facial') {
             valid = secret === 'mock-face-scan-success';
+        }
+
+        // super_admin never needs a password — always unlocked
+        if (user?.role === 'super_admin') {
+            setAdminPanelUnlocked(true);
+            return true;
         }
 
         if (valid) {

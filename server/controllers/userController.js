@@ -1,11 +1,28 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// @desc    Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
+// Frontend uses different role slugs — map DB roles to frontend slugs
+const ROLE_MAP = {
+  super_admin: 'super_admin',   // no remapping needed — identical
+  group_leader: 'groupleader',
+  special_advisor: 'special-advisor',
+  meeting_organizer: 'meeting-organizer',
+  official_member: 'official-member',
+};
+const mapRole = (r) => ROLE_MAP[r] || r;
+
+// @desc    Generate JWT — includes name, email, role for frontend parseJwt
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: mapRole(user.role),
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '30d' }
+  );
 };
 
 // @desc    Auth user & get token
@@ -18,12 +35,12 @@ const authUser = async (req, res) => {
 
   if (user && (await user.matchPassword(password))) {
     res.json({
-      token: generateToken(user._id),
+      token: generateToken(user),
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: mapRole(user.role),
       }
     });
   } else {
@@ -55,12 +72,12 @@ const registerUser = async (req, res) => {
 
   if (user) {
     res.status(201).json({
-      token: generateToken(user._id),
+      token: generateToken(user),
       user: {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: mapRole(user.role),
       }
     });
   } else {
@@ -132,7 +149,7 @@ const updateUserProfile = async (req, res) => {
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
-      role: updatedUser.role,
+      role: mapRole(updatedUser.role),
       phone: updatedUser.phone,
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
@@ -145,8 +162,29 @@ const updateUserProfile = async (req, res) => {
       nextOfKinPhone: updatedUser.nextOfKinPhone,
       nextOfKinRelation: updatedUser.nextOfKinRelation,
       facialUpload: updatedUser.facialUpload,
-      token: generateToken(updatedUser._id),
+      token: generateToken(updatedUser),
     });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+};
+
+// @desc    Update password
+// @route   PATCH /api/users/profile/password
+// @access  Private
+const updatePassword = async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    if (req.body.password) {
+      user.password = req.body.password;
+      await user.save();
+      res.json({ message: 'Password updated successfully' });
+    } else {
+      res.status(400);
+      throw new Error('Password is required');
+    }
   } else {
     res.status(404);
     throw new Error('User not found');
@@ -158,4 +196,5 @@ module.exports = {
   registerUser,
   getUserProfile,
   updateUserProfile,
+  updatePassword,
 };

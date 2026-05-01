@@ -8,78 +8,44 @@ import {
     Database, ShieldCheck, HardDrive, Archive, Loader2, Fingerprint
 } from 'lucide-react';
 import { usePageConfig } from '../context/PageConfigContext';
+import { fetchArchives, uploadArchive } from '../api/archives';
 
-const MOCK_GALLERY = [
-    {
-        id: 1,
-        title: 'Strategic Summit - Q1',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1523240715630-971c469b71f9?q=80&w=1200',
-        date: '2026-03-15',
-        author: 'Admin',
-        tags: ['Strategy', 'Garki'],
-        description: 'Quarterly objective alignment and resource optimization summit.'
-    },
-    {
-        id: 2,
-        title: 'Community Empowerment Initiative',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1200',
-        date: '2026-02-28',
-        author: 'Ola Fashola',
-        tags: ['Outreach', 'Philanthropy'],
-        description: 'Operationalizing support for local socio-economic development.'
-    },
-    {
-        id: 3,
-        title: 'Brotherhood Convocation 2025',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1200',
-        date: '2025-12-20',
-        author: 'Super Admin',
-        tags: ['Convention', 'Legacy'],
-        description: 'Annual assembly documenting our collective trajectory and sovereignty.'
-    },
-    {
-        id: 4,
-        title: 'Infrastructure Launch Phase 1',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=1200',
-        date: '2026-01-05',
-        author: 'Kola Ayoola',
-        tags: ['Infrastructure', 'Operations'],
-        description: 'Deployment of phase 1 strategic assets for community empowerment.'
-    },
-];
-
-const MOCK_FILES = [
-    { id: 1, title: 'Strategic_Fiscal_Policy_2026.pdf', type: 'pdf', size: '2.4 MB', date: '2026-01-10', author: 'Treasurer' },
-    { id: 2, title: 'Constitutional_Charter_v3.docx', type: 'doc', size: '1.1 MB', date: '2025-11-05', author: 'Admin' },
-    { id: 3, title: 'Q2_Expansion_Proposal.pptx', type: 'presentation', size: '5.8 MB', date: '2026-03-01', author: 'Leader' },
-    { id: 4, title: 'Audited_Ledger_Archive.xlsx', type: 'sheet', size: '3.2 MB', date: '2026-02-15', author: 'Treasurer' },
-];
 
 export default function DocumentaryPage() {
     const { config } = usePageConfig('documentary');
     const [searchTerm, setSearchTerm] = useState('');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedMedia, setSelectedMedia] = useState(null);
-    const [viewMode, setViewMode] = useState('grid'); // grid, list
-    const [activeTab, setActiveTab] = useState('gallery'); // gallery, files
+    const [viewMode, setViewMode] = useState('grid');
+    const [activeTab, setActiveTab] = useState('gallery');
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
 
+    const [galleryData, setGalleryData] = useState([]);
+    const [filesData, setFilesData] = useState([]);
+
     useEffect(() => {
-        const timer = setTimeout(() => setIsInitialLoading(false), 800);
-        return () => clearTimeout(timer);
+        const loadArchives = async () => {
+            setIsInitialLoading(true);
+            try {
+                const data = await fetchArchives();
+                setGalleryData(data.gallery || []);
+                setFilesData(data.files || []);
+            } catch (err) {
+                // Keep empty on error
+            } finally {
+                setIsInitialLoading(false);
+            }
+        };
+        loadArchives();
     }, []);
 
-    const filteredGallery = MOCK_GALLERY.filter(item =>
+    const filteredGallery = galleryData.filter(item =>
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const filteredFiles = MOCK_FILES.filter(item =>
+    const filteredFiles = filesData.filter(item =>
         item.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -87,15 +53,24 @@ export default function DocumentaryPage() {
         e.preventDefault();
         setUploading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Note: form data extraction omitted here since the upload modal doesn't have controlled inputs hooked up in this snippet yet
+            const title = "New Upload"; 
+            const type = activeTab === 'gallery' ? 'gallery' : 'file';
+            await uploadArchive(title, type);
             toast.success('Archive Material Synchronized');
             setShowUploadModal(false);
+            // Optionally reload archives here
+            const data = await fetchArchives();
+            setGalleryData(data.gallery || []);
+            setFilesData(data.files || []);
         } catch (err) {
             toast.error('System Synchronization Failure');
         } finally {
             setUploading(false);
         }
     };
+
+
 
     if (isInitialLoading) {
         return (

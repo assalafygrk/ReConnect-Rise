@@ -127,7 +127,7 @@ export default function RegistrationPage() {
 
                 {/* Right Side: Registration Form */}
                 <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    {/* <div className="absolute -inset-1 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div> */}
 
                     <div className="relative rounded-[2rem] p-8 md:p-12 shadow-2xl border border-white/10"
                         style={{ background: 'rgba(255,248,240,0.04)', backdropFilter: 'blur(40px)' }}>
@@ -166,7 +166,7 @@ export default function RegistrationPage() {
                                                 name="firstName"
                                                 value={formData.firstName}
                                                 onChange={handleChange}
-                                                placeholder="First"
+                                                placeholder="First Name"
                                                 className="w-full px-4 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
                                                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                                                 required
@@ -179,7 +179,7 @@ export default function RegistrationPage() {
                                                 name="lastName"
                                                 value={formData.lastName}
                                                 onChange={handleChange}
-                                                placeholder="Last"
+                                                placeholder="Last Name"
                                                 className="w-full px-4 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
                                                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                                                 required
@@ -215,7 +215,7 @@ export default function RegistrationPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Secure Mobile Line</label>
+                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Phone Number</label>
                                         <input
                                             type="tel"
                                             name="phone"
@@ -223,13 +223,14 @@ export default function RegistrationPage() {
                                             onChange={handleChange}
                                             placeholder="Your phone number"
                                             className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
+                                            maxLength={11}
                                             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                                             required
                                         />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Security Key (Password)</label>
+                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Password</label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
@@ -343,7 +344,7 @@ export default function RegistrationPage() {
                                             ></textarea>
                                         </div>
 
-                                        <div className="space-y-2">
+                                        {/* <div className="space-y-2">
                                             <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Education Level (Optional)</label>
                                             <select
                                                 name="educationLevel"
@@ -360,6 +361,7 @@ export default function RegistrationPage() {
                                                 <option value="Other" className="bg-[#252545]">Other</option>
                                             </select>
                                         </div>
+                                        
 
                                         {formData.educationLevel && (
                                             <div className="space-y-2">
@@ -379,7 +381,7 @@ export default function RegistrationPage() {
                                                     <option value="Other" className="bg-[#252545]">Other Institution</option>
                                                 </select>
                                             </div>
-                                        )}
+                                        )} */}
                                     </div>
 
                                     <div className="flex gap-4 mt-6">

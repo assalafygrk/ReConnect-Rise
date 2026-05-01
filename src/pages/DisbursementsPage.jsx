@@ -10,7 +10,7 @@ import {
 import dayjs from 'dayjs';
 import { useReactToPrint } from 'react-to-print';
 import TransactionReceipt from '../components/TransactionReceipt';
-import { fetchDisbursements, addDisbursement } from '../api/disbursements';
+import { fetchDisbursements, addDisbursement, updateDisbursementStatus } from '../api/disbursements';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
@@ -18,12 +18,7 @@ function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
 }
 
-const MOCK = [
-    { id: 1, member: 'Seun Adeyemi', amount: 5000, reason: 'Medical support', date: '2026-03-22', status: 'approved' },
-    { id: 2, member: 'Tunde Lawal', amount: 3000, reason: 'Emergency transport', date: '2026-03-15', status: 'pending' },
-    { id: 3, member: 'Nonso Okafor', amount: 10000, reason: 'Hospital bill', date: '2026-03-01', status: 'approved' },
-    { id: 4, member: 'Dare Balogun', amount: 12000, reason: 'Family Aid', date: '2026-03-28', status: 'pending' },
-];
+
 
 export default function DisbursementsPage() {
     const { hasRole, ROLES } = useAuth();
@@ -59,7 +54,8 @@ export default function DisbursementsPage() {
             const data = await fetchDisbursements();
             setItems(data);
         } catch (err) {
-            setItems(MOCK);
+            toast.error('Failed to load financial registry');
+            setItems([]);
         } finally {
             setLoading(false);
         }
@@ -84,13 +80,12 @@ export default function DisbursementsPage() {
     const handleApproval = async (id, newStatus) => {
         setActionLoading(true);
         try {
-            // Mock API call
-            await new Promise(r => setTimeout(r, 800));
-            setItems((prev) => prev.map(item => item.id === id ? { ...item, status: newStatus } : item));
-            if (selectedItem?.id === id) setSelectedItem(prev => ({ ...prev, status: newStatus }));
+            const updated = await updateDisbursementStatus(id, newStatus);
+            setItems((prev) => prev.map(item => item._id === id || item.id === id ? updated : item));
+            if (selectedItem?._id === id || selectedItem?.id === id) setSelectedItem(updated);
             toast.success(`Disbursement registry updated: ${newStatus}`);
         } catch (err) {
-            toast.error('Audit update failed');
+            toast.error(err.message || 'Audit update failed');
         } finally {
             setActionLoading(false);
         }
@@ -244,7 +239,7 @@ export default function DisbursementsPage() {
                         <tbody className="divide-y divide-black/5 whitespace-nowrap">
                             {filteredItems.map((item) => (
                                 <tr
-                                    key={item.id}
+                                    key={item._id || item.id}
                                     onClick={() => setSelectedItem(item)}
                                     className="hover:bg-gray-50 transition-colors cursor-pointer group"
                                 >
@@ -384,7 +379,7 @@ export default function DisbursementsPage() {
                                 <div className="space-y-1">
                                     <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Transaction Audit</h3>
                                     <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                        <History size={12} className="text-blue-500" /> Reference #DSB-{String(selectedItem.id).padStart(4, '0')}
+                                        <History size={12} className="text-blue-500" /> Reference #{String(selectedItem._id || selectedItem.id).slice(-6).toUpperCase()}
                                     </p>
                                 </div>
                                 <button onClick={() => setSelectedItem(null)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
@@ -435,7 +430,7 @@ export default function DisbursementsPage() {
                                 {selectedItem.status === 'pending' && isTreasurer && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <button
-                                            onClick={() => handleApproval(selectedItem.id, 'approved')}
+                                            onClick={() => handleApproval(selectedItem._id || selectedItem.id, 'approved')}
                                             disabled={actionLoading}
                                             className="py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/10 hover:opacity-90 active:scale-95 transition-all"
                                         >
@@ -443,7 +438,7 @@ export default function DisbursementsPage() {
                                             Authorize Outlay
                                         </button>
                                         <button
-                                            onClick={() => handleApproval(selectedItem.id, 'declined')}
+                                            onClick={() => handleApproval(selectedItem._id || selectedItem.id, 'declined')}
                                             disabled={actionLoading}
                                             className="py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-red-900/10 hover:opacity-90 active:scale-95 transition-all"
                                         >

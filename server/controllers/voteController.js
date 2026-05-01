@@ -8,7 +8,11 @@ const getVotes = async (req, res) => {
   
   const transformed = votes.map(v => {
     const resultsObj = {};
-    v.results.forEach((val, key) => { resultsObj[key] = val; });
+    if (v.results instanceof Map || (v.results && typeof v.results.forEach === 'function')) {
+      v.results.forEach((val, key) => { resultsObj[key] = val; });
+    } else {
+      Object.assign(resultsObj, v.results);
+    }
     
     // Check if user has voted
     let myVote = null;
@@ -77,14 +81,31 @@ const castVote = async (req, res) => {
   }
 
   const { choice } = req.body;
-  const currentVotes = vote.results.get(choice) || 0;
-  vote.results.set(choice, currentVotes + 1);
+  if (!choice) {
+    res.status(400);
+    throw new Error('Choice is required');
+  }
+
+  // Handle both Mongoose Map and plain object cases
+  if (vote.results instanceof Map || (vote.results && typeof vote.results.get === 'function')) {
+    const currentVotes = vote.results.get(choice) || 0;
+    vote.results.set(choice, currentVotes + 1);
+  } else {
+    vote.results = vote.results || {};
+    vote.results[choice] = (vote.results[choice] || 0) + 1;
+    vote.markModified('results');
+  }
+
   vote.voters.push(req.user._id);
 
   await vote.save();
   
   const resultsObj = {};
-  vote.results.forEach((val, key) => { resultsObj[key] = val; });
+  if (vote.results instanceof Map || (vote.results && typeof vote.results.forEach === 'function')) {
+    vote.results.forEach((val, key) => { resultsObj[key] = val; });
+  } else {
+    Object.assign(resultsObj, vote.results);
+  }
   
   res.json({
     ...vote._doc,

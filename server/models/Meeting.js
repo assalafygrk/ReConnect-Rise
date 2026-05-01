@@ -20,6 +20,9 @@ const meetingSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  zoomLink: {
+    type: String,
+  },
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -12,6 +12,14 @@ const getWalletInfo = async (req, res) => {
       throw new Error('User not found');
     }
 
+    const transactions = await Transaction.find({ user: user._id });
+    const totalGiftsSent = transactions
+      .filter(tx => tx.type === 'debit')
+      .reduce((acc, tx) => acc + tx.amount, 0);
+    const totalGiftsReceived = transactions
+      .filter(tx => tx.type === 'credit')
+      .reduce((acc, tx) => acc + tx.amount, 0);
+
     const recentTransactions = await Transaction.find({ user: user._id })
       .sort({ createdAt: -1 })
       .limit(10)
@@ -20,6 +28,8 @@ const getWalletInfo = async (req, res) => {
     res.json({
       balance: user.walletBalance || 0,
       recentTransactions,
+      totalGiftsSent,
+      totalGiftsReceived,
     });
   } catch (error) {
     res.status(500);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
-import { Wallet, ArrowUpRight, ArrowDownLeft, Send, History, Heart, X, Search, Filter, Download, PieChart, TrendingUp, Zap } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownLeft, Send, History, Heart, X, Search, Filter, Download, PieChart, TrendingUp, Zap, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
 import { fetchWallet, transferFunds } from '../api/wallet';
 import { fetchMembers } from '../api/members';
@@ -243,10 +243,10 @@ export default function WalletPage() {
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <p className="text-xs font-bold text-black/40">Gifts Sent</p>
-                                <p className="text-sm font-black text-[#1A1A2E] tracking-tight">{formatNaira(45000)}</p>
+                                <p className="text-sm font-black text-[#1A1A2E] tracking-tight">{formatNaira(data.totalGiftsSent)}</p>
                             </div>
                             <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-[#E8820C] to-[#F5A623] w-[65%] rounded-full"></div>
+                                <div className="h-full bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-full" style={{ width: `${Math.min(100, (data.totalGiftsSent / 50000) * 100)}%` }}></div>
                             </div>
                             <div className="flex items-center gap-3 text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 p-3 rounded-2xl border border-green-100 italic">
                                 <TrendingUp size={14} /> 12% Growth from last month

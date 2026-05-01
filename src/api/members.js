@@ -16,3 +16,13 @@ export async function fetchMember(id) {
     if (!res.ok) throw new Error('Failed to load member');
     return res.json();
 }
+
+export async function updateMemberStatus(id, status) {
+    const res = await fetch(`${BASE_URL}/members/${id}/status`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Failed to update member status');
+    return res.json();
+}

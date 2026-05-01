@@ -52,9 +52,11 @@ export default function MembersPage() {
         setLoading(true);
         try {
             const data = await fetchMembers();
-            setMembers(data);
+            const mapped = data.map(m => ({ ...m, id: m._id || m.id, joinedYear: m.joinedYear || new Date(m.createdAt).getFullYear() || 2023 }));
+            setMembers(mapped);
         } catch (err) {
-            setMembers(MOCK_MEMBERS);
+            toast.error('Failed to synchronize directory. Please try again.');
+            setMembers([]);
         } finally {
             setLoading(false);
         }

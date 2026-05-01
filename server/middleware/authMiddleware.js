@@ -34,6 +34,8 @@ const protect = async (req, res, next) => {
 
 const authorize = (...roles) => {
   return (req, res, next) => {
+    // super_admin bypasses all role restrictions
+    if (req.user.role === 'super_admin') return next();
     if (!roles.includes(req.user.role)) {
       res.status(403);
       throw new Error(`User role ${req.user.role} is not authorized to access this route`);

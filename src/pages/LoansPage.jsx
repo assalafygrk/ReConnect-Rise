@@ -11,7 +11,8 @@ import {
 import dayjs from 'dayjs';
 import { useReactToPrint } from 'react-to-print';
 import TransactionReceipt from '../components/TransactionReceipt';
-import { fetchLoans, addLoan, recordRepayment } from '../api/loans';
+import { fetchLoans, addLoan, recordRepayment, updateLoanStatus } from '../api/loans';
+import { fetchDashboard } from '../api/dashboard';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
@@ -26,7 +27,7 @@ const MOCK = [
     { id: 4, member: 'Emeka Obi', amount: 50000, balance: 50000, disbursedDate: '2026-03-20', status: 'pending_leader', repaymentPlan: 'Lump sum April' },
 ];
 
-const VAULT_BALANCE = 120000;
+// VAULT_BALANCE now dynamically fetched
 
 export default function LoansPage() {
     const { hasRole, ROLES, user } = useAuth();
@@ -38,6 +39,7 @@ export default function LoansPage() {
 
     // States
     const [loans, setLoans] = useState([]);
+    const [vaultBalance, setVaultBalance] = useState(120000);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -68,8 +70,14 @@ export default function LoansPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const data = await fetchLoans();
+            const [data, dashboardData] = await Promise.all([
+                fetchLoans(),
+                fetchDashboard().catch(() => null)
+            ]);
             setLoans(data);
+            if (dashboardData?.stats?.loanFundBalance !== undefined) {
+                setVaultBalance(dashboardData.stats.loanFundBalance);
+            }
         } catch (err) {
             setLoans(MOCK);
         } finally {
@@ -81,12 +89,11 @@ export default function LoansPage() {
         e.preventDefault();
         setActionLoading(true);
         try {
-            let initialStatus = 'pending_treasurer';
-            if (isTreasurer) initialStatus = 'pending_leader';
-            if (isLeader && isTreasurer) initialStatus = 'active'; // Admin or dual role
-
-
-            const data = await addLoan({ ...form, status: initialStatus });
+            const data = await addLoan({
+                amount: Number(form.amount),
+                purpose: form.plan,
+                duration: 6, // default 6 month duration
+            });
             setLoans((prev) => [data, ...prev]);
             toast.success('Loan application committed to registry');
             setShowForm(false);
@@ -101,12 +108,15 @@ export default function LoansPage() {
     const handleApproval = async (id, newStatus) => {
         setActionLoading(true);
         try {
-            await new Promise(r => setTimeout(r, 800));
-            setLoans((prev) => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
-            if (selectedLoan?.id === id) setSelectedLoan(prev => ({ ...prev, status: newStatus }));
+            // Map frontend status labels to backend status values
+            const backendStatus = newStatus === 'active' ? 'disbursed' : newStatus;
+            const updated = await updateLoanStatus(id, backendStatus);
+            const frontendLoan = { ...updated, status: newStatus };
+            setLoans((prev) => prev.map(l => l.id === id || l._id === id ? frontendLoan : l));
+            if (selectedLoan?.id === id || selectedLoan?._id === id) setSelectedLoan(frontendLoan);
             toast.success(`Loan registry updated: ${newStatus.replace('_', ' ')}`);
         } catch (err) {
-            toast.error('Audit update failed');
+            toast.error(err.message || 'Audit update failed');
         } finally {
             setActionLoading(false);
         }
@@ -156,7 +166,7 @@ export default function LoansPage() {
         { label: 'Total Loaned', value: totalLoaned, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Outstanding', value: activeBalance, icon: Wallet, color: 'text-red-600', bg: 'bg-red-50' },
         { label: 'Pending Audit', value: loans.filter(l => l.status.startsWith('pending')).length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', isMoney: false },
-        { label: 'Vault Ready', value: VAULT_BALANCE, icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Vault Ready', value: vaultBalance, icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     ];
 
     const getStatusStyle = (status) => {
@@ -396,7 +406,7 @@ export default function LoansPage() {
                                 />
                             </div>
 
-                            {Number(form.amount) > VAULT_BALANCE && (
+                            {Number(form.amount) > vaultBalance && (
                                 <div className="bg-red-50 rounded-2xl p-4 flex gap-3 border border-red-100 items-start">
                                     <AlertTriangle size={18} className="text-red-600 flex-shrink-0" />
                                     <p className="text-[10px] font-bold text-red-800 leading-normal uppercase">

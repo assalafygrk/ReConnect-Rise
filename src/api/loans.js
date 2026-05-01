@@ -21,6 +21,16 @@ export async function addLoan(data) {
     return res.json();
 }
 
+export async function updateLoanStatus(id, status) {
+    const res = await fetch(`${BASE_URL}/loans/${id}/status`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Failed to update loan status');
+    return res.json();
+}
+
 export async function recordRepayment(loanId, amount) {
     const res = await fetch(`${BASE_URL}/loans/${loanId}/repay`, {
         method: 'POST',

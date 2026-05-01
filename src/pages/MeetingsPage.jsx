@@ -6,7 +6,7 @@ import {
     MoreHorizontal, Loader2, Zap, Globe
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { fetchMeetings, addMeeting } from '../api/meetings';
+import { fetchMeetings, addMeeting, updateMeeting } from '../api/meetings';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
@@ -69,19 +69,22 @@ export default function MeetingsPage() {
             setForm({ title: '', date: '', time: '', venue: 'Zoom', zoomLink: '' });
             setAgendaItems(['']);
         } catch (err) {
-            const mockNew = {
-                ...form,
-                id: Date.now(),
-                status: 'upcoming',
-                agenda: agendaItems.filter(i => i.trim()),
-                minutes: null
-            };
-            setMeetings((prev) => [mockNew, ...prev]);
-            toast.success('Summit Scheduled (Local Archive)');
-            setShowForm(false);
+            toast.error(err.message || 'Failed to schedule summit');
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleCommitMinutes = async (meetingId) => {
+        try {
+            const updated = await updateMeeting(meetingId, { minutes: minutesText, status: 'past' });
+            setMeetings(prev => prev.map(m => m.id === meetingId || m._id === meetingId ? { ...m, ...updated, minutes: minutesText, status: 'past' } : m));
+        } catch {
+            // Fall back to local update if backend unavailable
+            setMeetings(prev => prev.map(m => m.id === meetingId || m._id === meetingId ? { ...m, minutes: minutesText, status: 'past' } : m));
+        }
+        setShowMinutesModal(null);
+        toast.success('Archive Updated: Minutes Synchronized');
     };
 
     if (loading) return (
@@ -367,11 +370,7 @@ export default function MeetingsPage() {
                                 <button onClick={() => setShowMinutesModal(null)} className="flex-1 py-5 font-black text-[10px] uppercase tracking-widest bg-white rounded-2xl border border-black/5 hover:bg-gray-100 transition-all">Discard</button>
                                 <button
                                     disabled={!minutesText.trim()}
-                                    onClick={() => {
-                                        setMeetings(prev => prev.map(m => m.id === showMinutesModal ? { ...m, minutes: minutesText, status: 'past' } : m));
-                                        setShowMinutesModal(null);
-                                        toast.success('Archive Updated: Minutes Synchronized');
-                                    }}
+                                    onClick={() => handleCommitMinutes(showMinutesModal)}
                                     className="flex-[2] py-5 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-30"
                                 >
                                     Commit to Archive

@@ -9,20 +9,13 @@ import {
 import dayjs from 'dayjs';
 import { useReactToPrint } from 'react-to-print';
 import WeeklyReportTemplate from '../components/WeeklyReportTemplate';
-import { fetchContributions } from '../api/contributions';
+import { fetchContributions, recordBatchContributions } from '../api/contributions';
+import { fetchDashboard } from '../api/dashboard';
+import { fetchMembers } from '../api/members';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
-const MOCK_MEMBERS = Array.from({ length: 20 }, (_, i) => ({
-    id: i + 1,
-    name: ['Emeka Obi', 'Tunde Lawal', 'Seun Adeyemi', 'Dare Balogun', 'Femi Adeoye',
-        'Kola Ayoola', 'Gbenga Aina', 'Ola Fashola', 'Wale Adekeye', 'Chukwu Eze',
-        'Nonso Okafor', 'Jide Akintola', 'Bayo Oluwole', 'Ade Salami', 'Musa Haruna',
-        'Chidi Nwosu', 'Uche Okeke', 'Rotimi Adesanya', 'Lanre Olatunji', 'Sam Udo'][i],
-    paid: false,
-    bonus: 0,
-    note: ''
-}));
+
 
 export default function ContributionsPage() {
     const { hasRole, user } = useAuth();
@@ -46,8 +39,14 @@ export default function ContributionsPage() {
     const [treasurerName, setTreasurerName] = useState(user?.name || '');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Running totals (mocked for now, as per standard system)
-    const runningTotal = { collected: 450000, disbursed: 20000, bonus: 35000 };
+    const [dashboardData, setDashboardData] = useState(null);
+
+    // Running totals (from actual backend data, falling back to safe defaults)
+    const runningTotal = { 
+        collected: dashboardData?.stats?.welfareBalance || 0, 
+        disbursed: dashboardData?.stats?.totalLoansOut || 0, 
+        bonus: 0 
+    };
 
     // Print setup
     const printRef = useRef();
@@ -63,10 +62,27 @@ export default function ContributionsPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            await fetchContributions();
-            setMembers(MOCK_MEMBERS);
+            // Try to load real members and dashboard data from backend
+            const [realMembers, dbData] = await Promise.all([
+                fetchMembers(),
+                fetchDashboard().catch(() => null)
+            ]);
+            
+            if (dbData) {
+                setDashboardData(dbData);
+            }
+
+            const shaped = realMembers.map(m => ({
+                id: m._id,
+                name: m.name,
+                paid: false,
+                bonus: 0,
+                note: ''
+            }));
+            setMembers(shaped);
         } catch (err) {
-            setMembers(MOCK_MEMBERS);
+            toast.error('Failed to load members for ledger');
+            setMembers([]);
         } finally {
             setLoading(false);
         }
@@ -109,10 +125,20 @@ export default function ContributionsPage() {
         }
         setActionLoading(true);
         try {
-            await new Promise(r => setTimeout(r, 1000)); // Mock API delay
+            await recordBatchContributions({
+                weekId: weekOf,
+                contributions: members.map(m => ({
+                    memberId: m.id,
+                    amount: m.paid ? 100 : 0,
+                    bonus: Number(m.bonus || 0),
+                    note: m.note || '',
+                    paid: m.paid,
+                    type: 'welfare',
+                }))
+            });
             toast.success('Treasury ledger updated successfully');
         } catch (err) {
-            toast.error('Failed to update ledger');
+            toast.error(err.message || 'Failed to update ledger');
         } finally {
             setActionLoading(false);
         }

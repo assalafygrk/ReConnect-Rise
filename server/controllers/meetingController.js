@@ -6,13 +6,14 @@ const getMeetings = async (req, res) => {
 };
 
 const addMeeting = async (req, res) => {
-  const { title, date, time, location, description, agenda } = req.body;
+  const { title, date, time, venue, zoomLink, description, agenda } = req.body;
   const meeting = await Meeting.create({
     title,
     date,
     time,
-    location,
-    description,
+    location: venue || 'TBD', // map venue to location
+    description: description,
+    zoomLink, // save zoomLink
     agenda,
     organizer: req.user._id,
   });

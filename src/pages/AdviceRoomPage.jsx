@@ -10,6 +10,7 @@ import {
 import dayjs from 'dayjs';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
+import { fetchVisions, createVision, upvoteVision } from '../api/visions';
 
 
 const MOCK_CATEGORIES = [
@@ -21,40 +22,7 @@ const MOCK_CATEGORIES = [
     { id: 'others', label: 'General Directives', icon: MoreVertical },
 ];
 
-const MOCK_IDEAS = [
-    {
-        id: 1,
-        author: 'Ola Fashola',
-        content: 'We should synchronize a monthly community service initiative to optimize our group\'s external impact and brand sovereignty.',
-        type: 'text',
-        category: 'community',
-        upvotes: 24,
-        date: '2026-03-28',
-        status: 'published'
-    },
-    {
-        id: 2,
-        author: 'Seun Adeyemi',
-        content: 'Proposed an educational endowment fund for the brotherhood lineage to ensure intergenerational prosperity.',
-        audioUrl: '#',
-        type: 'voice',
-        category: 'finance',
-        duration: '0:45',
-        upvotes: 42,
-        date: '2026-03-25',
-        status: 'published'
-    },
-    {
-        id: 3,
-        author: 'Kola Ayoola',
-        content: 'Automated fiscal reminder protocols for contributions to maintain 100% operational liquidity.',
-        type: 'text',
-        category: 'operations',
-        upvotes: 15,
-        date: '2026-03-20',
-        status: 'published'
-    },
-];
+
 
 export default function AdviceRoomPage() {
     const { user, hasRole, ROLES } = useAuth();
@@ -62,7 +30,37 @@ export default function AdviceRoomPage() {
     const isAdvisor = hasRole(ROLES.SPECIAL_ADVISOR, ROLES.ADMIN);
 
 
-    const [ideas, setIdeas] = useState(MOCK_IDEAS);
+    const [ideas, setIdeas] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadVisions();
+    }, []);
+
+    const loadVisions = async () => {
+        setLoading(true);
+        try {
+            const data = await fetchVisions();
+            setIdeas(data.map(d => ({
+                id: d._id,
+                author: d.author?.name || 'Unknown',
+                content: d.content,
+                type: d.type || 'text',
+                category: d.category,
+                upvotes: d.upvotes || 0,
+                date: d.createdAt,
+                status: d.status || 'published',
+                audioUrl: d.audioUrl,
+                duration: d.duration,
+            })));
+        } catch (err) {
+            setIdeas([]);
+            toast.error('Failed to load visions');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const [inputText, setInputText] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showProposalModal, setShowProposalModal] = useState(false);
@@ -170,33 +168,19 @@ export default function AdviceRoomPage() {
         setSlideDistance(0);
     };
 
-    const handleSubmit = async (e) => {
+    const handleTextSubmit = async (e) => {
         if (e) e.preventDefault();
-        if (!inputText.trim() && !recordedAudio) return;
+        if (!inputText.trim()) return;
 
         setSubmitting(true);
         try {
-            await new Promise(r => setTimeout(r, 1500)); // Simulate processing
-            const newIdea = {
-                id: Date.now(),
-                author: user?.name || 'Institutional Member',
-                content: inputText || null,
-                audioUrl: recordedAudio?.url || null,
-                duration: recordedAudio?.duration || null,
-                type: recordedAudio ? 'voice' : 'text',
-                category: activeSubmissionCategory,
-                upvotes: 0,
-                date: dayjs().format('YYYY-MM-DD'),
-                status: 'pending' // Proposals go to pending first
-            };
-
-            setIdeas([newIdea, ...ideas]);
+            await createVision(inputText, activeSubmissionCategory);
+            toast.success('Vision published successfully');
             setInputText('');
-            setRecordedAudio(null);
             setShowProposalModal(false);
-            toast.success('Vision transmitted to Special Advisor for verification.');
+            loadVisions(); // Reload to get updated list
         } catch (err) {
-            toast.error('Synchronizing Failure');
+            toast.error('Failed to publish vision');
         } finally {
             setSubmitting(false);
         }
@@ -214,11 +198,14 @@ export default function AdviceRoomPage() {
         toast.error('Vision rejected and purged from registry.');
     };
 
-    const handleUpvote = (id) => {
-        setIdeas(prev => prev.map(idea =>
-            idea.id === id ? { ...idea, upvotes: idea.upvotes + 1 } : idea
-        ));
-        toast.success('Alignment Registered');
+    const handleUpvote = async (id) => {
+        try {
+            await upvoteVision(id);
+            setIdeas(ideas.map(i => i.id === id ? { ...i, upvotes: i.upvotes + 1 } : i));
+            toast.success('Alignment Registered');
+        } catch (err) {
+            toast.error('Failed to cast upvote');
+        }
     };
 
 

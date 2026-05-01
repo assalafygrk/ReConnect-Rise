@@ -46,193 +46,111 @@ const StatCard = ({ icon: Icon, label, value, sub, color, onClick, trend }) => (
 );
 
 const MOCK_NEW_MEMBER = {
-    poolBalance: 142500,
-    savingsGoal: 250000,
-    totalPaid: 14,
-    totalUnpaid: 6,
-    totalMembers: 20,
-    recentTransactions: [
-        { id: 1, type: 'contribution', member: 'Emeka Obi', amount: 100, date: '2026-03-24', note: 'Weekly contribution' },
-        { id: 2, type: 'disbursement', member: 'Seun Adeyemi', amount: 5000, date: '2026-03-22', note: 'Medical support' },
-        { id: 3, type: 'contribution', member: 'Tunde Lawal', amount: 100, date: '2026-03-21', note: 'Weekly contribution' },
-        { id: 4, type: 'loan_repayment', member: 'Dare Balogun', amount: 10000, date: '2026-03-20', note: 'Loan repayment' },
-        { id: 5, type: 'contribution', member: 'Femi Adeoye', amount: 200, date: '2026-03-18', note: 'Weekly + bonus' },
-    ],
-    monthlyChart: [
-        { month: 'Nov', contributions: 8800, disbursements: 2000 },
-        { month: 'Dec', contributions: 9200, disbursements: 5000 },
-        { month: 'Jan', contributions: 9600, disbursements: 3500 },
-        { month: 'Feb', contributions: 9800, disbursements: 8000 },
-        { month: 'Mar', contributions: 10400, disbursements: 5000 },
-    ],
+    poolBalance: 0,
+    savingsGoal: 0,
+    totalPaid: 0,
+    totalUnpaid: 0,
+    totalMembers: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 5200,
+        totalContributions: 0,
         activeLoan: 0,
-        nextMeeting: '15 Apr 2026',
+        nextMeeting: 'N/A',
     }
 };
 
 const MOCK_TREASURER = {
-    poolBalance: 4250000,
-    savingsGoal: 10000000,
-    totalPaid: 185,
-    totalUnpaid: 15,
-    totalMembers: 200,
-    liquidityRatio: 0.85,
-    pendingDisbursements: 450000,
-    recentTransactions: [
-        { id: 1, type: 'disbursement', member: 'Community Project', amount: 450000, date: '2026-04-18', note: 'Bridge funding' },
-        { id: 2, type: 'contribution', member: 'Group A Batch', amount: 125000, date: '2026-04-16', note: 'Weekly dues' },
-        { id: 3, type: 'contribution', member: 'Group B Batch', amount: 95000, date: '2026-04-15', note: 'Weekly dues' },
-        { id: 4, type: 'loan_repayment', member: 'Musa Bello', amount: 50000, date: '2026-04-14', note: 'Final repayment' },
-        { id: 5, type: 'contribution', member: 'Group C Batch', amount: 110000, date: '2026-04-12', note: 'Weekly dues' },
-    ],
-    monthlyChart: [
-        { month: 'Oct', contributions: 520000, disbursements: 80000 },
-        { month: 'Nov', contributions: 680000, disbursements: 120000 },
-        { month: 'Dec', contributions: 920000, disbursements: 450000 },
-        { month: 'Jan', contributions: 860000, disbursements: 135000 },
-        { month: 'Feb', contributions: 980000, disbursements: 180000 },
-        { month: 'Mar', contributions: 1240000, disbursements: 500000 },
-    ],
+    poolBalance: 0,
+    savingsGoal: 0,
+    totalPaid: 0,
+    totalUnpaid: 0,
+    totalMembers: 0,
+    liquidityRatio: 0,
+    pendingDisbursements: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 25200,
+        totalContributions: 0,
         activeLoan: 0,
-        nextMeeting: '15 Apr 2026',
+        nextMeeting: 'N/A',
     }
 };
 
 const MOCK_GROUP_LEADER = {
-    poolBalance: 320000,
-    savingsGoal: 500000,
-    totalPaid: 42,
-    totalUnpaid: 8,
-    totalMembers: 50,
-    groupName: "Unity Vanguard",
-    participationRate: 84,
-    recentTransactions: [
-        { id: 1, type: 'contribution', member: 'Emeka Obi', amount: 5000, date: '2026-04-18', note: 'Weekly' },
-        { id: 2, type: 'contribution', member: 'Tunde Lawal', amount: 5000, date: '2026-04-18', note: 'Weekly' },
-        { id: 3, type: 'disbursement', member: 'Seun Adeyemi', amount: 15000, date: '2026-04-17', note: 'Welfare' },
-        { id: 4, type: 'loan_repayment', member: 'Dare Balogun', amount: 10000, date: '2026-04-15', note: 'Repayment' },
-        { id: 5, type: 'contribution', member: 'Femi Adeoye', amount: 5000, date: '2026-04-14', note: 'Weekly' },
-    ],
-    monthlyChart: [
-        { month: 'Oct', contributions: 120000, disbursements: 20000 },
-        { month: 'Nov', contributions: 135000, disbursements: 35000 },
-        { month: 'Dec', contributions: 150000, disbursements: 80000 },
-        { month: 'Jan', contributions: 145000, disbursements: 45000 },
-        { month: 'Feb', contributions: 160000, disbursements: 60000 },
-        { month: 'Mar', contributions: 185000, disbursements: 25000 },
-    ],
+    poolBalance: 0,
+    savingsGoal: 0,
+    totalPaid: 0,
+    totalUnpaid: 0,
+    totalMembers: 0,
+    groupName: "Loading...",
+    participationRate: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 18200,
+        totalContributions: 0,
         activeLoan: 0,
-        nextMeeting: '15 Apr 2026',
+        nextMeeting: 'N/A',
     }
 };
 
 const MOCK_WELFARE = {
-    totalWelfareFunds: 850000,
-    pendingRequests: 12,
-    disbursedThisMonth: 145000,
-    totalMembers: 200,
-    recentTransactions: [
-        { id: 1, type: 'disbursement', member: 'Bayo Ahmed', amount: 25000, date: '2026-04-19', note: 'Medical Support' },
-        { id: 2, type: 'disbursement', member: 'Ibrahim Dan', amount: 15000, date: '2026-04-18', note: 'Bereavement' },
-        { id: 3, type: 'contribution', member: 'Welfare Levy', amount: 50000, date: '2026-04-15', note: 'Monthly Levy' },
-        { id: 4, type: 'disbursement', member: 'Janet Okafor', amount: 20000, date: '2026-04-12', note: 'Nuptial Gift' },
-        { id: 5, type: 'disbursement', member: 'Abubakar Ali', amount: 10000, date: '2026-04-10', note: 'Emergency' },
-    ],
-    monthlyChart: [
-        { month: 'Oct', contributions: 40000, disbursements: 35000 },
-        { month: 'Nov', contributions: 45000, disbursements: 55000 },
-        { month: 'Dec', contributions: 50000, disbursements: 95000 },
-        { month: 'Jan', contributions: 55000, disbursements: 45000 },
-        { month: 'Feb', contributions: 48000, disbursements: 65000 },
-        { month: 'Mar', contributions: 60000, disbursements: 50000 },
-    ],
+    totalWelfareFunds: 0,
+    pendingRequests: 0,
+    disbursedThisMonth: 0,
+    totalMembers: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 12500,
+        totalContributions: 0,
         activeLoan: 0,
-        nextMeeting: '15 Apr 2026',
+        nextMeeting: 'N/A',
     }
 };
 
 const MOCK_OFFICIAL_MEMBER = {
-    poolBalance: 4250000,
-    savingsGoal: 10000000,
-    totalPaid: 185,
-    totalUnpaid: 15,
-    totalMembers: 200,
-    seniorityYears: 3,
-    trustScore: 98,
-    advocacyPoints: 450,
-    recentTransactions: [
-        { id: 1, type: 'contribution', member: 'Self', amount: 25000, date: '2026-04-18', note: 'Premium Dues' },
-        { id: 2, type: 'loan_repayment', member: 'Self', amount: 50000, date: '2026-04-10', note: 'Loan Repayment' },
-        { id: 3, type: 'contribution', member: 'Self', amount: 25000, date: '2026-03-18', note: 'Premium Dues' },
-    ],
-    monthlyChart: [
-        { month: 'Oct', contributions: 20000, disbursements: 0 },
-        { month: 'Nov', contributions: 25000, disbursements: 0 },
-        { month: 'Dec', contributions: 30000, disbursements: 0 },
-        { month: 'Jan', contributions: 25000, disbursements: 0 },
-        { month: 'Feb', contributions: 25000, disbursements: 0 },
-        { month: 'Mar', contributions: 35000, disbursements: 0 },
-    ],
+    poolBalance: 0,
+    savingsGoal: 0,
+    totalPaid: 0,
+    totalUnpaid: 0,
+    totalMembers: 0,
+    seniorityYears: 0,
+    trustScore: 0,
+    advocacyPoints: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 850000,
-        activeLoan: 150000,
-        nextMeeting: '15 Apr 2026',
+        totalContributions: 0,
+        activeLoan: 0,
+        nextMeeting: 'N/A',
     }
 };
 
 const MOCK_ADVISOR = {
-    activeAdviceRooms: 8,
-    pendingPolicies: 3,
-    communitySentiment: 92,
-    totalMembers: 200,
-    recentTransactions: [
-        { id: 1, type: 'contribution', member: 'Board Dues', amount: 100000, date: '2026-04-15', note: 'Executive Dues' },
-        { id: 2, type: 'disbursement', member: 'Policy Review', amount: 20000, date: '2026-04-10', note: 'Audit Expenses' },
-    ],
-    monthlyChart: [
-        { month: 'Oct', contributions: 85, disbursements: 90 }, // Sentiment vs Participation
-        { month: 'Nov', contributions: 88, disbursements: 85 },
-        { month: 'Dec', contributions: 92, disbursements: 95 },
-        { month: 'Jan', contributions: 90, disbursements: 88 },
-        { month: 'Feb', contributions: 94, disbursements: 92 },
-        { month: 'Mar', contributions: 96, disbursements: 94 },
-    ],
+    activeAdviceRooms: 0,
+    pendingPolicies: 0,
+    communitySentiment: 0,
+    totalMembers: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 1250000,
+        totalContributions: 0,
         activeLoan: 0,
-        nextMeeting: '15 Apr 2026',
+        nextMeeting: 'N/A',
     }
 };
 
 const MOCK_ORGANIZER = {
-    upcomingEvents: 4,
-    totalVenues: 12,
-    avgAttendance: 145,
-    totalMembers: 200,
-    recentTransactions: [
-        { id: 1, type: 'disbursement', member: 'Grand Majlis Plaza', amount: 150000, date: '2026-04-15', note: 'Venue Deposit' },
-        { id: 2, type: 'disbursement', member: 'Catering Services', amount: 85000, date: '2026-04-12', note: 'Event Logistics' },
-    ],
-    monthlyChart: [
-        { month: 'Oct', contributions: 120, disbursements: 110 }, // Attendance trends
-        { month: 'Nov', contributions: 140, disbursements: 130 },
-        { month: 'Dec', contributions: 200, disbursements: 180 },
-        { month: 'Jan', contributions: 130, disbursements: 120 },
-        { month: 'Feb', contributions: 155, disbursements: 140 },
-        { month: 'Mar', contributions: 175, disbursements: 160 },
-    ],
+    upcomingEvents: 0,
+    totalVenues: 0,
+    avgAttendance: 0,
+    totalMembers: 0,
+    recentTransactions: [],
+    monthlyChart: [],
     myStats: {
-        totalContributions: 45000,
+        totalContributions: 0,
         activeLoan: 0,
-        nextMeeting: '15 Apr 2026',
+        nextMeeting: 'N/A',
     }
 };
 
@@ -245,6 +163,7 @@ export default function DashboardPage() {
     const [selectedTx, setSelectedTx] = useState(null);
 
     const effectiveRole = activeRole || user?.role || 'member';
+    const isSuperAdmin = effectiveRole === 'super_admin';
     const isAdmin = effectiveRole === 'admin';
     const isTreasurer = effectiveRole === 'treasurer';
     const isGroupLeader = effectiveRole === 'groupleader';
@@ -259,17 +178,25 @@ export default function DashboardPage() {
 
     const loadData = async () => {
         setLoading(true);
+
+        // Role-specific base shape (keeps all UI-specific fields)
+        const getRoleBase = () => {
+            if (isSuperAdmin || isTreasurer || isAdmin) return MOCK_TREASURER;
+            if (isGroupLeader) return MOCK_GROUP_LEADER;
+            if (isWelfare) return MOCK_WELFARE;
+            if (isOfficialMember) return MOCK_OFFICIAL_MEMBER;
+            if (isAdvisor) return MOCK_ADVISOR;
+            if (isOrganizer) return MOCK_ORGANIZER;
+            return MOCK_NEW_MEMBER;
+        };
+
         try {
-            const dashboardData = await fetchDashboard();
-            setData(dashboardData);
+            const apiData = await fetchDashboard();
+            // Merge: real API values override mock defaults, keeping role UI fields intact
+            setData({ ...getRoleBase(), ...apiData });
         } catch {
-            if (isTreasurer) setData(MOCK_TREASURER);
-            else if (isGroupLeader) setData(MOCK_GROUP_LEADER);
-            else if (isWelfare) setData(MOCK_WELFARE);
-            else if (isOfficialMember) setData(MOCK_OFFICIAL_MEMBER);
-            else if (isAdvisor) setData(MOCK_ADVISOR);
-            else if (isOrganizer) setData(MOCK_ORGANIZER);
-            else setData(MOCK_NEW_MEMBER);
+            // Backend unavailable — use full mock data for that role
+            setData(getRoleBase());
         } finally {
             setLoading(false);
         }

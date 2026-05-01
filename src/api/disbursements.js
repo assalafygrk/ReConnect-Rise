@@ -20,3 +20,12 @@ export async function addDisbursement(data) {
     if (!res.ok) throw new Error('Failed to add disbursement');
     return res.json();
 }
+export async function updateDisbursementStatus(id, status) {
+    const res = await fetch(`${BASE_URL}/disbursements/${id}/status`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Failed to update status');
+    return res.json();
+}

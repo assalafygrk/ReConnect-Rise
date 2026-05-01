@@ -1,75 +1,129 @@
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-function generateMockJwt(payload) {
-    const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-    const body = btoa(JSON.stringify(payload));
-    return `${header}.${body}.mock-signature`;
-}
-
+// ─── Login ───────────────────────────────────────────────────────────────────
 export async function apiLogin(email, password) {
-    // MOCK LOGIN SINCE BACKEND IS NOT YET CONNECTED
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (password !== 'rr2026') { // Using a simple static password for dev
-                return reject(new Error('Invalid password. Use "rr2026" for testing.'));
-            }
-
-            let role = 'member';
-            let name = 'New Member';
-
-            if (email.includes('admin')) {
-                role = 'admin';
-                name = 'System Admin';
-            } else if (email.includes('treasurer')) {
-                role = 'treasurer';
-                name = 'Test Treasurer';
-            } else if (email.includes('leader')) {
-                role = 'groupleader';
-                name = 'Test Group Leader';
-            } else if (email.includes('welfare')) {
-                role = 'welfare';
-                name = 'Test Welfare Officer';
-            } else if (email.includes('advisor')) {
-                role = 'special-advisor';
-                name = 'Test Advisor';
-            } else if (email.includes('organizer')) {
-                role = 'meeting-organizer';
-                name = 'Test Organizer';
-            } else if (email.includes('official')) {
-                role = 'official-member';
-                name = 'Official Member';
-            }
-
-            const token = generateMockJwt({
-                id: Date.now(),
-                name,
-                email,
-                role,
-                exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 24 hours
-            });
-
-            resolve({ token, user: { name, email, role } });
-        }, 800);
+    const res = await fetch(`${BASE_URL}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
     });
+
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Login failed');
+    return data; // { token, user }
 }
 
+// ─── Register ─────────────────────────────────────────────────────────────────
 export async function apiRegister(userData) {
-    // MOCK REGISTER SINCE BACKEND IS NOT YET CONNECTED
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const role = 'member'; // Default role for new users
-            const fullName = [userData.firstName, userData.middleName, userData.lastName].filter(Boolean).join(' ');
+    // Compose full name from parts
+    const name = [userData.firstName, userData.middleName, userData.lastName]
+        .filter(Boolean)
+        .join(' ');
 
-            const token = generateMockJwt({
-                id: Date.now(),
-                name: fullName,
-                email: userData.email,
-                phone: userData.phone,
-                role,
-                exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 24 hours
-            });
-
-            resolve({ token, user: { name: fullName, email: userData.email, phone: userData.phone, role } });
-        }, 800);
+    const res = await fetch(`${BASE_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name,
+            email: userData.email,
+            password: userData.password,
+            phone: userData.phone,
+            firstName: userData.firstName,
+            middleName: userData.middleName,
+            lastName: userData.lastName,
+            dateOfBirth: userData.dateOfBirth,
+            residentialAddress: userData.residentialAddress,
+            occupation: userData.occupation,
+            educationLevel: userData.educationLevel,
+            school: userData.school,
+            facialUpload: userData.facialUpload,
+        }),
     });
+
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Registration failed');
+    return data; // { token, user }
+}
+
+// ─── Get Profile ──────────────────────────────────────────────────────────────
+export async function apiGetProfile() {
+    const token = localStorage.getItem('rr_token');
+    const res = await fetch(`${BASE_URL}/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch profile');
+    return data;
+}
+
+// ─── Update Profile ───────────────────────────────────────────────────────────
+export async function apiUpdateProfile(profileData) {
+    const token = localStorage.getItem('rr_token');
+    const res = await fetch(`${BASE_URL}/users/profile`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+    });
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Failed to update profile');
+    return data;
+}
+
+// ─── Update Password ──────────────────────────────────────────────────────────
+export async function apiUpdatePassword(password) {
+    const token = localStorage.getItem('rr_token');
+    const res = await fetch(`${BASE_URL}/users/profile/password`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+    });
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Failed to update password');
+    return data;
 }

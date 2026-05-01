@@ -4,10 +4,12 @@ const Contribution = require('../models/Contribution');
 // @route   GET /api/contributions
 // @access  Private
 const getContributions = async (req, res) => {
-  const { week } = req.query;
-  const query = week ? { weekId: week } : {};
+  const { week, user } = req.query;
+  const query = {};
+  if (week) query.weekId = week;
+  if (user) query.user = user;
   
-  const contributions = await Contribution.find(query).populate('user', 'name email');
+  const contributions = await Contribution.find(query).populate('user', 'name email').sort({ createdAt: -1 });
   res.json(contributions);
 };
 

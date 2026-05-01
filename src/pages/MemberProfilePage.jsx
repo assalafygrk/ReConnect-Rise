@@ -8,7 +8,7 @@ import {
     Info, ExternalLink, Download
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { fetchMember } from '../api/members';
+import { fetchMember, updateMemberStatus } from '../api/members';
 import { useAuth } from '../context/AuthContext';
 
 function formatNaira(v) {
@@ -260,10 +260,17 @@ export default function MemberProfilePage() {
                             </button>
                         </div>
 
-                        <form onSubmit={(e) => {
+                        <form onSubmit={async (e) => {
                             e.preventDefault();
-                            setMember({ ...m, ...form });
-                            toast.success('Member rank updated in shared registry.');
+                            try {
+                                const updated = await updateMemberStatus(m._id || m.id, form.status || form.role);
+                                setMember({ ...m, ...form, ...updated });
+                                toast.success('Member rank updated in shared registry.');
+                            } catch {
+                                // Fallback: update locally
+                                setMember({ ...m, ...form });
+                                toast.success('Member rank updated (local).');
+                            }
                             setShowEditForm(false);
                         }} className="space-y-6">
                             <div className="space-y-2">

@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: [
+      'super_admin',
       'admin',
       'group_leader',
       'treasurer',
@@ -52,6 +53,14 @@ const userSchema = new mongoose.Schema({
   nextOfKinPhone: String,
   nextOfKinRelation: String,
   facialUpload: String, // Base64 or URL
+  notifications: {
+    push: { type: Boolean, default: true },
+    email: { type: Boolean, default: false },
+    app: { type: Boolean, default: true },
+  },
+  transactionPin: String, // Hashed 4-digit PIN
+  twoFactorSecret: String,
+  twoFactorEnabled: { type: Boolean, default: false },
 }, {
   timestamps: true,
 });
@@ -62,9 +71,9 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 // Encrypt password using bcrypt
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    next();
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);

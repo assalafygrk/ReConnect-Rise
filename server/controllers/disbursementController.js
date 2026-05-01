@@ -53,4 +53,33 @@ const addDisbursement = async (req, res) => {
   });
 };
 
-module.exports = { getDisbursements, addDisbursement };
+// @desc    Update disbursement status (Approve/Decline)
+// @route   PATCH /api/disbursements/:id/status
+// @access  Private/Treasurer/Admin
+const updateDisbursementStatus = async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
+
+  if (!['pending', 'approved', 'declined', 'completed'].includes(status)) {
+    res.status(400);
+    throw new Error('Invalid status');
+  }
+
+  const disbursement = await Disbursement.findById(id);
+
+  if (disbursement) {
+    disbursement.status = status;
+    const updatedDisbursement = await disbursement.save();
+    
+    const populated = await Disbursement.findById(updatedDisbursement._id).populate('memberId', 'name');
+    res.json({
+      ...populated._doc,
+      member: populated.memberId?.name || 'Unknown'
+    });
+  } else {
+    res.status(404);
+    throw new Error('Disbursement not found');
+  }
+};
+
+module.exports = { getDisbursements, addDisbursement, updateDisbursementStatus };

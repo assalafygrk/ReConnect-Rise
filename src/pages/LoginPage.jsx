@@ -73,7 +73,7 @@ export default function LoginPage() {
                 {/* Right Side: Login Form */}
                 <div className="relative group">
                     {/* Decorative glow */}
-                    <div className="absolute -inset-1 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                    {/* <div className="absolute -inset-1 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div> */}
 
                     <div className="relative rounded-[2rem] p-8 md:p-12 shadow-2xl border border-white/10"
                         style={{ background: 'rgba(255,248,240,0.04)', backdropFilter: 'blur(40px)' }}>
@@ -98,7 +98,7 @@ export default function LoginPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Member Email</label>
+                                <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Email Address</label>
                                 <input
                                     type="email"
                                     value={email}
@@ -114,7 +114,7 @@ export default function LoginPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Access Key</label>
+                                <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Password</label>
                                 <div className="relative">
                                     <input
                                         type={showPassword ? 'text' : 'password'}

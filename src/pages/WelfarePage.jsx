@@ -17,11 +17,7 @@ import { fetchMembers } from '../api/members';
 import WeeklyReportTemplate from '../components/WeeklyReportTemplate';
 import { useReactToPrint } from 'react-to-print';
 
-const MOCK = [
-    { id: 1, submittedBy: 'Seun Adeyemi', type: 'Medical', amount: 5000, description: 'Hospital bill for malaria treatment at Garki Hospital.', status: 'pending', date: '2026-03-20' },
-    { id: 2, submittedBy: 'Tunde Lawal', type: 'Emergency', amount: 3000, description: 'Loss of mobile device during transit. Requesting replacement support.', status: 'approved', date: '2026-03-10' },
-    { id: 3, submittedBy: 'Musa Haruna', type: 'Education', amount: 8000, description: 'Final year project binding and submission fees.', status: 'declined', date: '2026-03-05' },
-];
+const MOCK = [];
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;

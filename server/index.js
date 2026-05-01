@@ -38,6 +38,13 @@ app.get('/', (req, res) => {
   res.send('ReConnect & Rise API is running...');
 });
 
+// 404 Handler
+app.use((req, res, next) => {
+  res.status(404);
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  next(error);
+});
+
 // Error Handling Middleware
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;

@@ -56,8 +56,20 @@ const getDashboardSummary = async (req, res) => {
     const myTotalContributions = userContributions.reduce((acc, c) => acc + c.amount, 0);
     const myActiveLoan = await Loan.findOne({ user: req.user._id, status: 'disbursed' });
 
-    // Monthly Chart Data
+    // Collection stats (totalPaid/totalUnpaid for current month)
     const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const startOfMonth = new Date(currentYear, currentMonth, 1);
+    
+    const uniquePayersThisMonth = await Contribution.distinct('user', {
+      status: 'confirmed',
+      createdAt: { $gte: startOfMonth }
+    });
+    
+    const totalPaid = uniquePayersThisMonth.length;
+    const totalUnpaid = memberCount - totalPaid;
+
+    // Monthly Chart Data
     
     // Influx (Contributions)
     const influxData = await Contribution.aggregate([
@@ -111,6 +123,8 @@ const getDashboardSummary = async (req, res) => {
     res.json({
       poolBalance,
       savingsGoal,
+      totalPaid,
+      totalUnpaid,
       totalMembers: memberCount,
       recentTransactions,
       monthlyChart,
@@ -124,7 +138,8 @@ const getDashboardSummary = async (req, res) => {
         loanFundBalance: totalLoanFund,
         activeLoans: activeLoans.length,
         totalLoansOut: totalLoansOut,
-      }
+      },
+      liquidityRatio: savingsGoal > 0 ? (poolBalance / savingsGoal) : 0
     });
   } catch (error) {
     console.error(error);
