@@ -1,1 +1,4 @@
-i tried to log in thsi system in my mobile phone but it through me an error message "failed to fetch" please debuge this issue.
+- let continue build and wired the backend of nexus.
+make sure is recoded/save in database and the function is going fine, i hope you get what i mean.
+
+VITE_API_URL=https://localhost:5000/api

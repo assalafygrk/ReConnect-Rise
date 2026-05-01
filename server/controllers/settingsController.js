@@ -20,9 +20,10 @@ const getSettings = async (req, res) => {
 const updateSettings = async (req, res) => {
   const s = await getOrCreate();
   const allowed = [
-    'systemName', 'maintenanceMode', 'allowRegistration', 'groupAnnouncement',
+    'systemName', 'orgSlogan', 'logoUrl', 'maintenanceMode', 'allowRegistration', 'groupAnnouncement',
     'monthlySavingsTarget', 'loanInterestRate', 'welfareTarget',
-    'loanFundTarget', 'maxLoanAmount', 'allowProfilePhotoChange'
+    'loanFundTarget', 'maxLoanAmount', 'allowProfilePhotoChange',
+    'enabledPages'
   ];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) s[key] = req.body[key];
@@ -46,8 +47,8 @@ const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword)
     return res.status(400).json({ message: 'Both current and new password required' });
-  if (newPassword.length < 8)
-    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  if (newPassword.length < 8 || newPassword.length > 64)
+    return res.status(400).json({ message: 'New password must be between 8 and 64 characters' });
 
   const user = await User.findById(req.user._id).select('+password');
   if (!user) return res.status(404).json({ message: 'User not found' });

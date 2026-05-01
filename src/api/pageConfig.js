@@ -1,8 +1,42 @@
 // ─── Per-Page Admin Configuration Store ─────────────────────────────────────
-// Backs every page's configurable content. Uses localStorage for persistence.
-// Admin edits via Settings → Module Nexus → Page Configuration.
+// Backs every page's configurable content. Uses localStorage for fast sync access,
+// but syncs with MongoDB backend via `/api/page-configs`.
 
 const STORAGE_KEY = 'rr_page_configs';
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+function authHeaders() {
+    const token = localStorage.getItem('rr_token');
+    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+}
+
+// Backend sync functions
+export async function fetchBackendPageConfigs() {
+    try {
+        const res = await fetch(`${BASE_URL}/page-configs`);
+        if (res.ok) {
+            const data = await res.json();
+            // data is a map of { [pageId]: config }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            return data;
+        }
+    } catch (err) {
+        console.error('Failed to fetch page configs from backend', err);
+    }
+    return null;
+}
+
+export async function saveBackendPageConfig(pageId, config) {
+    try {
+        await fetch(`${BASE_URL}/page-configs`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ pageId, config })
+        });
+    } catch (err) {
+        console.error('Failed to sync page config to backend', err);
+    }
+}
 
 export const PAGE_DEFAULTS = {
     dashboard: {
@@ -140,11 +174,13 @@ export function getPageConfig(pageId) {
     return { ...(PAGE_DEFAULTS[pageId] || {}), ...(overrides[pageId] || {}) };
 }
 
-/** Merges a partial update into a page's config and persists it. */
+/** Merges a partial update into a page's config and persists it locally and remotely. */
 export function setPageConfig(pageId, patch) {
     const all = load();
-    all[pageId] = { ...(all[pageId] || {}), ...patch };
+    const newConfig = { ...(all[pageId] || {}), ...patch };
+    all[pageId] = newConfig;
     save(all);
+    saveBackendPageConfig(pageId, newConfig);
 }
 
 /** Returns ALL page configs (defaults merged with overrides). */
@@ -154,14 +190,38 @@ export function getAllPageConfigs() {
     );
 }
 
+export async function resetBackendPageConfig(pageId) {
+    try {
+        await fetch(`${BASE_URL}/page-configs/${pageId}`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+    } catch (err) {
+        console.error('Failed to reset page config on backend', err);
+    }
+}
+
+export async function resetAllBackendPageConfigs() {
+    try {
+        await fetch(`${BASE_URL}/page-configs`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+    } catch (err) {
+        console.error('Failed to reset all page configs on backend', err);
+    }
+}
+
 /** Resets a single page config back to defaults. */
 export function resetPageConfig(pageId) {
     const all = load();
     delete all[pageId];
     save(all);
+    resetBackendPageConfig(pageId);
 }
 
 /** Resets ALL page configs back to defaults. */
 export function resetAllPageConfigs() {
     localStorage.removeItem(STORAGE_KEY);
+    resetAllBackendPageConfigs();
 }

@@ -42,8 +42,6 @@ export async function apiRegister(userData) {
             dateOfBirth: userData.dateOfBirth,
             residentialAddress: userData.residentialAddress,
             occupation: userData.occupation,
-            educationLevel: userData.educationLevel,
-            school: userData.school,
             facialUpload: userData.facialUpload,
         }),
     });

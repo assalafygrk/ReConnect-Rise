@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { getPageConfig, setPageConfig as apiSetPageConfig, resetPageConfig as apiResetPageConfig, resetAllPageConfigs } from '../api/pageConfig';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { getPageConfig, setPageConfig as apiSetPageConfig, resetPageConfig as apiResetPageConfig, resetAllPageConfigs, fetchBackendPageConfigs } from '../api/pageConfig';
 
 const PageConfigContext = createContext(null);
 
@@ -7,6 +7,12 @@ export function PageConfigProvider({ children }) {
     // version bump forces re-renders when any config changes
     const [version, setVersion] = useState(0);
     const bump = useCallback(() => setVersion(v => v + 1), []);
+
+    useEffect(() => {
+        fetchBackendPageConfigs().then(() => {
+            bump();
+        });
+    }, [bump]);
 
     const updatePageConfig = useCallback((pageId, patch) => {
         apiSetPageConfig(pageId, patch);

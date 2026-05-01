@@ -21,14 +21,26 @@ import {
 } from '../api/settings';
 import { useAuth } from '../context/AuthContext';
 import { getLogs, addLog, clearLogs, exportLogsCSV } from '../api/auditLog';
+import AdminAuthGate from '../components/admin/AdminAuthGate';
+import { useNavigate } from 'react-router-dom';
 
 export default function SettingsPage() {
+    const navigate = useNavigate();
     const {
         user: currentUser,
         hasRole,
+        adminPanelUnlocked,
+        unlockAdminPanel
     } = useAuth();
     const isAdmin = hasRole('admin') || hasRole('super_admin');
     const isTreasurer = hasRole('treasurer') || hasRole('admin') || hasRole('super_admin');
+    const [showGate, setShowGate] = useState(false);
+
+    useEffect(() => {
+        if (isAdmin && !adminPanelUnlocked) {
+            setShowGate(true);
+        }
+    }, [isAdmin, adminPanelUnlocked]);
 
     const [settings, setSettings] = useState({
         systemName: 'ReConnect & Rise',
@@ -186,6 +198,18 @@ export default function SettingsPage() {
             setPinSaving(false);
         }
     };
+
+    if (showGate) {
+        return (
+            <AdminAuthGate
+                onClose={() => navigate('/dashboard')}
+                onSuccess={() => {
+                    setShowGate(false);
+                    toast.success('System Settings unlocked');
+                }}
+            />
+        );
+    }
 
     if (loading) {
         return (

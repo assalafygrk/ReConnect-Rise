@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { addLog } from '../api/auditLog';
+import { fetchSettings, updateSettings } from '../api/settings';
 import { ROLES, ROLE_CLASSES, ROLE_HIERARCHY } from '../constants/roles';
 
 const AuthContext = createContext(null);
@@ -32,23 +33,23 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [activeRole, setActiveRole] = useState(null);
     const [enabledPages, setEnabledPages] = useState(() => {
+        const defaultPages = {
+            dashboard: true, contributions: true, members: true,
+            disbursements: true, loans: true, requests: true,
+            votes: true, meetings: true, chat: true, wallet: true,
+            settings: true, profile: true, documentary: true, advice: true,
+            login: true, register: true, id_card: true, nexus: true
+        };
         try {
             const saved = localStorage.getItem('rr_enabled_pages');
-            return saved ? JSON.parse(saved) : {
-                dashboard: true, contributions: true, members: true,
-                disbursements: true, loans: true, requests: true,
-                votes: true, meetings: true, chat: true, wallet: true,
-                settings: true, profile: true, documentary: true, advice: true,
-                login: true, register: true, id_card: true, nexus: true
-            };
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Ensure new defaults are merged if older local storage exists
+                return { ...defaultPages, ...parsed };
+            }
+            return defaultPages;
         } catch {
-            return {
-                dashboard: true, contributions: true, members: true,
-                disbursements: true, loans: true, requests: true,
-                votes: true, meetings: true, chat: true, wallet: true,
-                settings: true, profile: true, documentary: true, advice: true,
-                login: true, register: true, id_card: true, nexus: true
-            };
+            return defaultPages;
         }
     });
     const [loading, setLoading] = useState(true);
@@ -72,10 +73,26 @@ export function AuthProvider({ children }) {
     });
 
     useEffect(() => {
-        localStorage.setItem('rr_enabled_pages', JSON.stringify(enabledPages));
-    }, [enabledPages]);
+        const loadInitialSettings = async () => {
+            try {
+                const settings = await fetchSettings();
+                if (settings && settings.enabledPages) {
+                    setEnabledPages(prev => {
+                        const merged = { ...prev, ...settings.enabledPages };
+                        // Ensure critical public pages don't get locked out if missing from DB
+                        if (merged.login === undefined) merged.login = true;
+                        if (merged.register === undefined) merged.register = true;
+                        localStorage.setItem('rr_enabled_pages', JSON.stringify(merged));
+                        return merged;
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load system settings:', err);
+            }
+        };
 
-    useEffect(() => {
+        loadInitialSettings();
+
         const token = localStorage.getItem('rr_token');
         if (token) {
             const payload = parseJwt(token);
@@ -123,9 +140,19 @@ export function AuthProvider({ children }) {
         toast.success(`Active Role Switched to: ${ROLE_CLASSES[role]?.label || role}`);
     };
 
-    const togglePage = (pageId) => {
+    const togglePage = async (pageId) => {
         setEnabledPages(prev => {
             const next = { ...prev, [pageId]: !prev[pageId] };
+            
+            // Sync to backend asynchronously
+            updateSettings({ enabledPages: next }).catch(err => {
+                console.error('Failed to sync enabled pages to backend:', err);
+                toast.error('Failed to save module state to server');
+            });
+            
+            // Update local storage
+            localStorage.setItem('rr_enabled_pages', JSON.stringify(next));
+
             addLog(
                 user?.name || 'Admin',
                 next[pageId] ? 'Module Activated' : 'Module Deactivated',
@@ -137,8 +164,15 @@ export function AuthProvider({ children }) {
     };
 
     const isPageEnabled = (pageId) => {
-        // super_admin and admin always have access to all pages
+        // Strict enforcement for public portals — admins do not bypass this
+        // This allows admins to actually see the locked state when they disable it
+        if (pageId === 'login' || pageId === 'register') {
+            return enabledPages[pageId];
+        }
+
+        // super_admin and admin always have access to all internal pages
         if (activeRole === ROLES.SUPER_ADMIN || activeRole === ROLES.ADMIN) return true;
+        
         return enabledPages[pageId];
     };
 

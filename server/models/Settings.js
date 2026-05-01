@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const settingsSchema = new mongoose.Schema({
   // System
   systemName: { type: String, default: 'ReConnect & Rise' },
+  orgSlogan: { type: String, default: 'Empowering Communities' },
+  logoUrl: { type: String, default: '/logo.jpg' },
   maintenanceMode: { type: Boolean, default: false },
   allowRegistration: { type: Boolean, default: true },
   groupAnnouncement: { type: String, default: '' },
@@ -24,6 +26,18 @@ const settingsSchema = new mongoose.Schema({
   // Admin panel security mode: 'password' | '2fa' | 'facial'
   adminSecurityMode: { type: String, default: 'password' },
   allowProfilePhotoChange: { type: Boolean, default: false },
+
+  // Module Nexus (Enabled Pages)
+  enabledPages: {
+    type: Object,
+    default: {
+      dashboard: true, contributions: true, members: true,
+      disbursements: true, loans: true, requests: true,
+      votes: true, meetings: true, chat: true, wallet: true,
+      settings: true, profile: true, documentary: true, advice: true,
+      login: true, register: true, id_card: true, nexus: true
+    }
+  }
 
 }, { timestamps: true });
 

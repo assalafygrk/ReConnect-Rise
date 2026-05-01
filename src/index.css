@@ -15,19 +15,30 @@
   --font-body: 'DM Sans', sans-serif;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 * {
   box-sizing: border-box;
 }
 
 body {
   font-family: var(--font-body);
-  background-color: #FFF8F0;
-  color: #1A1A2E;
+  background-color: var(--color-bg);
+  color: var(--color-navy);
   margin: 0;
   padding: 0;
+  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
-h1, h2, h3, h4 {
+.dark body {
+  background-color: #0B1221;
+  color: #ffffff;
+}
+
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-heading);
 }
 

@@ -137,10 +137,10 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-10">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-10 transition-colors duration-500">
             
             {/* Master Header Card */}
-            <div className="relative bg-[#0F172A] rounded-[3rem] p-8 md:p-12 overflow-hidden shadow-2xl border border-white/5 flex flex-col lg:flex-row items-center lg:items-end gap-10">
+            <div className="relative bg-[#0F172A] dark:bg-[#1A2235]/60 dark:backdrop-blur-3xl rounded-[3rem] p-8 md:p-12 overflow-hidden shadow-2xl border border-white/5 dark:border-white/10 flex flex-col lg:flex-row items-center lg:items-end gap-10">
                 <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-indigo-600 rounded-full blur-[200px] opacity-10 pointer-events-none"></div>
                 
                 {/* Profile Photo - Serious Frame */}
@@ -159,7 +159,7 @@ export default function ProfilePage() {
                         <>
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="absolute -bottom-2 -right-2 w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-indigo-500 hover:scale-110 transition-all active:scale-95"
+                                className="absolute -bottom-2 -right-2 w-14 h-14 bg-indigo-600 dark:bg-[#3B82F6] text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-indigo-500 dark:hover:bg-[#2563EB] hover:scale-110 transition-all active:scale-95"
                             >
                                 <Camera size={24} />
                             </button>
@@ -168,10 +168,10 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                <div className="flex-1 text-center lg:text-left space-y-6">
+                <div className="flex-1 text-center lg:text-left space-y-6 z-10">
                     <div className="space-y-2">
                         <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
-                            <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md border border-indigo-500/20">
+                            <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 dark:bg-[#3B82F6]/20 dark:text-[#60A5FA] text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md border border-indigo-500/20">
                                 {roleDetails.label}
                             </span>
                             <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md border border-emerald-500/20 flex items-center gap-2">
@@ -185,25 +185,25 @@ export default function ProfilePage() {
                     
                     <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8 pt-4 border-t border-white/10">
                         <div className="flex items-center gap-3 text-white/60">
-                            <Mail size={18} className="text-indigo-400" />
+                            <Mail size={18} className="text-indigo-400 dark:text-[#3B82F6]" />
                             <span className="text-sm font-bold">{formData.email}</span>
                         </div>
                         <div className="flex items-center gap-3 text-white/60">
-                            <Phone size={18} className="text-indigo-400" />
+                            <Phone size={18} className="text-indigo-400 dark:text-[#3B82F6]" />
                             <span className="text-sm font-bold">{formData.phone}</span>
                         </div>
                         <div className="flex items-center gap-3 text-white/60">
-                            <Database size={18} className="text-indigo-400" />
+                            <Database size={18} className="text-indigo-400 dark:text-[#3B82F6]" />
                             <span className="text-sm font-bold">RR-MEM-{String(user?.id || '0').padStart(6, '0')}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-3 w-full lg:w-auto">
+                <div className="flex flex-col gap-3 w-full lg:w-auto z-10">
                     <button
                         onClick={() => setIsEditing(!isEditing)}
                         className={`px-8 py-5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl
-                            ${isEditing ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/20'}`}
+                            ${isEditing ? 'bg-rose-500/10 text-rose-400 dark:text-rose-300 border border-rose-500/20' : 'bg-indigo-600 dark:bg-[#3B82F6] text-white hover:bg-indigo-500 dark:hover:bg-[#2563EB] shadow-indigo-600/20 dark:shadow-[#3B82F6]/20'}`}
                     >
                         {isEditing ? <XCircle size={18} /> : <Edit size={18} />}
                         {isEditing ? 'Discard Changes' : 'Modify Credentials'}
@@ -224,7 +224,7 @@ export default function ProfilePage() {
                 <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-24">
                     
                     {/* Navigation Tabs */}
-                    <div className="bg-white rounded-[2.5rem] p-4 shadow-xl border border-black/5 space-y-2">
+                    <div className="bg-white dark:bg-white/5 dark:backdrop-blur-xl rounded-[2.5rem] p-4 shadow-xl border border-black/5 dark:border-white/10 space-y-2">
                         {[
                             { id: 'personal', label: 'Personal Intelligence', icon: Fingerprint },
                             { id: 'identity', label: 'Member Identity', icon: Bookmark },
@@ -236,9 +236,11 @@ export default function ProfilePage() {
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full flex items-center gap-4 px-6 py-5 rounded-2xl transition-all duration-300 group
-                                    ${activeTab === tab.id ? 'bg-[#0F172A] text-white shadow-xl translate-x-2' : 'hover:bg-gray-50 text-black/40 hover:text-black'}`}
+                                    ${activeTab === tab.id 
+                                        ? 'bg-[#0F172A] dark:bg-[#3B82F6]/20 text-white shadow-xl translate-x-2' 
+                                        : 'hover:bg-gray-50 dark:hover:bg-white/5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'}`}
                             >
-                                <tab.icon size={20} className={activeTab === tab.id ? 'text-indigo-400' : 'text-gray-300 group-hover:text-indigo-500'} />
+                                <tab.icon size={20} className={activeTab === tab.id ? 'text-indigo-400 dark:text-[#60A5FA]' : 'text-gray-300 dark:text-white/20 group-hover:text-indigo-500 dark:group-hover:text-white'} />
                                 <span className="text-[11px] font-black uppercase tracking-widest flex-1 text-left">{tab.label}</span>
                                 <ChevronRight size={16} className={activeTab === tab.id ? 'opacity-100' : 'opacity-0'} />
                             </button>
@@ -247,11 +249,11 @@ export default function ProfilePage() {
 
                     {/* Mini Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-600/20 space-y-2">
+                        <div className="bg-indigo-600 dark:bg-[#3B82F6]/20 dark:backdrop-blur-xl rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-600/20 dark:border dark:border-[#3B82F6]/30 space-y-2">
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Total Paid</p>
                             <h4 className="text-3xl font-serif font-black">{formatNaira(ledger.reduce((acc, c) => acc + (c.status === 'confirmed' ? c.amount : 0), 0))}</h4>
                         </div>
-                        <div className="bg-emerald-500 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/20 space-y-2">
+                        <div className="bg-emerald-500 dark:bg-emerald-500/20 dark:backdrop-blur-xl rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/20 dark:border dark:border-emerald-500/30 space-y-2">
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Dividends</p>
                             <h4 className="text-3xl font-serif font-black">{formatNaira(ledger.reduce((acc, c) => acc + (c.bonus || 0), 0))}</h4>
                         </div>
@@ -261,16 +263,16 @@ export default function ProfilePage() {
 
                 {/* Right Content Area */}
                 <div className="lg:col-span-8">
-                    <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl border border-black/5 min-h-[600px] relative overflow-hidden transition-all duration-500">
+                    <div className="bg-white dark:bg-[#1A2235]/60 dark:backdrop-blur-3xl rounded-[3rem] p-8 md:p-12 shadow-xl border border-black/5 dark:border-white/10 min-h-[600px] relative overflow-hidden transition-all duration-500">
                         
                         {activeTab === 'personal' && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-12">
-                                <div className="flex items-center justify-between border-b border-black/5 pb-8">
+                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-8">
                                     <div className="space-y-1">
-                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E]">Personal Intelligence</h2>
-                                        <p className="text-[11px] font-black text-black/30 uppercase tracking-[0.2em]">Confidential Member Dossier</p>
+                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E] dark:text-white">Personal Intelligence</h2>
+                                        <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Confidential Member Dossier</p>
                                     </div>
-                                    <Fingerprint size={32} className="text-black/5" />
+                                    <Fingerprint size={32} className="text-black/5 dark:text-white/10" />
                                 </div>
 
                                 {isEditing ? (
@@ -284,48 +286,48 @@ export default function ProfilePage() {
                                                 { label: 'Professional Designation', key: 'occupation', icon: Briefcase, type: 'text' },
                                             ].map((field) => (
                                                 <div key={field.key} className="space-y-3 group">
-                                                    <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] flex items-center gap-2 group-focus-within:text-indigo-600 transition-colors">
-                                                        <field.icon size={14} className="text-indigo-400" /> {field.label}
+                                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-[#3B82F6] transition-colors">
+                                                        <field.icon size={14} className="text-indigo-400 dark:text-[#3B82F6]" /> {field.label}
                                                     </label>
                                                     <input
                                                         type={field.type}
                                                         value={formData[field.key]}
                                                         onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all"
+                                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all"
                                                     />
                                                 </div>
                                             ))}
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-black/40 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                <Home size={14} className="text-indigo-400" /> Primary Residence
+                                        <div className="space-y-3 group">
+                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] flex items-center gap-2 group-focus-within:text-indigo-600 dark:group-focus-within:text-[#3B82F6] transition-colors">
+                                                <Home size={14} className="text-indigo-400 dark:text-[#3B82F6]" /> Primary Residence
                                             </label>
                                             <textarea
                                                 value={formData.residentialAddress}
                                                 onChange={(e) => setFormData({ ...formData, residentialAddress: e.target.value })}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all resize-none"
+                                                className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all resize-none"
                                                 rows={3}
                                             />
                                         </div>
 
-                                        <div className="pt-8 border-t border-black/5">
+                                        <div className="pt-8 border-t border-black/5 dark:border-white/10">
                                             <div className="flex items-center gap-3 mb-8">
-                                                <Users size={20} className="text-indigo-600" />
-                                                <h3 className="text-xl font-serif font-black">Succession & Next of Kin</h3>
+                                                <Users size={20} className="text-indigo-600 dark:text-[#3B82F6]" />
+                                                <h3 className="text-xl font-serif font-black dark:text-white">Succession & Next of Kin</h3>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/40 uppercase">Full Name</label>
-                                                    <input type="text" value={formData.nextOfKinName} onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all" />
+                                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase">Full Name</label>
+                                                    <input type="text" value={formData.nextOfKinName} onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all" />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/40 uppercase">Phone</label>
-                                                    <input type="tel" value={formData.nextOfKinPhone} onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all" />
+                                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase">Phone</label>
+                                                    <input type="tel" value={formData.nextOfKinPhone} onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all" />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-black/40 uppercase">Kin Relation</label>
-                                                    <input type="text" value={formData.nextOfKinRelation} onChange={(e) => setFormData({ ...formData, nextOfKinRelation: e.target.value })} className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all" />
+                                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase">Kin Relation</label>
+                                                    <input type="text" value={formData.nextOfKinRelation} onChange={(e) => setFormData({ ...formData, nextOfKinRelation: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all" />
                                                 </div>
                                             </div>
                                         </div>
@@ -333,9 +335,9 @@ export default function ProfilePage() {
                                         <button
                                             type="submit"
                                             disabled={saving}
-                                            className="w-full py-6 rounded-3xl bg-[#0F172A] text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl hover:shadow-indigo-600/20 transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
+                                            className="w-full py-6 rounded-3xl bg-[#0F172A] dark:bg-[#3B82F6] text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl hover:shadow-indigo-600/20 dark:hover:shadow-[#3B82F6]/30 transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
                                         >
-                                            {saving ? <Loader2 size={20} className="animate-spin text-indigo-400" /> : <ShieldCheck size={20} className="text-indigo-400" />}
+                                            {saving ? <Loader2 size={20} className="animate-spin text-indigo-400 dark:text-white" /> : <ShieldCheck size={20} className="text-indigo-400 dark:text-white" />}
                                             {saving ? 'Synchronizing Data...' : 'Confirm Profile Update'}
                                         </button>
                                     </form>
@@ -347,18 +349,18 @@ export default function ProfilePage() {
                                             { label: 'Professional Designation', value: formData.occupation, icon: Briefcase },
                                             { label: 'Geo-Origin', value: formData.stateOfOrigin, icon: MapPin },
                                         ].map((info, i) => (
-                                            <div key={i} className="p-8 bg-gray-50 rounded-[2.5rem] border border-black/5 hover:bg-white hover:shadow-xl transition-all duration-300">
-                                                <div className="flex items-center gap-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">
+                                            <div key={i} className="p-8 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] border border-black/5 dark:border-white/5 hover:bg-white dark:hover:bg-white/10 hover:shadow-xl dark:shadow-none transition-all duration-300">
+                                                <div className="flex items-center gap-3 text-[10px] font-black text-indigo-600 dark:text-[#3B82F6] uppercase tracking-widest mb-4">
                                                     <info.icon size={16} /> {info.label}
                                                 </div>
-                                                <p className="text-xl font-black text-[#1A1A2E]">{info.value || 'Not Registered'}</p>
+                                                <p className="text-xl font-black text-[#1A1A2E] dark:text-white">{info.value || 'Not Registered'}</p>
                                             </div>
                                         ))}
-                                        <div className="md:col-span-2 p-8 bg-gray-50 rounded-[2.5rem] border border-black/5">
-                                            <div className="flex items-center gap-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">
+                                        <div className="md:col-span-2 p-8 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] border border-black/5 dark:border-white/5">
+                                            <div className="flex items-center gap-3 text-[10px] font-black text-indigo-600 dark:text-[#3B82F6] uppercase tracking-widest mb-4">
                                                 <Home size={16} /> Primary Residence
                                             </div>
-                                            <p className="text-lg font-bold text-[#1A1A2E] leading-relaxed">
+                                            <p className="text-lg font-bold text-[#1A1A2E] dark:text-white leading-relaxed">
                                                 {formData.residentialAddress || 'No residency registered.'}
                                             </p>
                                         </div>
@@ -369,16 +371,16 @@ export default function ProfilePage() {
 
                         {activeTab === 'identity' && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-12">
-                                <div className="flex items-center justify-between border-b border-black/5 pb-8">
+                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-8">
                                     <div className="space-y-1">
-                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E]">Official Identity</h2>
-                                        <p className="text-[11px] font-black text-black/30 uppercase tracking-[0.2em]">Authorized Credentials</p>
+                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E] dark:text-white">Official Identity</h2>
+                                        <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Authorized Credentials</p>
                                     </div>
-                                    <Bookmark size={32} className="text-black/5" />
+                                    <Bookmark size={32} className="text-black/5 dark:text-white/10" />
                                 </div>
 
-                                <div className="flex flex-col items-center bg-[#F8FAFC] rounded-[3rem] p-6 md:p-10 border border-black/5 shadow-inner">
-                                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.4em] mb-12 text-center">Digital Brotherhood Pass</p>
+                                <div className="flex flex-col items-center bg-[#F8FAFC] dark:bg-white/5 rounded-[3rem] p-6 md:p-10 border border-black/5 dark:border-white/10 shadow-inner">
+                                    <p className="text-[10px] font-black text-indigo-600 dark:text-[#3B82F6] uppercase tracking-[0.4em] mb-12 text-center">Digital Brotherhood Pass</p>
                                     <div className="w-full overflow-x-auto pb-8 scrollbar-hide">
                                         <div className="min-w-[400px] flex justify-center py-4">
                                             <div className="transform scale-[0.8] sm:scale-100 lg:scale-110 origin-center transition-transform">
@@ -393,8 +395,8 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
                                     <div className="mt-16 flex gap-4">
-                                        <button className="px-8 py-4 rounded-xl bg-white border border-black/5 text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95">Download PDF</button>
-                                        <button className="px-8 py-4 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all active:scale-95">Verify Identity</button>
+                                        <button className="px-8 py-4 rounded-xl bg-white dark:bg-white/10 border border-black/5 dark:border-white/5 text-[10px] font-black dark:text-white uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/20 transition-all active:scale-95">Download PDF</button>
+                                        <button className="px-8 py-4 rounded-xl bg-indigo-600 dark:bg-[#3B82F6] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 dark:shadow-[#3B82F6]/30 hover:bg-indigo-500 dark:hover:bg-[#2563EB] transition-all active:scale-95">Verify Identity</button>
                                     </div>
                                 </div>
                             </div>
@@ -402,54 +404,58 @@ export default function ProfilePage() {
 
                         {activeTab === 'security' && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-12">
-                                <div className="flex items-center justify-between border-b border-black/5 pb-8">
+                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-8">
                                     <div className="space-y-1">
-                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E]">Security & Access</h2>
-                                        <p className="text-[11px] font-black text-black/30 uppercase tracking-[0.2em]">Credential Protection Protocol</p>
+                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E] dark:text-white">Security & Access</h2>
+                                        <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Credential Protection Protocol</p>
                                     </div>
-                                    <Lock size={32} className="text-black/5" />
+                                    <Lock size={32} className="text-black/5 dark:text-white/10" />
                                 </div>
 
                                 <form onSubmit={handlePasswordChange} className="space-y-10 max-w-lg">
                                     <div className="space-y-8">
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-black/40 uppercase tracking-widest flex items-center justify-between">
+                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest flex items-center justify-between">
                                                 <span>Master Credentials</span>
-                                                <button type="button" onClick={() => setShowPasswords(!showPasswords)} className="text-indigo-600 hover:underline flex items-center gap-1">
+                                                <button type="button" onClick={() => setShowPasswords(!showPasswords)} className="text-indigo-600 dark:text-[#3B82F6] hover:underline flex items-center gap-1">
                                                     {showPasswords ? <EyeOff size={12} /> : <Eye size={12} />}
                                                     {showPasswords ? 'Shield' : 'Reveal'}
                                                 </button>
                                             </label>
                                             <div className="space-y-4">
                                                 <div className="relative">
-                                                    <KeyRound className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20" size={18} />
+                                                    <KeyRound className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20" size={18} />
                                                     <input
                                                         type={showPasswords ? 'text' : 'password'}
                                                         placeholder="New Security Key"
                                                         value={passwords.new}
                                                         onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white rounded-2xl pl-16 pr-6 py-5 text-sm font-bold outline-none transition-all"
+                                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl pl-16 pr-6 py-5 text-sm font-bold dark:text-white outline-none transition-all"
+                                                        minLength={8}
+                                                        maxLength={64}
                                                     />
                                                 </div>
                                                 <div className="relative">
-                                                    <CheckCircle className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20" size={18} />
+                                                    <CheckCircle className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20" size={18} />
                                                     <input
                                                         type={showPasswords ? 'text' : 'password'}
                                                         placeholder="Repeat New Key"
                                                         value={passwords.confirm}
                                                         onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white rounded-2xl pl-16 pr-6 py-5 text-sm font-bold outline-none transition-all"
+                                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-white/10 rounded-2xl pl-16 pr-6 py-5 text-sm font-bold dark:text-white outline-none transition-all"
+                                                        minLength={8}
+                                                        maxLength={64}
                                                     />
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="p-8 bg-amber-50 rounded-[2.5rem] border border-amber-100 flex gap-4">
-                                        <AlertTriangle className="text-amber-600 shrink-0" size={24} />
+                                    <div className="p-8 bg-amber-50 dark:bg-amber-500/10 rounded-[2.5rem] border border-amber-100 dark:border-amber-500/20 flex gap-4">
+                                        <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0" size={24} />
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-black text-amber-900 uppercase">Warning Protocol</p>
-                                            <p className="text-xs font-bold text-amber-700 leading-relaxed">
+                                            <p className="text-[10px] font-black text-amber-900 dark:text-amber-300 uppercase">Warning Protocol</p>
+                                            <p className="text-xs font-bold text-amber-700 dark:text-amber-200/70 leading-relaxed">
                                                 Updating your master key will revoke all active sessions. Ensure you have memorized your new credentials before committing.
                                             </p>
                                         </div>
@@ -458,31 +464,31 @@ export default function ProfilePage() {
                                     <button
                                         type="submit"
                                         disabled={saving || !passwords.new}
-                                        className="w-full py-6 rounded-3xl bg-[#1A1A2E] text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-xl hover:bg-black transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
+                                        className="w-full py-6 rounded-3xl bg-[#1A1A2E] dark:bg-[#3B82F6] text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-xl hover:bg-black dark:hover:bg-[#2563EB] transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
                                     >
                                         {saving ? <Loader2 size={20} className="animate-spin" /> : <Lock size={20} />}
                                         Update Access Key
                                     </button>
                                 </form>
 
-                                <div className="pt-12 border-t border-black/5">
+                                <div className="pt-12 border-t border-black/5 dark:border-white/10">
                                     <div className="flex items-center justify-between mb-8">
                                         <div className="space-y-1">
-                                            <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">Two-Factor Protocols</h3>
-                                            <p className="text-[11px] font-black text-black/30 uppercase tracking-[0.2em]">Multi-Layer Defense</p>
+                                            <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">Two-Factor Protocols</h3>
+                                            <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Multi-Layer Defense</p>
                                         </div>
-                                        <ShieldCheck size={28} className={twoFactorEnabled ? "text-emerald-500" : "text-black/10"} />
+                                        <ShieldCheck size={28} className={twoFactorEnabled ? "text-emerald-500" : "text-black/10 dark:text-white/10"} />
                                     </div>
 
-                                    <div className={`p-8 rounded-[2.5rem] border transition-all ${twoFactorEnabled ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-black/5'}`}>
+                                    <div className={`p-8 rounded-[2.5rem] border transition-all ${twoFactorEnabled ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' : 'bg-gray-50 dark:bg-white/5 border-black/5 dark:border-white/10'}`}>
                                         <div className="flex items-center justify-between gap-6 flex-col sm:flex-row text-center sm:text-left">
                                             <div className="flex flex-col sm:flex-row items-center gap-5">
-                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${twoFactorEnabled ? 'bg-white text-emerald-600' : 'bg-white text-black/20'}`}>
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${twoFactorEnabled ? 'bg-white dark:bg-emerald-500 text-emerald-600 dark:text-white' : 'bg-white dark:bg-white/10 text-black/20 dark:text-white/20'}`}>
                                                     <Fingerprint size={28} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-[#1A1A2E]">Biometric Authenticator</p>
-                                                    <p className="text-[10px] text-black/40 font-bold uppercase tracking-widest mt-1">
+                                                    <p className="text-sm font-black text-[#1A1A2E] dark:text-white">Biometric Authenticator</p>
+                                                    <p className="text-[10px] text-black/40 dark:text-white/40 font-bold uppercase tracking-widest mt-1">
                                                         {twoFactorEnabled ? 'Active Protection' : 'Protection Disabled'}
                                                     </p>
                                                 </div>
@@ -492,7 +498,7 @@ export default function ProfilePage() {
                                                     setTwoFactorEnabled(!twoFactorEnabled);
                                                     toast.success(`2FA Protocol ${!twoFactorEnabled ? 'Activated' : 'Revoked'}`);
                                                 }}
-                                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${twoFactorEnabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-white border border-black/10 text-[#1A1A2E]'}`}
+                                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${twoFactorEnabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 dark:shadow-emerald-500/30' : 'bg-white dark:bg-white/10 border border-black/10 dark:border-white/5 text-[#1A1A2E] dark:text-white dark:hover:bg-white/20'}`}
                                             >
                                                 {twoFactorEnabled ? 'Disable' : 'Activate'}
                                             </button>
@@ -504,49 +510,49 @@ export default function ProfilePage() {
 
                         {activeTab === 'history' && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-12">
-                                <div className="flex items-center justify-between border-b border-black/5 pb-8">
+                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-8">
                                     <div className="space-y-1">
-                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E]">Financial Compliance</h2>
-                                        <p className="text-[11px] font-black text-black/30 uppercase tracking-[0.2em]">Master Ledger Sync</p>
+                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E] dark:text-white">Financial Compliance</h2>
+                                        <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Master Ledger Sync</p>
                                     </div>
-                                    <Database size={32} className="text-black/5" />
+                                    <Database size={32} className="text-black/5 dark:text-white/10" />
                                 </div>
 
-                                <div className="overflow-hidden border border-black/5 rounded-[2.5rem]">
+                                <div className="overflow-hidden border border-black/5 dark:border-white/10 rounded-[2.5rem]">
                                     <table className="w-full text-left">
                                         <thead>
-                                            <tr className="bg-gray-50 border-b border-black/5">
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 tracking-widest">Temporal Point</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 tracking-widest text-center">Status</th>
-                                                <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 tracking-widest text-right">Contribution</th>
+                                            <tr className="bg-gray-50 dark:bg-white/5 border-b border-black/5 dark:border-white/10">
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 dark:text-white/40 tracking-widest">Temporal Point</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 dark:text-white/40 tracking-widest text-center">Status</th>
+                                                <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 dark:text-white/40 tracking-widest text-right">Contribution</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-black/5">
+                                        <tbody className="divide-y divide-black/5 dark:divide-white/10">
                                             {loadingLedger ? (
-                                                <tr><td colSpan={3} className="px-8 py-20 text-center text-[10px] font-black uppercase text-black/20 tracking-widest">Synchronizing Ledger Data...</td></tr>
+                                                <tr><td colSpan={3} className="px-8 py-20 text-center text-[10px] font-black uppercase text-black/20 dark:text-white/20 tracking-widest">Synchronizing Ledger Data...</td></tr>
                                             ) : ledger.length === 0 ? (
-                                                <tr><td colSpan={3} className="px-8 py-20 text-center text-[10px] font-black uppercase text-black/20 tracking-widest">No Compliance Records Found.</td></tr>
+                                                <tr><td colSpan={3} className="px-8 py-20 text-center text-[10px] font-black uppercase text-black/20 dark:text-white/20 tracking-widest">No Compliance Records Found.</td></tr>
                                             ) : ledger.map((row, i) => (
-                                                <tr key={i} className="hover:bg-gray-50 transition-colors group">
+                                                <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-black/20 group-hover:bg-indigo-50 group-hover:text-indigo-400 transition-colors">
+                                                            <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center text-black/20 dark:text-white/40 group-hover:bg-indigo-50 dark:group-hover:bg-[#3B82F6]/20 group-hover:text-indigo-400 dark:group-hover:text-[#3B82F6] transition-colors">
                                                                 <Calendar size={18} />
                                                             </div>
                                                             <div>
-                                                                <p className="text-sm font-black text-[#1A1A2E]">{row.weekId ? `Cycle Week ${row.weekId}` : 'Special Outlay'}</p>
-                                                                <p className="text-[10px] font-bold text-black/30 uppercase">{dayjs(row.createdAt).format('DD MMM YYYY')}</p>
+                                                                <p className="text-sm font-black text-[#1A1A2E] dark:text-white">{row.weekId ? `Cycle Week ${row.weekId}` : 'Special Outlay'}</p>
+                                                                <p className="text-[10px] font-bold text-black/30 dark:text-white/40 uppercase">{dayjs(row.createdAt).format('DD MMM YYYY')}</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6 text-center">
-                                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${row.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${row.status === 'confirmed' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-500/20'}`}>
                                                             {row.status === 'confirmed' ? 'Verified' : 'Pending'}
                                                         </span>
                                                     </td>
                                                     <td className="px-8 py-6 text-right">
-                                                        <p className="text-lg font-black text-[#1A1A2E]">{formatNaira(row.amount)}</p>
-                                                        {row.bonus > 0 && <p className="text-[10px] font-black text-emerald-500 uppercase">+ {formatNaira(row.bonus)} Dividend</p>}
+                                                        <p className="text-lg font-black text-[#1A1A2E] dark:text-white">{formatNaira(row.amount)}</p>
+                                                        {row.bonus > 0 && <p className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase">+ {formatNaira(row.bonus)} Dividend</p>}
                                                     </td>
                                                 </tr>
                                             ))}

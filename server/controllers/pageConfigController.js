@@ -21,4 +21,15 @@ const setPageConfig = async (req, res) => {
   res.json(pageConfig);
 };
 
-module.exports = { getAllConfigs, setPageConfig };
+const deletePageConfig = async (req, res) => {
+  const { pageId } = req.params;
+  await PageConfig.findOneAndDelete({ pageId });
+  res.json({ message: 'Page config reset successfully' });
+};
+
+const deleteAllPageConfigs = async (req, res) => {
+  await PageConfig.deleteMany({});
+  res.json({ message: 'All page configs reset successfully' });
+};
+
+module.exports = { getAllConfigs, setPageConfig, deletePageConfig, deleteAllPageConfigs };

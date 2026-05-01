@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BrandProvider } from './context/BrandContext';
 import { PageConfigProvider } from './context/PageConfigContext';
@@ -47,6 +48,7 @@ function PageGuard({ children, id }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <PageConfigProvider>
         <BrandProvider>
@@ -172,5 +174,6 @@ export default function App() {
         </BrandProvider>
       </PageConfigProvider>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }

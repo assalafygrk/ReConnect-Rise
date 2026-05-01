@@ -31,6 +31,16 @@ const generateToken = (user) => {
 const authUser = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || email.length > 100) {
+    res.status(400);
+    throw new Error('Invalid email format');
+  }
+
+  if (!password || password.length < 8 || password.length > 64) {
+    res.status(400);
+    throw new Error('Password must be between 8 and 64 characters');
+  }
+
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
@@ -53,7 +63,22 @@ const authUser = async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = async (req, res) => {
-  const { name, email, password, phone, role } = req.body;
+  const { 
+    name, email, password, phone, role,
+    firstName, lastName, middleName, 
+    dateOfBirth, residentialAddress, 
+    occupation, facialUpload 
+  } = req.body;
+
+  if (!email || email.length > 100) {
+    res.status(400);
+    throw new Error('Invalid email format');
+  }
+
+  if (!password || password.length < 8 || password.length > 64) {
+    res.status(400);
+    throw new Error('Password must be between 8 and 64 characters');
+  }
 
   const userExists = await User.findOne({ email });
 
@@ -68,6 +93,13 @@ const registerUser = async (req, res) => {
     password,
     phone,
     role: role || 'member',
+    firstName,
+    lastName,
+    middleName,
+    dateOfBirth,
+    residentialAddress,
+    occupation,
+    facialUpload
   });
 
   if (user) {

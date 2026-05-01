@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Eye, EyeOff, ShieldCheck, ArrowRight, UserPlus, Upload, ArrowLeft, Camera } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, ArrowRight, UserPlus, Upload, ArrowLeft, Camera, CheckCircle2, Fingerprint } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useBrand } from '../context/BrandContext';
 import { usePageConfig } from '../context/PageConfigContext';
@@ -11,9 +11,20 @@ import IdCard from '../components/IdCard';
 
 export default function RegistrationPage() {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, isPageEnabled } = useAuth();
     const { brand } = useBrand();
     const { config } = usePageConfig('register');
+
+    if (!isPageEnabled('register') || config.registrationOpen === false) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#0B1221] text-white space-y-4 px-4 text-center">
+                <ShieldCheck size={48} className="text-[#3B82F6]" />
+                <h1 className="text-3xl font-black font-serif">Registration Closed</h1>
+                <p className="text-white/50 text-sm max-w-md">{config.closedNotice || 'We are not accepting new members at this time.'}</p>
+                <Link to="/login" className="px-6 py-3 bg-[#3B82F6] rounded-xl font-bold mt-4 hover:bg-[#2563EB] transition-colors">Return to Login</Link>
+            </div>
+        );
+    }
 
     // Multi-step
     const [step, setStep] = useState(1);
@@ -25,12 +36,10 @@ export default function RegistrationPage() {
         email: '',
         phone: '',
         password: '',
-        facialUpload: null, // Now holds Data URL
+        facialUpload: null, 
         occupation: '',
         residentialAddress: '',
-        dateOfBirth: '',
-        educationLevel: '',
-        school: ''
+        dateOfBirth: ''
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -62,12 +71,7 @@ export default function RegistrationPage() {
 
         // Final validation for Step 2
         if (!formData.facialUpload || !formData.residentialAddress || !formData.dateOfBirth || !formData.occupation) {
-            toast.error('Please complete all required fields on this step (including Photo and Occupation)');
-            return;
-        }
-
-        if (formData.educationLevel && formData.educationLevel !== 'None' && !formData.school) {
-            toast.error('Please select your school or institution');
+            toast.error('Please complete all required fields on this step (including Biometric Capture)');
             return;
         }
 
@@ -75,16 +79,6 @@ export default function RegistrationPage() {
         try {
             const data = await apiRegister(formData);
             login(data.token);
-
-            // Build member object for ID Card
-            const fullName = [formData.firstName, formData.middleName, formData.lastName].filter(Boolean).join(' ');
-            setRegisteredMember({
-                name: fullName,
-                photo: formData.facialUpload,
-                occupation: formData.occupation,
-                idNo: 'RR-' + Math.floor(1000 + Math.random() * 9000), // Random ID for demo
-                issueDate: new Date()
-            });
 
             setShowSuccessModal(true);
         } catch (err) {
@@ -95,142 +89,161 @@ export default function RegistrationPage() {
     };
 
     const finishRegistration = () => {
-        toast.success('Registration successful. Welcome, brother!');
+        toast.success('Identity Secured. Welcome!');
         navigate('/dashboard');
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4"
-            style={{ background: 'linear-gradient(135deg, #1A1A2E 0%, #252545 50%, #1A1A2E 100%)' }}>
+        <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 relative overflow-hidden bg-[#0B1221]">
+            
+            {/* Background Blur Elements */}
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#3B82F6] rounded-full blur-[150px] opacity-[0.05] pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#F5A623] rounded-full blur-[150px] opacity-[0.05] pointer-events-none"></div>
+            <div className="absolute top-[20%] right-[10%] text-white/[0.02] -rotate-12 pointer-events-none">
+                <Fingerprint size={300} />
+            </div>
 
-            {/* Background patterns */}
-            <div className="fixed inset-0 opacity-5 pointer-events-none"
-                style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, #E8820C 0%, transparent 50%), radial-gradient(circle at 75% 75%, #F5A623 0%, transparent 50%)' }} />
-
-            <div className="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="relative w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center z-10">
 
                 {/* Left Side: Branding */}
                 <div className="hidden lg:block space-y-8">
-                    <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8820C]/20 border border-[#E8820C]/30 text-[#F5A623] text-[10px] font-bold uppercase tracking-widest mb-4">
-                            <ShieldCheck size={12} />
+                    <div className="space-y-6">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#FCD34D] text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md">
+                            <ShieldCheck size={14} className="animate-pulse" />
                             {config.badgeText}
                         </div>
-                        <h1 className="text-6xl font-black text-white leading-tight mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        <h1 className="text-5xl lg:text-7xl font-black text-white leading-[1.1] font-serif tracking-tight">
                             {config.pageHeadline}
                         </h1>
-                        <p className="text-white/50 text-lg max-w-md leading-relaxed">
+                        <p className="text-white/60 text-xl max-w-md leading-relaxed font-serif">
                             {config.pageSubtitle}
                         </p>
+                    </div>
+
+                    <div className="flex gap-4 items-center pt-8 border-t border-white/10">
+                        <div className="flex -space-x-4">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0B1221] bg-white/10 backdrop-blur-md flex items-center justify-center text-white/50 text-xs font-bold shadow-sm">
+                                    <UserPlus size={16} />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-sm font-medium text-white/50">
+                            Join over <span className="text-white font-bold">1,000+</span> brothers.
+                        </div>
                     </div>
                 </div>
 
                 {/* Right Side: Registration Form */}
-                <div className="relative group">
-                    {/* <div className="absolute -inset-1 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div> */}
+                <div className="relative w-full max-w-lg mx-auto">
+                    <div className="bg-[#1A2235]/60 backdrop-blur-3xl rounded-[2.5rem] p-8 md:p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-white/10 relative overflow-hidden">
+                        
+                        {/* Step Indicator Line */}
+                        <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5">
+                            <div 
+                                className="h-full bg-gradient-to-r from-[#3B82F6] to-[#F5A623] transition-all duration-700"
+                                style={{ width: step === 1 ? '50%' : '100%' }}
+                            />
+                        </div>
 
-                    <div className="relative rounded-[2rem] p-8 md:p-12 shadow-2xl border border-white/10"
-                        style={{ background: 'rgba(255,248,240,0.04)', backdropFilter: 'blur(40px)' }}>
-
-                        <div className="text-center mb-10">
-                            <div className="inline-flex p-1 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6">
-                                <div className="w-20 h-20 rounded-xl overflow-hidden shadow-2xl">
+                        <div className="text-center mb-10 mt-4">
+                            <div className="inline-flex p-1.5 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden shadow-2xl">
                                     <img src={brand.logoUrl} alt={brand.orgName + ' Logo'} className="w-full h-full object-cover" />
                                 </div>
                             </div>
-                            <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                                {step === 1 ? 'Join the Brotherhood' : 'Verification Details'}
+                            <h2 className="text-3xl font-black text-white mb-3 font-serif tracking-wide">
+                                {step === 1 ? 'Join the Brotherhood' : 'Biometric Verification'}
                             </h2>
-                            <p className="text-white/40 text-sm">
+                            <p className="text-white/40 text-sm font-medium">
                                 {step === 1 ? config.step1Label : config.step2Label}
                             </p>
                         </div>
 
                         {/* Registration Closed Banner */}
                         {config.registrationOpen === false && (
-                            <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm font-medium text-center">
-                                {config.closedNotice}
+                            <div className="mb-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold text-center flex items-center justify-center gap-2">
+                                <ShieldCheck size={16} /> {config.closedNotice}
                             </div>
                         )}
 
-                        <form onSubmit={step === 1 ? handleNextStep : handleSubmit} className="space-y-6">
+                        <form onSubmit={step === 1 ? handleNextStep : handleSubmit} className="space-y-5">
 
                             {/* STEP 1 FIELDS */}
                             {step === 1 && (
-                                <>
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">First Name</label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">First Name</label>
                                             <input
                                                 type="text"
                                                 name="firstName"
                                                 value={formData.firstName}
                                                 onChange={handleChange}
-                                                placeholder="First Name"
-                                                className="w-full px-4 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                placeholder="Enter first name"
+                                                className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                                maxLength={100}
                                                 required
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Last Name</label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Last Name</label>
                                             <input
                                                 type="text"
                                                 name="lastName"
                                                 value={formData.lastName}
                                                 onChange={handleChange}
-                                                placeholder="Last Name"
-                                                className="w-full px-4 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                placeholder="Enter last name"
+                                                className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                                maxLength={100}
                                                 required
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Middle Name (Optional)</label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Middle Name (Optional)</label>
                                         <input
                                             type="text"
                                             name="middleName"
                                             value={formData.middleName}
                                             onChange={handleChange}
-                                            placeholder="Middle name"
-                                            className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
-                                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            placeholder="Enter middle name"
+                                            className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                            maxLength={100}
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Email Address</label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Email Address</label>
                                         <input
                                             type="email"
                                             name="email"
                                             value={formData.email}
                                             onChange={handleChange}
-                                            placeholder="your@email.com"
-                                            className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
-                                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            placeholder="brother@example.com"
+                                            className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                            maxLength={100}
                                             required
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Phone Number</label>
                                         <input
                                             type="tel"
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleChange}
-                                            placeholder="Your phone number"
-                                            className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
+                                            placeholder="e.g., 08012345678"
+                                            className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
                                             maxLength={11}
-                                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                                             required
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Password</label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Secure Password</label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
@@ -238,157 +251,122 @@ export default function RegistrationPage() {
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 placeholder="••••••••"
-                                                className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all pr-14"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all pr-12 focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                                minLength={8}
+                                                maxLength={64}
                                                 required
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors p-2"
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors p-2"
                                             >
-                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
                                     </div>
 
                                     <button
                                         type="submit"
-                                        className="group relative w-full py-4.5 rounded-2xl font-bold text-white transition-all duration-300 overflow-hidden shadow-[0_10px_40px_-10px_rgba(232,130,12,0.5)] active:scale-[0.98] mt-4"
-                                        style={{ background: 'linear-gradient(135deg, #E8820C, #F5A623)' }}>
-                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                                        <span className="relative flex items-center justify-center gap-3">
-                                            Continue to Step 2 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                        className="group relative w-full py-4 rounded-2xl font-bold text-white transition-all duration-300 overflow-hidden shadow-lg mt-8 active:scale-[0.98] border border-white/10"
+                                        style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
+                                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                        <span className="relative flex items-center justify-center gap-2 text-sm tracking-wide">
+                                            Continue to Verification <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                         </span>
                                     </button>
-                                </>
+                                </div>
                             )}
 
                             {/* STEP 2 FIELDS */}
                             {step === 2 && (
-                                <>
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Live Facial Capture</label>
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
+                                            <Fingerprint size={12} className="text-[#3B82F6]" /> Biometric Facial Capture
+                                        </label>
 
-                                            {isCameraActive ? (
-                                                <LiveFacialCapture
-                                                    onCapture={(dataUrl) => {
-                                                        setFormData({ ...formData, facialUpload: dataUrl });
-                                                        setIsCameraActive(false);
-                                                    }}
-                                                    onCancel={() => setIsCameraActive(false)}
-                                                />
-                                            ) : (
-                                                <div
-                                                    className="w-full px-6 py-6 border-2 border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#E8820C]/50 transition-colors bg-white/5"
-                                                    onClick={() => setIsCameraActive(true)}
-                                                >
-                                                    {formData.facialUpload ? (
-                                                        <div className="flex flex-col items-center">
-                                                            <div className="w-20 h-20 rounded-full overflow-hidden shadow-xl mb-3 border-2 border-[#E8820C]">
-                                                                <img src={formData.facialUpload} alt="Face captured" className="w-full h-full object-cover transform scale-x-[-1]" />
-                                                            </div>
-                                                            <p className="text-white/60 text-sm font-medium">Tap to retake photo</p>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <Camera className="text-[#E8820C] mb-2" size={24} />
-                                                            <p className="text-white/60 text-sm font-medium">
-                                                                Tap to initialize camera capture
-                                                            </p>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Occupation</label>
-                                            <input
-                                                type="text"
-                                                name="occupation"
-                                                value={formData.occupation}
-                                                onChange={handleChange}
-                                                placeholder="Your current profession / job"
-                                                className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-                                                required
+                                        {isCameraActive ? (
+                                            <LiveFacialCapture
+                                                onCapture={(dataUrl) => {
+                                                    setFormData({ ...formData, facialUpload: dataUrl });
+                                                    setIsCameraActive(false);
+                                                }}
+                                                onCancel={() => setIsCameraActive(false)}
                                             />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Date of Birth</label>
-                                            <input
-                                                type="date"
-                                                name="dateOfBirth"
-                                                value={formData.dateOfBirth}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 rounded-2xl text-white outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Residential Address</label>
-                                            <textarea
-                                                name="residentialAddress"
-                                                value={formData.residentialAddress}
-                                                onChange={handleChange}
-                                                placeholder="Full street address"
-                                                rows="2"
-                                                className="w-full px-6 py-4 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50 resize-none"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-                                                required
-                                            ></textarea>
-                                        </div>
-
-                                        {/* <div className="space-y-2">
-                                            <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Education Level (Optional)</label>
-                                            <select
-                                                name="educationLevel"
-                                                value={formData.educationLevel}
-                                                onChange={handleChange}
-                                                className="w-full px-6 py-4 rounded-2xl text-white outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50 appearance-none cursor-pointer"
-                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                        ) : (
+                                            <div
+                                                className="w-full p-6 border border-white/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#3B82F6]/50 transition-all bg-white/5 group relative overflow-hidden"
+                                                onClick={() => setIsCameraActive(true)}
                                             >
-                                                <option value="" className="bg-[#252545]">Select Level (Optional)...</option>
-                                                <option value="Primary" className="bg-[#252545]">Primary</option>
-                                                <option value="Secondary" className="bg-[#252545]">Secondary</option>
-                                                <option value="Undergraduate" className="bg-[#252545]">Undergraduate</option>
-                                                <option value="Postgraduate" className="bg-[#252545]">Postgraduate</option>
-                                                <option value="Other" className="bg-[#252545]">Other</option>
-                                            </select>
-                                        </div>
-                                        
-
-                                        {formData.educationLevel && (
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em] ml-2">Select School</label>
-                                                <select
-                                                    name="school"
-                                                    value={formData.school}
-                                                    onChange={handleChange}
-                                                    className="w-full px-6 py-4 rounded-2xl text-white outline-none transition-all focus:ring-2 focus:ring-[#E8820C]/50 appearance-none cursor-pointer"
-                                                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-                                                >
-                                                    <option value="" className="bg-[#252545]">Select Institution...</option>
-                                                    <option value="University of Lagos" className="bg-[#252545]">University of Lagos</option>
-                                                    <option value="Ahmadu Bello University" className="bg-[#252545]">Ahmadu Bello University</option>
-                                                    <option value="University of Ibadan" className="bg-[#252545]">University of Ibadan</option>
-                                                    <option value="Bayero University Kano" className="bg-[#252545]">Bayero University Kano</option>
-                                                    <option value="Other" className="bg-[#252545]">Other Institution</option>
-                                                </select>
+                                                <div className="absolute inset-0 bg-[#3B82F6]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                {formData.facialUpload ? (
+                                                    <div className="flex flex-col items-center relative z-10">
+                                                        <div className="relative w-24 h-24 rounded-full overflow-hidden shadow-2xl mb-4 border-[3px] border-[#3B82F6]">
+                                                            <img src={formData.facialUpload} alt="Face captured" className="w-full h-full object-cover transform scale-x-[-1]" />
+                                                            <div className="absolute inset-0 bg-[#3B82F6]/20 mix-blend-overlay"></div>
+                                                        </div>
+                                                        <p className="text-[#3B82F6] text-xs font-bold uppercase tracking-widest flex items-center gap-1"><Camera size={12} /> Retake Biometrics</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center relative z-10 space-y-3 py-4">
+                                                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform shadow-inner text-[#3B82F6]">
+                                                            <Fingerprint size={32} />
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-white/80 text-sm font-bold">Initialize Scanner</p>
+                                                            <p className="text-white/40 text-[10px] mt-1">Required for secure identity verification</p>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )} */}
+                                        )}
                                     </div>
 
-                                    <div className="flex gap-4 mt-6">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Occupation / Profession</label>
+                                        <input
+                                            type="text"
+                                            name="occupation"
+                                            value={formData.occupation}
+                                            onChange={handleChange}
+                                            placeholder="Current occupation"
+                                            className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Date of Birth</label>
+                                        <input
+                                            type="date"
+                                            name="dateOfBirth"
+                                            value={formData.dateOfBirth}
+                                            onChange={handleChange}
+                                            className="w-full px-5 py-3.5 rounded-2xl text-white outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm"
+                                            style={{ colorScheme: 'dark' }}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Residential Address</label>
+                                        <textarea
+                                            name="residentialAddress"
+                                            value={formData.residentialAddress}
+                                            onChange={handleChange}
+                                            placeholder="Full residential street address"
+                                            rows="2"
+                                            className="w-full px-5 py-3.5 rounded-2xl text-white placeholder-white/20 outline-none transition-all focus:ring-2 focus:ring-[#3B82F6]/50 focus:border-[#3B82F6]/50 bg-white/5 border border-white/10 text-sm resize-none"
+                                            required
+                                        ></textarea>
+                                    </div>
+
+                                    <div className="flex gap-4 mt-8">
                                         <button
                                             type="button"
                                             onClick={handlePrevStep}
-                                            className="px-6 py-4.5 rounded-2xl font-bold text-white/70 hover:text-white transition-colors bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center"
+                                            className="px-5 py-4 rounded-2xl font-bold text-white/50 hover:text-white transition-colors bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center active:scale-95"
                                         >
                                             <ArrowLeft size={18} />
                                         </button>
@@ -396,69 +374,66 @@ export default function RegistrationPage() {
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="group flex-1 relative py-4.5 rounded-2xl font-bold text-white transition-all duration-300 overflow-hidden shadow-[0_10px_40px_-10px_rgba(232,130,12,0.5)] active:scale-[0.98] disabled:opacity-50"
-                                            style={{ background: 'linear-gradient(135deg, #E8820C, #F5A623)' }}>
-                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                                            <span className="relative flex items-center justify-center gap-3">
+                                            className="group flex-1 relative py-4 rounded-2xl font-bold text-white transition-all duration-300 overflow-hidden shadow-lg active:scale-[0.98] disabled:opacity-50 border border-white/10"
+                                            style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' }}>
+                                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                            <span className="relative flex items-center justify-center gap-2 text-sm tracking-wide">
                                                 {loading ? (
                                                     <>
                                                         <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                                                         </svg>
-                                                        Registering...
+                                                        Securing Identity...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <UserPlus size={18} className="group-hover:-translate-y-1 transition-transform" /> Complete Registration
+                                                        <ShieldCheck size={16} className="group-hover:-translate-y-0.5 transition-transform" /> Finalize Registration
                                                     </>
                                                 )}
                                             </span>
                                         </button>
                                     </div>
-                                </>
+                                </div>
                             )}
                         </form>
 
                         {step === 1 && (
                             <div className="mt-8 text-center">
-                                <p className="text-white/60 text-sm">
-                                    Already a brother?{' '}
-                                    <Link to="/login" className="text-[#F5A623] hover:text-white font-bold transition-colors">
-                                        Login Document
+                                <p className="text-white/40 text-xs font-medium">
+                                    Already a member?{' '}
+                                    <Link to="/login" className="text-[#FCD34D] hover:text-white font-bold transition-colors">
+                                        Access Dashboard
                                     </Link>
                                 </p>
                             </div>
                         )}
-
-                        <div className="mt-10 flex items-center justify-center gap-4 text-white/30 text-[10px] font-bold uppercase tracking-widest">
-                            <span className="w-10 h-px bg-white/10"></span>
-                            <ShieldCheck size={14} /> {step === 1 ? 'Secured Form' : 'Identity Verification'}
-                            <span className="w-10 h-px bg-white/10"></span>
-                        </div>
                     </div>
                 </div>
             </div>
 
             {/* SUCCESS MODAL Overlay */}
             {showSuccessModal && (
-                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-                    <div className="max-w-md w-full bg-[#1A1A2E] rounded-[2rem] border border-white/10 shadow-2xl p-8 animate-in slide-in-from-bottom flex flex-col items-center">
-                        <div className="w-16 h-16 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center mb-6 ring-4 ring-green-500/10">
-                            <CheckCircle2 size={32} />
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-[#0B1221]/90 backdrop-blur-xl transition-all">
+                    <div className="max-w-md w-full bg-[#1A2235] rounded-[2.5rem] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] p-10 animate-in zoom-in-95 duration-500 flex flex-col items-center relative overflow-hidden">
+                        
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#3B82F6] rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
+
+                        <div className="relative z-10 w-20 h-20 rounded-full bg-[#3B82F6]/10 text-[#3B82F6] flex items-center justify-center mb-6 border border-[#3B82F6]/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                            <CheckCircle2 size={40} className="animate-in fade-in zoom-in duration-700 delay-150" />
                         </div>
-                        <h2 className="text-2xl font-bold text-white mb-2 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
-                            Registration Successful!
+                        <h2 className="text-3xl font-black text-white mb-2 text-center font-serif">
+                            Identity Secured
                         </h2>
-                        <p className="text-white/50 text-center text-sm mb-8">
-                            Your identity has been secured. Welcome to the Brotherhood.
+                        <p className="text-white/50 text-center text-sm mb-10 leading-relaxed">
+                            Your biometric data and profile have been successfully registered to the network. Welcome to the Brotherhood.
                         </p>
 
                         <button
                             onClick={finishRegistration}
-                            className="w-full py-4 rounded-xl font-bold text-white transition-all bg-[#0A32B3] hover:bg-[#1A45CE] shadow-lg flex items-center justify-center gap-2"
+                            className="w-full py-4 rounded-2xl font-bold text-white transition-all bg-[#3B82F6] hover:bg-[#2563EB] shadow-[0_8px_20px_rgba(59,130,246,0.3)] active:scale-95 flex items-center justify-center gap-2 border border-white/10"
                         >
-                            Continue to Dashboard <ArrowRight size={18} />
+                            Access Dashboard <ArrowRight size={18} />
                         </button>
                     </div>
                 </div>
@@ -466,4 +441,3 @@ export default function RegistrationPage() {
         </div>
     );
 }
-
