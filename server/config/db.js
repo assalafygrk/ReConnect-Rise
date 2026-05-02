@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 let cachedConnection = null;
 
 const connectDB = async () => {
-  if (cachedConnection) {
+  if (cachedConnection && mongoose.connection.readyState === 1) {
     return cachedConnection;
   }
 
