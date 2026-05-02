@@ -14,12 +14,27 @@ const getDashboardSummary = async (req, res) => {
     
     // Get confirmed contributions
     const contributions = await Contribution.find({ status: 'confirmed' });
-    const totalWelfare = contributions
+    const totalWelfareIn = contributions
       .filter(c => c.type === 'welfare')
       .reduce((acc, c) => acc + c.amount, 0);
-    const totalLoanFund = contributions
+    const totalLoanFundIn = contributions
       .filter(c => c.type === 'loan_fund')
       .reduce((acc, c) => acc + c.amount, 0);
+
+    // Get total disbursed loans (outflow)
+    const disbursedLoansData = await Loan.find({ status: { $in: ['disbursed', 'active', 'repaid'] } });
+    const totalLoansOutflow = disbursedLoansData.reduce((acc, l) => acc + l.amount, 0);
+    const totalRepaymentsIn = disbursedLoansData.reduce((acc, l) => acc + (l.amountRepaid || 0), 0);
+
+    // Get total disbursements (outflow)
+    const disbursementsData = await Disbursement.find({ status: 'approved' });
+    const totalDisbursementsOutflow = disbursementsData.reduce((acc, d) => acc + d.amount, 0);
+
+    // Calculate final treasury balances
+    // Welfare balance is contributions - welfare-type disbursements (if we track type in disbursement)
+    // For now, let's just do a global pool balance
+    const totalWelfare = totalWelfareIn - totalDisbursementsOutflow;
+    const totalLoanFund = totalLoanFundIn - totalLoansOutflow + totalRepaymentsIn;
 
     const poolBalance = totalWelfare + totalLoanFund;
 

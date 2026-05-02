@@ -154,7 +154,7 @@ const MOCK_ORGANIZER = {
 };
 
 export default function DashboardPage() {
-    const { user, activeRole } = useAuth();
+    const { user, activeRole, userProfile } = useAuth();
     const { config } = usePageConfig('dashboard');
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -363,15 +363,25 @@ export default function DashboardPage() {
                     <div className="relative z-10 flex flex-col xl:flex-row justify-between gap-10">
                         <div className="space-y-6 max-w-2xl">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-[#3B82F6] backdrop-blur-md">
-                                <ActivitySquare size={12} className="animate-pulse" /> Global System Authority
+                                <ActivitySquare size={12} className="animate-pulse" /> {isSuperAdmin ? 'Supreme Authority' : 'Global System Authority'}
                             </div>
-                            <div>
-                                <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-black tracking-tight leading-none text-white lg:leading-tight">
-                                    Executive Command
-                                </h1>
-                                <p className="text-lg md:text-xl font-medium text-white/60 mt-4 leading-relaxed font-serif">
-                                    Welcome back, Administrator {user?.name?.split(' ')[0] || ''}. You are governing the entire brotherhood network infrastructure.
-                                </p>
+                            <div className="flex items-center gap-5">
+                                {userProfile?.facialUpload && (
+                                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 shadow-xl flex-shrink-0">
+                                        <img src={userProfile.facialUpload} alt="Avatar" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <div>
+                                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-black tracking-tight leading-none text-white lg:leading-tight">
+                                        {isSuperAdmin ? 'Supreme Command' : 'Executive Command'}
+                                    </h1>
+                                    <p className="text-lg md:text-xl font-medium text-white/60 mt-4 leading-relaxed font-serif">
+                                        {isSuperAdmin
+                                            ? `Welcome, Supreme Administrator ${user?.name?.split(' ')[0] || ''}. You hold ultimate authority over the entire brotherhood system.`
+                                            : `Welcome back, Administrator ${user?.name?.split(' ')[0] || ''}. You are governing the entire brotherhood network infrastructure.`
+                                        }
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

@@ -7,7 +7,10 @@ function authHeaders() {
 
 export async function fetchLoans() {
     const res = await fetch(`${BASE_URL}/loans`, { headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed to load loans');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to load loans' }));
+        throw new Error(error.message || 'Failed to load loans');
+    }
     return res.json();
 }
 
@@ -17,7 +20,10 @@ export async function addLoan(data) {
         headers: authHeaders(),
         body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to add loan');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to add loan' }));
+        throw new Error(error.message || 'Failed to add loan');
+    }
     return res.json();
 }
 
@@ -27,7 +33,10 @@ export async function updateLoanStatus(id, status) {
         headers: authHeaders(),
         body: JSON.stringify({ status }),
     });
-    if (!res.ok) throw new Error('Failed to update loan status');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to update loan status' }));
+        throw new Error(error.message || 'Failed to update loan status');
+    }
     return res.json();
 }
 
@@ -37,6 +46,9 @@ export async function recordRepayment(loanId, amount) {
         headers: authHeaders(),
         body: JSON.stringify({ amount }),
     });
-    if (!res.ok) throw new Error('Failed to record repayment');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to record repayment' }));
+        throw new Error(error.message || 'Failed to record repayment');
+    }
     return res.json();
 }

@@ -5,12 +5,13 @@ import {
     ArrowUpCircle, ArrowDownCircle, History,
     CheckCircle2, XCircle, Clock, Search,
     Filter, Download, Loader2, CreditCard,
-    TrendingDown, BadgeCheck, AlertTriangle, Fingerprint, Compass
+    TrendingDown, BadgeCheck, AlertTriangle, Fingerprint, Compass, User
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useReactToPrint } from 'react-to-print';
 import TransactionReceipt from '../components/TransactionReceipt';
 import { fetchDisbursements, addDisbursement, updateDisbursementStatus } from '../api/disbursements';
+import { fetchMembers } from '../api/members';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
@@ -30,10 +31,11 @@ export default function DisbursementsPage() {
 
     // States
     const [items, setItems] = useState([]);
+    const [membersList, setMembersList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ member: '', amount: '', reason: '' });
+    const [form, setForm] = useState({ memberId: '', amount: '', reason: '', type: 'welfare', method: 'Bank Transfer' });
     const [selectedItem, setSelectedItem] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -51,8 +53,12 @@ export default function DisbursementsPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const data = await fetchDisbursements();
+            const [data, members] = await Promise.all([
+                fetchDisbursements(),
+                fetchMembers().catch(() => []),
+            ]);
             setItems(data);
+            setMembersList(members);
         } catch (err) {
             toast.error('Failed to load financial registry');
             setItems([]);
@@ -63,15 +69,24 @@ export default function DisbursementsPage() {
 
     const handleAdd = async (e) => {
         e.preventDefault();
+        if (!form.memberId) { toast.error('Please select a member'); return; }
         setActionLoading(true);
         try {
-            const data = await addDisbursement({ ...form, status: isTreasurer ? 'approved' : 'pending' });
+            const payload = {
+                memberId: form.memberId,
+                amount: Number(form.amount),
+                reason: form.reason,
+                type: form.type || 'welfare',
+                method: form.method || 'Bank Transfer',
+                status: isTreasurer ? 'approved' : 'pending',
+            };
+            const data = await addDisbursement(payload);
             setItems((prev) => [data, ...prev]);
             toast.success(isTreasurer ? 'Transaction finalized successfully' : 'Request logged for review');
             setShowForm(false);
-            setForm({ member: '', amount: '', reason: '' });
+            setForm({ memberId: '', amount: '', reason: '', type: 'welfare', method: 'Bank Transfer' });
         } catch (err) {
-            toast.error(err.message);
+            toast.error(err.message || 'Failed to add disbursement');
         } finally {
             setActionLoading(false);
         }
@@ -297,48 +312,76 @@ export default function DisbursementsPage() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Recipient/Beneficiary</label>
-                                        <div className="relative group">
-                                            <Plus size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" />
-                                            <input
-                                                required
-                                                value={form.member}
-                                                onChange={(e) => setForm({ ...form, member: e.target.value })}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-12 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                                placeholder="Enter full name"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Requested Amount</label>
-                                        <div className="relative group">
-                                            <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 text-xs">₦</span>
-                                            <input
-                                                required
-                                                type="number"
-                                                min="100"
-                                                max={config.maxDisburseAmount || undefined}
-                                                value={form.amount}
-                                                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                                placeholder={`Min: 100 ${config.maxDisburseAmount ? `| Max: ${formatNaira(config.maxDisburseAmount)}` : ''}`}
-                                            />
-                                        </div>
+                            <form onSubmit={handleAdd} className="space-y-5">
+                                {/* Beneficiary Select */}
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Beneficiary / Recipient *</label>
+                                    <div className="relative">
+                                        <User size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 pointer-events-none" />
+                                        <select
+                                            required
+                                            value={form.memberId}
+                                            onChange={(e) => setForm({ ...form, memberId: e.target.value })}
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-12 pr-5 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">-- Select a member --</option>
+                                            {membersList.map(m => (
+                                                <option key={m._id} value={m._id}>{m.name} ({m.email})</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
+                                {/* Amount */}
                                 <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Verified Purpose/Reason</label>
+                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Amount *</label>
+                                    <div className="relative">
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 text-xs">₦</span>
+                                        <input
+                                            required
+                                            type="number"
+                                            min="100"
+                                            max={config.maxDisburseAmount || undefined}
+                                            value={form.amount}
+                                            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
+                                            placeholder="Min: 100"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Type & Method */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Type</label>
+                                        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer">
+                                            <option value="welfare">Welfare</option>
+                                            <option value="loan">Loan</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Method</label>
+                                        <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer">
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Cash">Cash</option>
+                                            <option value="Mobile Money">Mobile Money</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Reason */}
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Verified Purpose / Reason *</label>
                                     <textarea
                                         required
                                         value={form.reason}
                                         onChange={(e) => setForm({ ...form, reason: e.target.value })}
                                         className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-[2rem] px-6 py-5 text-xs font-bold outline-none transition-all resize-none leading-relaxed"
                                         rows={3}
-                                        placeholder="Provide detailed justification for this disbursement ledger entry..."
+                                        placeholder="Provide detailed justification for this disbursement..."
                                     />
                                 </div>
 
@@ -346,17 +389,17 @@ export default function DisbursementsPage() {
                                     <div className="bg-amber-50 rounded-2xl p-4 flex gap-3 border border-amber-100 items-start">
                                         <AlertTriangle size={18} className="text-amber-600 flex-shrink-0" />
                                         <p className="text-[10px] font-bold text-amber-800 leading-normal uppercase">
-                                            Threshold Warning: Requests exceeding ₦5,000 are subject to multi-stage Executive Review beyond the Treasurer.
+                                            Threshold Warning: Requests exceeding ₦5,000 are subject to multi-stage Executive Review.
                                         </p>
                                     </div>
                                 )}
 
-                                <div className="flex gap-4 pt-4">
+                                <div className="flex gap-4 pt-2">
                                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:bg-gray-50 rounded-2xl transition-all">Cancel</button>
                                     <button
                                         type="submit"
-                                        disabled={actionLoading}
-                                        className="flex-[2] py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-amber-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        disabled={actionLoading || !form.memberId}
+                                        className="flex-[2] py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                                         style={{ background: '#1A1A2E' }}
                                     >
                                         {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}

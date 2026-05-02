@@ -8,17 +8,12 @@ function authHeaders() {
 export async function fetchContributions(weekId) {
     const url = weekId ? `${BASE_URL}/contributions?week=${weekId}` : `${BASE_URL}/contributions`;
     const res = await fetch(url, { headers: authHeaders() });
-    let data;
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-        data = await res.json();
-    } else {
-        const text = await res.text();
-        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to load contributions' }));
+        throw new Error(error.message || 'Failed to load contributions');
     }
-
-    if (!res.ok) throw new Error('Failed to load contributions');
-    return data;
+    return res.json();
 }
 
 export async function fetchUserContributions(userId) {
@@ -49,6 +44,9 @@ export async function recordBatchContributions({ weekId, contributions }) {
         headers: authHeaders(),
         body: JSON.stringify({ weekId, contributions }),
     });
-    if (!res.ok) throw new Error('Failed to sync ledger');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to sync ledger' }));
+        throw new Error(error.message || 'Failed to sync ledger');
+    }
     return res.json();
 }

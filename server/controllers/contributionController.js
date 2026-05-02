@@ -1,4 +1,5 @@
 const Contribution = require('../models/Contribution');
+const Transaction = require('../models/Transaction');
 
 // @desc    Get all contributions
 // @route   GET /api/contributions
@@ -30,6 +31,15 @@ const recordContribution = async (req, res) => {
   });
 
   if (contribution) {
+    if (contribution.status === 'confirmed') {
+        await Transaction.create({
+            user: memberId,
+            type: 'credit',
+            amount: amount,
+            note: `Contribution: ${type || 'welfare'}`,
+            relatedUser: req.user?._id
+        });
+    }
     res.status(201).json(contribution);
   } else {
     res.status(400);

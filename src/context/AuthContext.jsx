@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { addLog } from '../api/auditLog';
 import { fetchSettings, updateSettings } from '../api/settings';
 import { ROLES, ROLE_CLASSES, ROLE_HIERARCHY } from '../constants/roles';
+import { apiGetProfile } from '../api/auth';
 
 const AuthContext = createContext(null);
 
@@ -31,6 +32,7 @@ function simpleHash(str) {
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
+    const [userProfile, setUserProfile] = useState(null); // Full profile with facialUpload
     const [activeRole, setActiveRole] = useState(null);
     const [enabledPages, setEnabledPages] = useState(() => {
         const defaultPages = {
@@ -99,6 +101,8 @@ export function AuthProvider({ children }) {
             if (payload && payload.exp * 1000 > Date.now()) {
                 setUser(payload);
                 setActiveRole(payload.role);
+                // Fetch full profile (includes facialUpload avatar)
+                apiGetProfile().then(profile => setUserProfile(profile)).catch(() => {});
             } else {
                 localStorage.removeItem('rr_token');
             }
@@ -118,12 +122,15 @@ export function AuthProvider({ children }) {
         const payload = parseJwt(token);
         setUser(payload);
         setActiveRole(payload.role);
+        // Fetch full profile after login to get facialUpload avatar
+        apiGetProfile().then(profile => setUserProfile(profile)).catch(() => {});
     };
 
     const logout = () => {
         localStorage.removeItem('rr_token');
         localStorage.removeItem('rr_mock_role');
         setUser(null);
+        setUserProfile(null);
         setActiveRole(null);
         setAdminPanelUnlocked(false);
         addLog('System', 'Session Terminated', 'User logged out', 'security');
@@ -245,6 +252,8 @@ export function AuthProvider({ children }) {
     return (
         <AuthContext.Provider value={{
             user,
+            userProfile,
+            setUserProfile,
             activeRole,
             enabledPages,
             loading,

@@ -7,7 +7,10 @@ function authHeaders() {
 
 export async function fetchDisbursements() {
     const res = await fetch(`${BASE_URL}/disbursements`, { headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed to load disbursements');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to load disbursements' }));
+        throw new Error(error.message || 'Failed to load disbursements');
+    }
     return res.json();
 }
 
@@ -17,7 +20,10 @@ export async function addDisbursement(data) {
         headers: authHeaders(),
         body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to add disbursement');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to add disbursement' }));
+        throw new Error(error.message || 'Failed to add disbursement');
+    }
     return res.json();
 }
 export async function updateDisbursementStatus(id, status) {
@@ -26,6 +32,9 @@ export async function updateDisbursementStatus(id, status) {
         headers: authHeaders(),
         body: JSON.stringify({ status }),
     });
-    if (!res.ok) throw new Error('Failed to update status');
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to update status' }));
+        throw new Error(error.message || 'Failed to update status');
+    }
     return res.json();
 }

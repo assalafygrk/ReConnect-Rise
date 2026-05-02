@@ -1,5 +1,6 @@
 const Disbursement = require('../models/Disbursement');
 const User = require('../models/User');
+const Transaction = require('../models/Transaction');
 
 // @desc    Get all disbursements
 // @route   GET /api/disbursements
@@ -45,6 +46,16 @@ const addDisbursement = async (req, res) => {
     status: status || 'pending'
   });
 
+  if (disbursement.status === 'approved') {
+      await Transaction.create({
+          user: targetMemberId,
+          type: 'debit',
+          amount: amount,
+          note: `Disbursement: ${reason}`,
+          relatedUser: req.user._id
+      });
+  }
+
   const populated = await Disbursement.findById(disbursement._id).populate('memberId', 'name');
   
   res.status(201).json({
@@ -68,8 +79,19 @@ const updateDisbursementStatus = async (req, res) => {
   const disbursement = await Disbursement.findById(id);
 
   if (disbursement) {
+    const oldStatus = disbursement.status;
     disbursement.status = status;
     const updatedDisbursement = await disbursement.save();
+    
+    if (oldStatus !== 'approved' && status === 'approved') {
+        await Transaction.create({
+            user: disbursement.memberId,
+            type: 'debit',
+            amount: disbursement.amount,
+            note: `Disbursement Approved: ${disbursement.reason}`,
+            relatedUser: req.user._id
+        });
+    }
     
     const populated = await Disbursement.findById(updatedDisbursement._id).populate('memberId', 'name');
     res.json({

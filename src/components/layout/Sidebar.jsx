@@ -73,7 +73,7 @@ const modulePages = [
 
 export default function Sidebar({ collapsed, onToggle }) {
     const {
-        user, logout, hasRole, isPageEnabled,
+        user, userProfile, logout, hasRole, isPageEnabled,
         activeRole, enabledPages, togglePage,
         adminPanelUnlocked, lockAdminPanel,
     } = useAuth();
@@ -232,20 +232,30 @@ export default function Sidebar({ collapsed, onToggle }) {
                 {/* User footer */}
                 <div className="border-t border-white/10 p-3 space-y-2">
                     {!collapsed && (
-                        <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
+                        <div className="px-3 py-2 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden flex items-center gap-3">
                             {/* Supreme Admin glow */}
                             {user?.role === 'super_admin' && (
                                 <div className="absolute inset-0 bg-gradient-to-r from-[#E8820C]/10 via-[#F5A623]/10 to-[#E8820C]/10 animate-pulse pointer-events-none rounded-xl" />
                             )}
-                            <p className="text-white text-sm font-medium truncate relative z-10">{user?.name || user?.email}</p>
-                            {user?.role === 'super_admin' ? (
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-pulse" />
-                                    <p className="text-[#F5A623] text-[10px] font-black uppercase tracking-widest">Supreme Admin</p>
-                                </div>
-                            ) : (
-                                <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace(/_/g, ' ')}</p>
-                            )}
+                            {/* User Avatar */}
+                            <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gradient-to-br from-[#E8820C] to-[#F5A623] flex items-center justify-center text-white text-xs font-bold">
+                                {userProfile?.facialUpload ? (
+                                    <img src={userProfile.facialUpload} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    user?.name?.charAt(0).toUpperCase() || 'R'
+                                )}
+                            </div>
+                            <div className="overflow-hidden relative z-10">
+                                <p className="text-white text-sm font-medium truncate">{user?.name || user?.email}</p>
+                                {user?.role === 'super_admin' ? (
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-pulse" />
+                                        <p className="text-[#F5A623] text-[10px] font-black uppercase tracking-widest">Supreme Admin</p>
+                                    </div>
+                                ) : (
+                                    <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace(/_/g, ' ')}</p>
+                                )}
+                            </div>
                         </div>
                     )}
                     <button

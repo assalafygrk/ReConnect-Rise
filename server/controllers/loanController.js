@@ -1,4 +1,5 @@
 const Loan = require('../models/Loan');
+const Transaction = require('../models/Transaction');
 
 // @desc    Get all loans
 // @route   GET /api/loans
@@ -56,6 +57,15 @@ const updateLoanStatus = async (req, res) => {
     if (req.body.status === 'approved') {
         loan.approvedBy = req.user._id;
         loan.repaymentDate = new Date(Date.now() + loan.duration * 30 * 24 * 60 * 60 * 1000);
+        
+        // Log transaction
+        await Transaction.create({
+            user: loan.user,
+            type: 'debit',
+            amount: loan.amount,
+            note: `Loan Disbursed: ${loan.purpose}`,
+            relatedUser: req.user._id
+        });
     }
     const updatedLoan = await loan.save();
     const populated = await Loan.findById(updatedLoan._id).populate('user', 'name');
@@ -84,6 +94,15 @@ const recordRepayment = async (req, res) => {
       loan.status = 'repaid';
       loan.balance = 0;
     }
+
+    // Log repayment transaction
+    await Transaction.create({
+        user: loan.user,
+        type: 'credit',
+        amount: amount,
+        note: `Loan Repayment: ${loan.purpose}`,
+        relatedUser: req.user._id
+    });
 
     const updatedLoan = await loan.save();
     const populated = await Loan.findById(updatedLoan._id).populate('user', 'name');

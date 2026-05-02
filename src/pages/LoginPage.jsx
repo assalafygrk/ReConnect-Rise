@@ -40,7 +40,7 @@ export default function LoginPage() {
             toast.success('Welcome back, brother!');
             
             if (data.user && (data.user.role === 'admin' || data.user.role === 'super_admin')) {
-                navigate('/nexus');
+                navigate('/dashboard');
             } else {
                 navigate('/dashboard');
             }

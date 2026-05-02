@@ -7,7 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import NotificationPopover from './NotificationPopover';
 
 export default function Navbar({ onMenuToggle, pageTitle }) {
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const { unreadCount } = useNotifications();
     const { theme, toggleTheme } = useTheme();
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -71,8 +71,8 @@ export default function Navbar({ onMenuToggle, pageTitle }) {
                     <div
                         className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-md group-hover:scale-110 transition-transform overflow-hidden bg-gradient-to-br from-[#E8820C] to-[#F5A623] dark:from-[#3B82F6] dark:to-[#1D4ED8]"
                     >
-                        {user?.photoURL ? (
-                            <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                        {userProfile?.facialUpload ? (
+                            <img src={userProfile.facialUpload} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
                             initials
                         )}
