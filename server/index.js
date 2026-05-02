@@ -6,6 +6,14 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./config/db');
 
+// Validate Environment Variables
+if (!process.env.MONGODB_URI) {
+  console.error('CRITICAL: MONGODB_URI is not defined in environment variables');
+}
+if (!process.env.JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET is not defined in environment variables');
+}
+
 const app = express();
 
 // Middleware to ensure DB connection
