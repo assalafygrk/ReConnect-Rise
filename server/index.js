@@ -31,18 +31,8 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-// Sanitize data against NoSQL query injection (Express 5 compatible wrapper)
-app.use((req, res, next) => {
-  if (req.body) mongoSanitize.sanitize(req.body);
-  if (req.params) mongoSanitize.sanitize(req.params);
-  if (req.query) {
-    // In Express 5, req.query is readonly, so we mutate it in-place
-    const sanitizedQuery = mongoSanitize.sanitize({ ...req.query });
-    for (const key in req.query) delete req.query[key];
-    for (const key in sanitizedQuery) req.query[key] = sanitizedQuery[key];
-  }
-  next();
-});
+// Sanitize data against NoSQL query injection
+app.use(mongoSanitize());
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
