@@ -15,7 +15,7 @@
     "cors": "^2.8.6",
     "dayjs": "^1.11.20",
     "dotenv": "^17.2.3",
-    "express": "^4.19.2",
+    "express": "^5.2.1",
     "express-mongo-sanitize": "^2.2.0",
     "helmet": "^8.1.0",
     "html-to-image": "^1.11.13",
