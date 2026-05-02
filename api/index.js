@@ -1,21 +1,25 @@
 const express = require('express');
 const app = express();
 
-app.get('/api/ping', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    message: 'Minimal Diagnostic API'
-  });
-});
-
-// For compatibility with your current setup, we still try to load the server index
-// but we catch any errors to prevent the whole function from crashing on startup
+let startupError = null;
 try {
   const serverApp = require('../server/index');
   app.use(serverApp);
 } catch (error) {
+  startupError = {
+    message: error.message,
+    stack: error.stack
+  };
   console.error('Failed to load server/index.js:', error.message);
 }
+
+app.get('/api/ping', (req, res) => {
+  res.json({ 
+    status: startupError ? 'error' : 'ok', 
+    timestamp: new Date().toISOString(),
+    message: 'Minimal Diagnostic API',
+    startupError: startupError
+  });
+});
 
 module.exports = app;
