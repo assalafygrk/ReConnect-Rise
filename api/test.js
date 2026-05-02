@@ -1,3 +1,1 @@
-module.exports = (req, res) => {
-  res.json({ message: "API is working", path: req.url });
-};
+module.exports = (req, res) => { res.status(200).json({ message: "Test function works" }); };
