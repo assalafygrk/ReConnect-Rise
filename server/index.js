@@ -1,5 +1,6 @@
-require('dotenv').config();
 const express = require('express');
+console.log('--- SERVER INITIALIZING ---');
+require('dotenv').config();
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -19,6 +20,11 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // app.use(mongoSanitize());
+
+// ─── Direct Health Check (Before DB) ──────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'ReConnect & Rise API is alive (Pre-DB)' });
+});
 
 // ─── DB Connection Middleware ─────────────────────────────────────────────────
 // Connect to DB on every request (serverless-safe — uses cached connection)
