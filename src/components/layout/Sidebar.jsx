@@ -253,7 +253,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                                         <p className="text-[#F5A623] text-[10px] font-black uppercase tracking-widest">Supreme Admin</p>
                                     </div>
                                 ) : (
-                                    <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace(/_/g, ' ')}</p>
+                                    <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace(/[-_]/g, ' ')}</p>
                                 )}
                             </div>
                         </div>

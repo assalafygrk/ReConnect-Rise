@@ -41,7 +41,7 @@ export default function Navbar({ onMenuToggle, pageTitle }) {
             <div className="flex items-center gap-2 sm:gap-3 relative">
                 
                 {/* Theme Toggle */}
-                <button
+                {/* <button
                     onClick={toggleTheme}
                     className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[#1A1A2E] dark:text-white"
                     title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -57,7 +57,7 @@ export default function Navbar({ onMenuToggle, pageTitle }) {
                     {unreadCount > 0 && (
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-[#FFF8F0] dark:border-[#0B1221]"></span>
                     )}
-                </button>
+                </button> */}
 
                 <NotificationPopover
                     isOpen={isNotifOpen}
@@ -82,7 +82,7 @@ export default function Navbar({ onMenuToggle, pageTitle }) {
                             {user?.name || user?.email?.split('@')[0]}
                         </p>
                         <p className="text-xs capitalize text-[#1A1A2E]/50 dark:text-white/40">
-                            {user?.role?.replace('_', ' ')}
+                            {user?.role?.replace(/[-_]/g, ' ')}
                         </p>
                     </div>
                 </Link>

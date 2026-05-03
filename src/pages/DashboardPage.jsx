@@ -5,8 +5,10 @@ import {
     ArrowRight, Calendar, Bell, ShieldCheck, TrendingDown,
     Activity, ArrowUpCircle, MoreHorizontal, Layers,
     Zap, Gem, FileText, BadgeCheck, Fingerprint, Lock,
-    Database, ActivitySquare, ServerCrash, Crown, Landmark, CircleDollarSign, Target, BarChart3,
-    Heart, HandHelping, Gift, Trophy, Star, Scroll, Lightbulb, Scale, CalendarRange, Mic2, MapPin, HeartHandshake, Award
+    Database, ActivitySquare, ServerCrash, Crown, AlertCircle, CircleDollarSign,
+    Heart, HandHelping, Gift, Trophy, Star, Scroll, Lightbulb,
+    Scale, CalendarRange, Mic2, MapPin, HeartHandshake, Award,
+    History, Landmark, BarChart3
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import {
@@ -163,9 +165,11 @@ export default function DashboardPage() {
 
     const effectiveRole = activeRole || user?.role || 'member';
     const isSuperAdmin = effectiveRole === 'super_admin';
-    const isAdmin = effectiveRole === 'admin';
-    const isTreasurer = effectiveRole === 'treasurer';
+    const isAdmin = effectiveRole === 'admin' || isSuperAdmin;
     const isGroupLeader = effectiveRole === 'groupleader';
+    const isTreasurer = effectiveRole === 'treasurer';
+    const isFinSec = effectiveRole === 'financial-secretary';
+    const isAuditor = effectiveRole === 'auditor';
     const isWelfare = effectiveRole === 'welfare';
     const isOfficialMember = effectiveRole === 'official-member';
     const isAdvisor = effectiveRole === 'special-advisor';
@@ -178,10 +182,11 @@ export default function DashboardPage() {
     const loadData = async () => {
         setLoading(true);
 
-        // Role-specific base shape (keeps all UI-specific fields)
         const getRoleBase = () => {
             if (isSuperAdmin || isTreasurer || isAdmin) return MOCK_TREASURER;
             if (isGroupLeader) return MOCK_GROUP_LEADER;
+            if (isFinSec) return MOCK_TREASURER;
+            if (isAuditor) return MOCK_TREASURER;
             if (isWelfare) return MOCK_WELFARE;
             if (isOfficialMember) return MOCK_OFFICIAL_MEMBER;
             if (isAdvisor) return MOCK_ADVISOR;
@@ -191,10 +196,8 @@ export default function DashboardPage() {
 
         try {
             const apiData = await fetchDashboard();
-            // Merge: real API values override mock defaults, keeping role UI fields intact
             setData({ ...getRoleBase(), ...apiData });
         } catch {
-            // Backend unavailable — use full mock data for that role
             setData(getRoleBase());
         } finally {
             setLoading(false);
@@ -353,7 +356,6 @@ export default function DashboardPage() {
     if (isAdmin) {
         return (
             <div className="max-w-7xl mx-auto pb-24 space-y-8 px-4">
-                {/* Ultra Premium Admin Header */}
                 <div className="relative bg-[#0A2540] rounded-[2rem] p-8 md:p-14 text-white shadow-2xl overflow-hidden group">
                     <div className="absolute top-0 right-0 w-[50rem] h-[50rem] bg-[#3B82F6] rounded-full blur-[150px] opacity-[0.08] group-hover:opacity-[0.12] transition-opacity duration-1000"></div>
                     <div className="absolute top-1/2 -translate-y-1/2 right-10 text-white/[0.02] pointer-events-none">
@@ -398,7 +400,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Quick Admin Metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     <StatCard icon={Database} label="Global Treasury" value={formatNaira(d.poolBalance)} color="#3B82F6" onClick={() => setSelectedWidget('balance')} />
                     <StatCard icon={TrendingUp} label="Target Velocity" value={`${goalPct}%`} sub="of Limit" color="#F5A623" onClick={() => setSelectedWidget('goal')} trend={+8} />
@@ -406,7 +407,6 @@ export default function DashboardPage() {
                     <StatCard icon={Layers} label="System Risk" value={d.totalUnpaid} sub="Delinquent" color="#F43F5E" onClick={() => setSelectedWidget('attendance')} />
                 </div>
 
-                {/* Analytics Matrix */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 bg-white rounded-[2rem] p-8 sm:p-10 border border-black/[0.03] shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-10">
                         <div className="flex justify-between items-start">
@@ -476,7 +476,6 @@ export default function DashboardPage() {
     if (isGroupLeader) {
         return (
             <div className="max-w-7xl mx-auto pb-24 space-y-8 px-4">
-                {/* Governing Premium Header */}
                 <div className="relative bg-[#2E1065] rounded-[2rem] p-8 md:p-14 text-white shadow-2xl overflow-hidden group">
                     <div className="absolute top-0 right-0 w-[50rem] h-[50rem] bg-[#8B5CF6] rounded-full blur-[150px] opacity-[0.08] group-hover:opacity-[0.15] transition-opacity duration-1000"></div>
                     <div className="relative z-10 flex flex-col xl:flex-row justify-between gap-10">
@@ -569,10 +568,65 @@ export default function DashboardPage() {
         );
     }
 
+    if (isFinSec) {
+        return (
+            <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 backdrop-blur-md w-fit">
+                            <PieChart size={12} className="animate-pulse" /> Revenue & Compliance Authority
+                        </div>
+                        <h1 className="text-4xl sm:text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">
+                            Financial Secretariat
+                        </h1>
+                        <p className="text-sm text-black/40 font-medium max-w-xl">
+                            Overseeing revenue streams, contribution velocity, and member financial compliance.
+                        </p>
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <StatCard icon={Landmark} label="Total Influx" value={formatNaira(d.poolBalance)} color="#10B981" trend={+5} />
+                    <StatCard icon={Activity} label="Collection Rate" value={`${Math.round(d.stats?.collectionRate || 0)}%`} color="#F5A623" sub="Current Cycle" trend={+2} />
+                    <StatCard icon={History} label="Pending Arrears" value={formatNaira(d.totalUnpaid * 5000)} color="#F43F5E" sub="Estimated" />
+                    <StatCard icon={CheckCircle2} label="Verified Entries" value={d.totalPaid} color="#3B82F6" sub="This Month" />
+                </div>
+                {renderModals()}
+            </div>
+        );
+    }
+
+    if (isAuditor) {
+        return (
+            <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 backdrop-blur-md w-fit">
+                            <Fingerprint size={12} className="animate-pulse" /> Oversight & Integrity Audit
+                        </div>
+                        <h1 className="text-4xl sm:text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">
+                            Internal Auditor
+                        </h1>
+                        <p className="text-sm text-black/40 font-medium max-w-xl">
+                            Validating every transaction and maintaining the sacred ledger of institutional integrity.
+                        </p>
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <StatCard icon={Database} label="System Records" value={d.stats?.totalTxCount || 0} color="#6366F1" sub="Ledger Entries" />
+                    <StatCard icon={History} label="Audit Trail" value="Synced" color="#F5A623" sub="Security Logs" />
+                    <StatCard icon={Scale} label="Discrepancies" value="0" color="#10B981" sub="Flagged Items" />
+                    <StatCard icon={ShieldCheck} label="Ledger Health" value="100%" color="#34D399" />
+                </div>
+                {renderModals()}
+            </div>
+        );
+    }
+
     if (isTreasurer) {
         return (
             <div className="max-w-7xl mx-auto pb-24 space-y-8 px-4">
-                {/* Fiscal Stewardship Header */}
                 <div className="relative bg-[#064E3B] rounded-[2rem] p-8 md:p-14 text-white shadow-2xl overflow-hidden group">
                     <div className="absolute top-0 right-0 w-[50rem] h-[50rem] bg-[#10B981] rounded-full blur-[150px] opacity-[0.08] group-hover:opacity-[0.12] transition-opacity duration-1000"></div>
                     <div className="relative z-10 flex flex-col xl:flex-row justify-between gap-10">
@@ -692,19 +746,19 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-2 gap-4 shrink-0">
                             <div className="bg-white/5 p-6 rounded-2xl border border-white/10 space-y-1 backdrop-blur-md shadow-sm">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Requests</p>
-                                <p className="text-2xl font-serif font-black text-white">{d.pendingRequests} Pending</p>
+                                <p className="text-2xl font-serif font-black text-white">{d.stats?.pendingRequests || 0} Pending</p>
                             </div>
                             <div className="bg-white/5 p-6 rounded-2xl border border-white/10 space-y-1 backdrop-blur-md shadow-sm">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Spent</p>
-                                <p className="text-2xl font-serif font-black text-white">{formatNaira(d.disbursedThisMonth)}</p>
+                                <p className="text-2xl font-serif font-black text-white">{formatNaira(d.stats?.totalWelfareGrants || 0)}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <StatCard icon={HeartHandshake} label="Welfare Pool" value={formatNaira(d.totalWelfareFunds)} color="#F43F5E" />
-                    <StatCard icon={HandHelping} label="Active Support" value={d.pendingRequests} color="#FB7185" sub="Awaiting Review" />
+                    <StatCard icon={HeartHandshake} label="Welfare Pool" value={formatNaira(d.stats?.welfareBalance || 0)} color="#F43F5E" />
+                    <StatCard icon={HandHelping} label="Active Support" value={d.stats?.pendingRequests || 0} color="#FB7185" sub="Awaiting Review" />
                     <StatCard icon={Gift} label="Gift Grants" value="5" color="#EC4899" sub="This Month" />
                     <StatCard icon={BadgeCheck} label="Care Status" value="Active" color="#10B981" />
                 </div>
@@ -775,13 +829,13 @@ export default function DashboardPage() {
                             </div>
                             <div>
                                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-black tracking-tight leading-none text-white">Official Member</h1>
-                                <p className="text-lg md:text-xl font-medium text-white/60 mt-4 leading-relaxed font-serif">Welcome back, Brother {user?.name?.split(' ')[0]}. You have served for {d.seniorityYears} years.</p>
+                                <p className="text-lg md:text-xl font-medium text-white/60 mt-4 leading-relaxed font-serif">Welcome back, Brother {user?.name?.split(' ')[0]}. You have served for {d.myStats?.seniorityYears || 0} years.</p>
                             </div>
                         </div>
                         <div className="flex gap-4 items-center shrink-0">
                             <div className="w-24 h-24 rounded-full border-4 border-white/5 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-inner">
                                 <div className="text-center">
-                                    <p className="text-2xl font-black text-white">{d.trustScore}</p>
+                                    <p className="text-2xl font-black text-white">{d.myStats?.trustScore || 0}</p>
                                     <p className="text-[8px] font-bold uppercase tracking-widest text-white/50">Trust</p>
                                 </div>
                             </div>
@@ -794,8 +848,8 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard icon={Trophy} label="Seniority Rank" value={`${d.seniorityYears} Years`} color="#64748B" sub="Active Status" />
-                    <StatCard icon={ShieldCheck} label="Trust Score" value={`${d.trustScore}%`} color="#3B82F6" sub="Peer Verified" />
+                    <StatCard icon={Trophy} label="Seniority Rank" value={`${d.myStats?.seniorityYears || 0} Years`} color="#64748B" sub="Active Status" />
+                    <StatCard icon={ShieldCheck} label="Trust Score" value={`${d.myStats?.trustScore || 0}%`} color="#3B82F6" sub="Peer Verified" />
                     <StatCard icon={Gem} label="Total Contributions" value={formatNaira(d.myStats.totalContributions)} color="#F5A623" trend={+15} />
                     <StatCard icon={Activity} label="Participation" value="High" color="#10B981" />
                 </div>
@@ -878,15 +932,15 @@ export default function DashboardPage() {
                         <div className="flex items-center shrink-0">
                             <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-sm text-center space-y-1">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Sentiment</p>
-                                <p className="text-4xl font-serif font-black text-white">{d.communitySentiment}%</p>
+                                <p className="text-4xl font-serif font-black text-white">{Math.round(d.stats?.avgSentiment || 0)}%</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <StatCard icon={Lightbulb} label="Advice Rooms" value={d.activeAdviceRooms} color="#F5A623" sub="Active Sessions" />
-                    <StatCard icon={Scale} label="Pending Policies" value={d.pendingPolicies} color="#D97706" sub="Awaiting Review" />
+                    <StatCard icon={Lightbulb} label="Advice Rooms" value={d.stats?.visionCount || 0} color="#F5A623" sub="Active Sessions" />
+                    <StatCard icon={Scale} label="Pending Policies" value={d.stats?.visionCount || 0} color="#D97706" sub="Awaiting Review" />
                     <StatCard icon={Users} label="Council Reach" value="Global" color="#3B82F6" />
                 </div>
 
@@ -1010,10 +1064,8 @@ export default function DashboardPage() {
         );
     }
 
-    // ========== NEW MEMBER DASHBOARD (Rebranded) ==========
     return (
         <div className="max-w-7xl mx-auto pb-24 space-y-8 px-4">
-            {/* Header / Hero Section */}
             <div className="relative bg-[#0B1221] rounded-[2rem] p-8 md:p-14 text-white shadow-2xl overflow-hidden group">
                 <div className="absolute top-0 right-0 w-[50rem] h-[50rem] bg-[#3B82F6] rounded-full blur-[150px] opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-1000"></div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-10">

@@ -115,8 +115,10 @@ export default function DisbursementsPage() {
 
     // Derived values
     const filteredItems = items.filter(item => {
-        const matchesSearch = item.member.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.reason.toLowerCase().includes(searchQuery.toLowerCase());
+        const memberName = item.member?.toLowerCase() || '';
+        const reason = item.reason?.toLowerCase() || '';
+        const matchesSearch = memberName.includes(searchQuery.toLowerCase()) ||
+            reason.includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === 'all' || item.status === filterStatus;
         return matchesSearch && matchesFilter;
     });

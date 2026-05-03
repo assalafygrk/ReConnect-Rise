@@ -5,9 +5,11 @@ const User = require('../models/User');
 const ROLE_MAP = {
   super_admin: 'super_admin',   // no remapping needed — identical
   group_leader: 'groupleader',
+  financial_secretary: 'financial-secretary',
   special_advisor: 'special-advisor',
   meeting_organizer: 'meeting-organizer',
   official_member: 'official-member',
+  auditor: 'auditor',
 };
 const mapRole = (r) => ROLE_MAP[r] || r;
 

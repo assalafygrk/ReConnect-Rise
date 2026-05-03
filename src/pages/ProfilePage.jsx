@@ -89,7 +89,7 @@ export default function ProfilePage() {
 
     const roleDetails = {
         class: activeRole === 'super_admin' ? 'A' : activeRole === 'admin' ? 'B' : 'C',
-        label: activeRole?.replace('_', ' ').toUpperCase() || 'OFFICIAL MEMBER'
+        label: activeRole?.replace(/[-_]/g, ' ').toUpperCase() || 'OFFICIAL MEMBER'
     };
 
     const handleImageChange = (e) => {
@@ -389,7 +389,7 @@ export default function ProfilePage() {
                                                     photo: previewImage,
                                                     occupation: formData.occupation,
                                                     idNo: user?.id ? `RR-MEM-${String(user.id).padStart(4, '0')}` : 'RR-MEM-0000',
-                                                    role: user?.role?.replace('_', ' ') || 'Official Member'
+                                                    role: user?.role?.replace(/[-_]/g, ' ') || 'Official Member'
                                                 }} />
                                             </div>
                                         </div>

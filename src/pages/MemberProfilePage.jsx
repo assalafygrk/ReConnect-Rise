@@ -30,7 +30,7 @@ const MOCK = {
 
 export default function MemberProfilePage() {
     const { id } = useParams();
-    const { hasRole } = useAuth();
+    const { hasRole, ROLES, ROLE_CLASSES } = useAuth();
     const isTreasurer = hasRole('treasurer');
     const canManage = hasRole('treasurer', 'group_leader');
     const [member, setMember] = useState(null);
@@ -118,7 +118,7 @@ export default function MemberProfilePage() {
                     <h1 className="text-3xl font-serif font-black tracking-tight mb-2">{m.name}</h1>
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#F5A623] text-[10px] font-black uppercase tracking-widest mb-6">
                         <Fingerprint size={12} />
-                        {m.role?.replace('_', ' ')}
+                        {m.role?.replace(/[-_]/g, ' ')}
                     </div>
 
                     <div className="w-full pt-6 border-t border-white/5 space-y-4">
@@ -290,10 +290,11 @@ export default function MemberProfilePage() {
                                     className="w-full border-2 border-[#1A1A2E]/5 rounded-[1.2rem] px-6 py-4 text-sm bg-[#FDFCFB] focus:border-[#E8820C] focus:bg-white outline-none font-bold text-[#1A1A2E] transition-all appearance-none cursor-pointer"
                                     style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%231A1A2E\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.5rem center', backgroundSize: '1.2rem' }}
                                 >
-                                    <option value="official_member">Official Member</option>
-                                    <option value="group_leader">Group Leader</option>
-                                    <option value="welfare">Welfare Officer</option>
-                                    {isTreasurer && <option value="treasurer">Treasurer (Institutional Head)</option>}
+                                    {Object.entries(ROLES).map(([key, value]) => (
+                                        <option key={value} value={value}>
+                                            {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </option>
+                                    ))}
                                 </select>
                                 {!isTreasurer && (
                                     <div className="flex items-center gap-2 mt-2 ml-2 text-rose-500">

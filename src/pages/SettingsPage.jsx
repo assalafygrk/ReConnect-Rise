@@ -30,7 +30,9 @@ export default function SettingsPage() {
         user: currentUser,
         hasRole,
         adminPanelUnlocked,
-        unlockAdminPanel
+        unlockAdminPanel,
+        ROLES,
+        ROLE_CLASSES
     } = useAuth();
     const isAdmin = hasRole('admin') || hasRole('super_admin');
     const isTreasurer = hasRole('treasurer') || hasRole('admin') || hasRole('super_admin');
@@ -262,7 +264,7 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-black text-[#1A1A2E] line-clamp-1">{member.name}</p>
-                                            <p className="text-[9px] font-bold text-black/30 uppercase tracking-widest mt-1">{(member.role || 'Member').replace('_', ' ')}</p>
+                                            <p className="text-[9px] font-bold text-black/30 uppercase tracking-widest mt-1">{(member.role || 'Member').replace(/[-_]/g, ' ')}</p>
                                         </div>
                                     </button>
                                 ))}
@@ -399,11 +401,11 @@ export default function SettingsPage() {
                                     onChange={(e) => handleRoleUpdate(selectedMember._id || selectedMember.id, e.target.value)}
                                     className="w-full bg-white border-2 border-black/5 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
                                 >
-                                    <option value="member">Member</option>
-                                    <option value="official_member">Official Member</option>
-                                    <option value="treasurer">Treasurer</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="super_admin">Super Admin</option>
+                                    {Object.entries(ROLES).map(([key, value]) => (
+                                        <option key={value} value={value}>
+                                            {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="p-8 bg-white border border-black/5 rounded-[2.5rem] space-y-4">

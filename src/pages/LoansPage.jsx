@@ -152,7 +152,8 @@ export default function LoansPage() {
 
     // Derived values
     const filteredLoans = loans.filter(l => {
-        const matchesSearch = l.member.toLowerCase().includes(searchQuery.toLowerCase());
+        const memberName = l.member?.toLowerCase() || '';
+        const matchesSearch = memberName.includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === 'all' || l.status === filterStatus;
         const matchesRole = isTreasurer || isLeader || l.member === (user?.name || user?.id);
         return matchesSearch && matchesFilter && matchesRole;

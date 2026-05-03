@@ -4,6 +4,10 @@ const Loan = require('../models/Loan');
 const Transaction = require('../models/Transaction');
 const Settings = require('../models/Settings');
 const Disbursement = require('../models/Disbursement');
+const Vision = require('../models/Vision');
+const Meeting = require('../models/Meeting');
+const AuditLog = require('../models/AuditLog');
+const Request = require('../models/Request');
 
 // @desc    Get dashboard summary
 // @route   GET /api/dashboard
@@ -135,6 +139,37 @@ const getDashboardSummary = async (req, res) => {
       };
     });
 
+    // --- Role-Specific Calculations ---
+    
+    // 1. Advisor Stats (Visions)
+    const visionCount = await Vision.countDocuments({});
+    const recentVisions = await Vision.find({}).sort({ createdAt: -1 }).limit(5);
+    const avgSentiment = visionCount > 0 ? (recentVisions.reduce((acc, v) => acc + (v.upvotes || 0), 0) / recentVisions.length) * 10 : 0;
+
+    // 2. Organizer Stats (Meetings)
+    const upcomingMeetings = await Meeting.countDocuments({ date: { $gte: new Date() } });
+    const completedMeetings = await Meeting.find({ status: 'completed' });
+    const totalAttendance = completedMeetings.reduce((acc, m) => acc + (m.attendees?.length || 0), 0);
+    const avgAttendance = completedMeetings.length > 0 ? (totalAttendance / completedMeetings.length) : 0;
+
+    // 3. Welfare Stats (Requests)
+    const pendingRequests = await Request.countDocuments({ status: 'pending' });
+    const welfareDisbursements = await Disbursement.find({ type: 'welfare', status: 'disbursed' });
+    const totalWelfareGrants = welfareDisbursements.reduce((acc, d) => acc + d.amount, 0);
+
+    // 4. Auditor/FinSec Stats
+    const totalTxCount = await Transaction.countDocuments({});
+    const auditLogsCount = await AuditLog.countDocuments({});
+    const collectionRate = memberCount > 0 ? (totalPaid / memberCount) * 100 : 0;
+
+    // 5. Official Member / User Seniority
+    const user = await User.findById(req.user._id);
+    const joinDate = user.createdAt;
+    const now = new Date();
+    const seniorityYears = Math.floor((now - joinDate) / (1000 * 60 * 60 * 24 * 365));
+    const trustScore = 85 + (seniorityYears * 2); // Simple mock algorithm
+
+
     res.json({
       poolBalance,
       savingsGoal,
@@ -145,7 +180,9 @@ const getDashboardSummary = async (req, res) => {
       monthlyChart,
       myStats: {
         totalContributions: myTotalContributions,
-        activeLoan: myActiveLoan ? myActiveLoan.amount : 0
+        activeLoan: myActiveLoan ? myActiveLoan.amount : 0,
+        seniorityYears,
+        trustScore: Math.min(trustScore, 100),
       },
       stats: {
         members: memberCount,
@@ -153,6 +190,15 @@ const getDashboardSummary = async (req, res) => {
         loanFundBalance: totalLoanFund,
         activeLoans: activeLoans.length,
         totalLoansOut: totalLoansOut,
+        pendingRequests,
+        totalWelfareGrants,
+        visionCount,
+        avgSentiment,
+        upcomingMeetings,
+        avgAttendance,
+        totalTxCount,
+        auditLogsCount,
+        collectionRate,
       },
       liquidityRatio: savingsGoal > 0 ? (poolBalance / savingsGoal) : 0
     });

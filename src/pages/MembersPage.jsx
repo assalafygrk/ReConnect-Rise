@@ -3,7 +3,8 @@ import { toast } from 'react-hot-toast';
 import {
     UserCircle, Phone, Mail, Crown, ShieldCheck, Plus, X, Users,
     Search, Filter, Trash2, ToggleLeft, ToggleRight, UserPlus,
-    Activity, Shield, Star, Zap, KeyRound, MapPin, Briefcase
+    Activity, Shield, Star, Zap, KeyRound, MapPin, Briefcase,
+    Landmark, Scale
 } from 'lucide-react';
 import { fetchMembers, createMember, updateMemberStatus, deleteMember } from '../api/members';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +14,10 @@ const roleBadge = {
     admin: { label: 'Admin', icon: ShieldCheck, color: '#3B82F6' },
     group_leader: { label: 'Group Leader', icon: Crown, color: '#F5A623' },
     groupleader: { label: 'Group Leader', icon: Crown, color: '#F5A623' },
+    'financial-secretary': { label: 'Financial Secretary', icon: Landmark, color: '#10B981' },
+    financial_secretary: { label: 'Financial Secretary', icon: Landmark, color: '#10B981' },
     treasurer: { label: 'Treasurer', icon: ShieldCheck, color: '#10B981' },
+    auditor: { label: 'Auditor', icon: Scale, color: '#F5A623' },
     welfare: { label: 'Welfare Officer', icon: Shield, color: '#14B8A6' },
     'special-advisor': { label: 'Special Advisor', icon: Star, color: '#8B5CF6' },
     special_advisor: { label: 'Special Advisor', icon: Star, color: '#8B5CF6' },
@@ -31,7 +35,7 @@ const BLANK_FORM = {
 };
 
 export default function MembersPage() {
-    const { hasRole, user: currentUser } = useAuth();
+    const { hasRole, user: currentUser, ROLES, ROLE_CLASSES } = useAuth();
     const canManage = hasRole('admin', 'super_admin', 'group_leader');
 
     const [members, setMembers] = useState([]);
@@ -155,7 +159,7 @@ export default function MembersPage() {
                         className="w-full bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-14 pr-6 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 transition-all appearance-none cursor-pointer"
                     >
                         <option value="all">All Roles</option>
-                        {Object.entries(roleBadge).filter(([k]) => !k.includes('-')).map(([role, { label }]) => (
+                        {Object.entries(roleBadge).map(([role, { label }]) => (
                             <option key={role} value={role}>{label}</option>
                         ))}
                     </select>
@@ -422,8 +426,10 @@ export default function MembersPage() {
                                 <select value={newMember.role} onChange={e => setNewMember({ ...newMember, role: e.target.value })}
                                     className="w-full bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-[#1A1A2E] dark:text-white focus:ring-4 focus:ring-[#E8820C]/10 outline-none transition-all appearance-none cursor-pointer"
                                 >
-                                    {['member', 'official_member', 'welfare', 'treasurer', 'meeting_organizer', 'special_advisor', 'group_leader', 'admin'].map(r => (
-                                        <option key={r} value={r}>{r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
+                                    {Object.entries(ROLES).map(([key, value]) => (
+                                        <option key={value} value={value}>
+                                            {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </option>
                                     ))}
                                 </select>
                             </div>

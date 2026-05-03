@@ -5,7 +5,7 @@ import {
     Eye, MessageSquare, FileText, Download,
     Search, Filter, Loader2, ClipboardCheck,
     AlertCircle, ArrowRight, User, Hash,
-    MoreHorizontal, ShieldAlert, BadgeCheck,
+    MoreHorizontal, ShieldAlert, BadgeCheck, Shield,
     Printer, TrendingUp, Inbox, Fingerprint, Compass, History, HeartHandshake
 } from 'lucide-react';
 
@@ -120,8 +120,12 @@ export default function WelfarePage() {
     );
 
     const officerFiltered = requests.filter(r => {
-        const matchesSearch = r.submittedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            r.type.toLowerCase().includes(searchQuery.toLowerCase());
+        const submittedBy = r.submittedBy?.toLowerCase() || '';
+        const type = r.type?.toLowerCase() || '';
+        const description = r.description?.toLowerCase() || '';
+        const matchesSearch = submittedBy.includes(searchQuery.toLowerCase()) ||
+            type.includes(searchQuery.toLowerCase()) ||
+            description.includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === 'all' || r.status === filterStatus;
         return matchesSearch && matchesFilter;
     });
@@ -152,7 +156,7 @@ export default function WelfarePage() {
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
                                 <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-[#F5A623]">
-                                    <HeartHandshake size={24} />
+                                    <Shield size={24} />
                                 </div>
                                 <div>
                                     <h1 className="text-3xl md:text-6xl font-serif font-black tracking-tighter">Welfare Centre.</h1>

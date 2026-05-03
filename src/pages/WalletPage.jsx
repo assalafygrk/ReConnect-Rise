@@ -395,7 +395,7 @@ export default function WalletPage() {
                                                         </div>
                                                         <div className="text-left">
                                                             <p className="text-sm font-bold text-[#1A1A2E]">{m.name}</p>
-                                                            <p className="text-[10px] text-black/30 font-medium">{m.phone} • {m.role?.replace('_', ' ')}</p>
+                                                            <p className="text-[10px] text-black/30 font-medium">{m.phone} • {m.role?.replace(/[-_]/g, ' ')}</p>
                                                         </div>
                                                     </button>
                                                 ))}
