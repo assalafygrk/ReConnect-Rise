@@ -23,12 +23,14 @@ const userSchema = new mongoose.Schema({
     enum: [
       'super_admin',
       'admin',
-      'group_leader',
+      'groupleader',
+      'financial-secretary',
       'treasurer',
+      'auditor',
       'welfare',
-      'special_advisor',
-      'meeting_organizer',
-      'official_member',
+      'special-advisor',
+      'meeting-organizer',
+      'official-member',
       'member'
     ],
     default: 'member',
