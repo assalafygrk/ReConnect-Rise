@@ -8,7 +8,7 @@ import {
     Database, ActivitySquare, ServerCrash, Crown, AlertCircle, CircleDollarSign,
     Heart, HandHelping, Gift, Trophy, Star, Scroll, Lightbulb,
     Scale, CalendarRange, Mic2, MapPin, HeartHandshake, Award,
-    History, Landmark, BarChart3
+    History, Landmark, BarChart3, Target
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import {
@@ -168,8 +168,6 @@ export default function DashboardPage() {
     const isAdmin = effectiveRole === 'admin' || isSuperAdmin;
     const isGroupLeader = effectiveRole === 'groupleader';
     const isTreasurer = effectiveRole === 'treasurer';
-    const isFinSec = effectiveRole === 'financial-secretary';
-    const isAuditor = effectiveRole === 'auditor';
     const isWelfare = effectiveRole === 'welfare';
     const isOfficialMember = effectiveRole === 'official-member';
     const isAdvisor = effectiveRole === 'special-advisor';
@@ -185,8 +183,6 @@ export default function DashboardPage() {
         const getRoleBase = () => {
             if (isSuperAdmin || isTreasurer || isAdmin) return MOCK_TREASURER;
             if (isGroupLeader) return MOCK_GROUP_LEADER;
-            if (isFinSec) return MOCK_TREASURER;
-            if (isAuditor) return MOCK_TREASURER;
             if (isWelfare) return MOCK_WELFARE;
             if (isOfficialMember) return MOCK_OFFICIAL_MEMBER;
             if (isAdvisor) return MOCK_ADVISOR;
@@ -568,61 +564,7 @@ export default function DashboardPage() {
         );
     }
 
-    if (isFinSec) {
-        return (
-            <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 backdrop-blur-md w-fit">
-                            <PieChart size={12} className="animate-pulse" /> Revenue & Compliance Authority
-                        </div>
-                        <h1 className="text-4xl sm:text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">
-                            Financial Secretariat
-                        </h1>
-                        <p className="text-sm text-black/40 font-medium max-w-xl">
-                            Overseeing revenue streams, contribution velocity, and member financial compliance.
-                        </p>
-                    </div>
-                </header>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <StatCard icon={Landmark} label="Total Influx" value={formatNaira(d.poolBalance)} color="#10B981" trend={+5} />
-                    <StatCard icon={Activity} label="Collection Rate" value={`${Math.round(d.stats?.collectionRate || 0)}%`} color="#F5A623" sub="Current Cycle" trend={+2} />
-                    <StatCard icon={History} label="Pending Arrears" value={formatNaira(d.totalUnpaid * 5000)} color="#F43F5E" sub="Estimated" />
-                    <StatCard icon={CheckCircle2} label="Verified Entries" value={d.totalPaid} color="#3B82F6" sub="This Month" />
-                </div>
-                {renderModals()}
-            </div>
-        );
-    }
-
-    if (isAuditor) {
-        return (
-            <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 backdrop-blur-md w-fit">
-                            <Fingerprint size={12} className="animate-pulse" /> Oversight & Integrity Audit
-                        </div>
-                        <h1 className="text-4xl sm:text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">
-                            Internal Auditor
-                        </h1>
-                        <p className="text-sm text-black/40 font-medium max-w-xl">
-                            Validating every transaction and maintaining the sacred ledger of institutional integrity.
-                        </p>
-                    </div>
-                </header>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <StatCard icon={Database} label="System Records" value={d.stats?.totalTxCount || 0} color="#6366F1" sub="Ledger Entries" />
-                    <StatCard icon={History} label="Audit Trail" value="Synced" color="#F5A623" sub="Security Logs" />
-                    <StatCard icon={Scale} label="Discrepancies" value="0" color="#10B981" sub="Flagged Items" />
-                    <StatCard icon={ShieldCheck} label="Ledger Health" value="100%" color="#34D399" />
-                </div>
-                {renderModals()}
-            </div>
-        );
-    }
 
     if (isTreasurer) {
         return (

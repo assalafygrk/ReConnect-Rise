@@ -3,12 +3,17 @@ const User = require('../models/User');
 
 // Frontend uses different role slugs — map DB roles to frontend slugs
 const ROLE_MAP = {
-  super_admin: 'super_admin',   // no remapping needed — identical
+  super_admin: 'super_admin',
   group_leader: 'groupleader',
+  groupleader: 'groupleader',
   financial_secretary: 'financial-secretary',
+  'financial-secretary': 'financial-secretary',
   special_advisor: 'special-advisor',
+  'special-advisor': 'special-advisor',
   meeting_organizer: 'meeting-organizer',
+  'meeting-organizer': 'meeting-organizer',
   official_member: 'official-member',
+  'official-member': 'official-member',
   auditor: 'auditor',
 };
 const mapRole = (r) => ROLE_MAP[r] || r;

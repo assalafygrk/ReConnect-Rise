@@ -64,8 +64,10 @@ const changePassword = async (req, res) => {
 // PUT /api/settings/users/:id/role — super_admin/admin only
 const updateUserRole = async (req, res) => {
   const { role } = req.body;
-  const validRoles = ['super_admin', 'admin', 'group_leader', 'treasurer', 'welfare',
-    'special_advisor', 'meeting_organizer', 'official_member', 'member'];
+  const validRoles = [
+    'super_admin', 'admin', 'groupleader', 'financial-secretary', 'treasurer',
+    'auditor', 'welfare', 'special-advisor', 'meeting-organizer', 'official-member', 'member'
+  ];
   if (!validRoles.includes(role))
     return res.status(400).json({ message: `Invalid role: ${role}` });
 
