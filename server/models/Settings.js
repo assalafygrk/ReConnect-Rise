@@ -10,6 +10,7 @@ const settingsSchema = new mongoose.Schema({
   groupAnnouncement: { type: String, default: '' },
 
   // Financial guardrails (Treasurer)
+  weeklyContributionAmount: { type: Number, default: 100 },
   monthlySavingsTarget: { type: Number, default: 250000 },
   loanInterestRate: { type: Number, default: 0 },
   welfareTarget: { type: Number, default: 1000000 },

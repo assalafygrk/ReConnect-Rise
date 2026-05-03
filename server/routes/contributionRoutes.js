@@ -2,15 +2,32 @@ const express = require('express');
 const router = express.Router();
 const {
   getContributions,
-  recordContribution,
-  recordBatchContributions,
+  getWeeklyStatus,
+  markPaid,
+  payViaWallet,
+  recordGeneralContribution,
   getWeeks,
+  recordBatchContributions,
 } = require('../controllers/contributionController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
+// Any authenticated user
 router.get('/', protect, getContributions);
-router.post('/', protect, authorize('admin', 'treasurer'), recordContribution);
 router.get('/weeks', protect, getWeeks);
-router.post('/batch', protect, authorize('admin', 'treasurer'), recordBatchContributions);
+
+// Current week status — treasurer/leader/admin see all; others see own
+router.get('/weekly-status', protect, getWeeklyStatus);
+
+// Member self-service wallet payment
+router.post('/pay-via-wallet', protect, payViaWallet);
+
+// Treasurer manually marks a member paid
+router.post('/mark-paid', protect, authorize('treasurer', 'admin', 'super_admin'), markPaid);
+
+// General (pool) contribution — any member; treasurer can record on behalf
+router.post('/general', protect, recordGeneralContribution);
+
+// Batch sync (legacy — treasurer/admin only)
+router.post('/batch', protect, authorize('treasurer', 'admin', 'super_admin'), recordBatchContributions);
 
 module.exports = router;

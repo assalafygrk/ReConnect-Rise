@@ -5,36 +5,50 @@ function authHeaders() {
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
-export async function fetchDisbursements() {
-    const res = await fetch(`${BASE_URL}/disbursements`, { headers: authHeaders() });
-    if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: 'Failed to load disbursements' }));
-        throw new Error(error.message || 'Failed to load disbursements');
-    }
-    return res.json();
+async function handleResponse(res) {
+    const body = await res.json().catch(() => ({ message: 'Server error' }));
+    if (!res.ok) throw new Error(body.message || 'Request failed');
+    return body;
 }
 
+// GET all disbursements (role-filtered by server)
+export async function fetchDisbursements() {
+    return handleResponse(await fetch(`${BASE_URL}/disbursements`, { headers: authHeaders() }));
+}
+
+// Group Leader creates a disbursement request
 export async function addDisbursement(data) {
-    const res = await fetch(`${BASE_URL}/disbursements`, {
+    // data: { memberId, amount, reason, type, method, bankAccountNumber, bankName, bankAccountName }
+    return handleResponse(await fetch(`${BASE_URL}/disbursements`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: 'Failed to add disbursement' }));
-        throw new Error(error.message || 'Failed to add disbursement');
-    }
-    return res.json();
+    }));
 }
+
+// Treasurer action: approve | decline
+export async function treasurerDisbursementAction(id, { action, declineReason }) {
+    return handleResponse(await fetch(`${BASE_URL}/disbursements/${id}/treasurer`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ action, declineReason }),
+    }));
+}
+
+// Mark as completed (after physical bank/cash transfer)
+export async function markDisbursementCompleted(id) {
+    return handleResponse(await fetch(`${BASE_URL}/disbursements/${id}/complete`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({}),
+    }));
+}
+
+// Legacy
 export async function updateDisbursementStatus(id, status) {
-    const res = await fetch(`${BASE_URL}/disbursements/${id}/status`, {
+    return handleResponse(await fetch(`${BASE_URL}/disbursements/${id}/status`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify({ status }),
-    });
-    if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: 'Failed to update status' }));
-        throw new Error(error.message || 'Failed to update status');
-    }
-    return res.json();
+    }));
 }

@@ -16,31 +16,21 @@ const getDashboardSummary = async (req, res) => {
   try {
     const memberCount = await User.countDocuments({});
     
-    // Get confirmed contributions
+    // Get all confirmed contributions
     const contributions = await Contribution.find({ status: 'confirmed' });
-    const totalWelfareIn = contributions
-      .filter(c => c.type === 'welfare')
-      .reduce((acc, c) => acc + c.amount, 0);
-    const totalLoanFundIn = contributions
-      .filter(c => c.type === 'loan_fund')
-      .reduce((acc, c) => acc + c.amount, 0);
+    const totalInflow = contributions.reduce((acc, c) => acc + c.amount, 0);
 
     // Get total disbursed loans (outflow)
-    const disbursedLoansData = await Loan.find({ status: { $in: ['disbursed', 'active', 'repaid'] } });
+    const disbursedLoansData = await Loan.find({ status: { $in: ['disbursed', 'active', 'repaid', 'disbursed_cash'] } });
     const totalLoansOutflow = disbursedLoansData.reduce((acc, l) => acc + l.amount, 0);
     const totalRepaymentsIn = disbursedLoansData.reduce((acc, l) => acc + (l.amountRepaid || 0), 0);
 
     // Get total disbursements (outflow)
-    const disbursementsData = await Disbursement.find({ status: 'approved' });
+    const disbursementsData = await Disbursement.find({ status: { $in: ['approved', 'completed'] } });
     const totalDisbursementsOutflow = disbursementsData.reduce((acc, d) => acc + d.amount, 0);
 
-    // Calculate final treasury balances
-    // Welfare balance is contributions - welfare-type disbursements (if we track type in disbursement)
-    // For now, let's just do a global pool balance
-    const totalWelfare = totalWelfareIn - totalDisbursementsOutflow;
-    const totalLoanFund = totalLoanFundIn - totalLoansOutflow + totalRepaymentsIn;
-
-    const poolBalance = totalWelfare + totalLoanFund;
+    // Calculate final treasury balance
+    const poolBalance = totalInflow - totalLoansOutflow + totalRepaymentsIn - totalDisbursementsOutflow;
 
     // Get settings for goal
     let settings = await Settings.findOne();

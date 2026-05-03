@@ -2,106 +2,159 @@ const Disbursement = require('../models/Disbursement');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 
-// @desc    Get all disbursements
-// @route   GET /api/disbursements
-// @access  Private
+function populateDisbursement(query) {
+  return query
+    .populate('memberId', 'name email walletBalance')
+    .populate('requestedBy', 'name')
+    .populate('reviewedBy', 'name');
+}
+
+function transformDisbursement(d) {
+  if (!d) return null;
+  const doc = d._doc || d;
+  return { ...doc, member: d.memberId?.name || 'Unknown', id: doc._id };
+}
+
+/**
+ * @desc    Get all disbursements
+ * @route   GET /api/disbursements
+ * @access  Private
+ */
 const getDisbursements = async (req, res) => {
-  const disbursements = await Disbursement.find({})
-    .populate('memberId', 'name email')
-    .sort({ createdAt: -1 });
-  
-  // Transform for frontend if needed
-  const transformed = disbursements.map(d => ({
-    ...d._doc,
-    member: d.memberId?.name || 'Unknown',
-  }));
-  
-  res.json(transformed);
+  // Let all users see all disbursements for transparency
+  const query = {};
+  const disbursements = await populateDisbursement(Disbursement.find(query).sort({ createdAt: -1 }));
+  res.json(disbursements.map(transformDisbursement));
 };
 
-// @desc    Add a disbursement
-// @route   POST /api/disbursements
-// @access  Private/Treasurer/Admin
+/**
+ * @desc    Group Leader creates a disbursement request
+ * @route   POST /api/disbursements
+ * @access  Private/GroupLeader/Admin
+ */
 const addDisbursement = async (req, res) => {
-  const { memberId, member, amount, reason, type, method, status } = req.body;
+  const { memberId, member, amount, reason, type, method, bankAccountNumber, bankName, bankAccountName } = req.body;
 
-  // If memberId is missing but member (name) is provided, try to find user
+  // Resolve memberId from name if not provided
   let targetMemberId = memberId;
   if (!targetMemberId && member) {
     const user = await User.findOne({ name: new RegExp(`^${member}$`, 'i') });
     if (user) targetMemberId = user._id;
   }
-
-  if (!targetMemberId) {
-    res.status(400);
-    throw new Error('Member identity required for disbursement');
-  }
+  if (!targetMemberId) { res.status(400); throw new Error('Member identity required'); }
+  if (!amount || Number(amount) <= 0) { res.status(400); throw new Error('Valid amount required'); }
+  if (!reason) { res.status(400); throw new Error('Reason is required'); }
 
   const disbursement = await Disbursement.create({
     memberId: targetMemberId,
-    amount,
+    amount: Number(amount),
     reason,
-    type: type || 'welfare',
-    method: method || 'Bank Transfer',
-    status: status || 'pending'
+    type: type || 'general',
+    method: method || 'wallet',
+    bankAccountNumber: bankAccountNumber || undefined,
+    bankName: bankName || undefined,
+    bankAccountName: bankAccountName || undefined,
+    requestedBy: req.user._id,
+    status: 'pending',
   });
 
-  if (disbursement.status === 'approved') {
-      await Transaction.create({
-          user: targetMemberId,
-          type: 'debit',
-          amount: amount,
-          note: `Disbursement: ${reason}`,
-          relatedUser: req.user._id
-      });
-  }
-
-  const populated = await Disbursement.findById(disbursement._id).populate('memberId', 'name');
-  
-  res.status(201).json({
-    ...populated._doc,
-    member: populated.memberId?.name || 'Unknown'
-  });
+  const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+  res.status(201).json(transformDisbursement(populated));
 };
 
-// @desc    Update disbursement status (Approve/Decline)
-// @route   PATCH /api/disbursements/:id/status
-// @access  Private/Treasurer/Admin
+/**
+ * @desc    Treasurer approves or declines a disbursement request
+ * @route   PATCH /api/disbursements/:id/treasurer
+ * @access  Private/Treasurer/Admin
+ */
+const treasurerAction = async (req, res) => {
+  const { action, declineReason } = req.body;
+  const disbursement = await Disbursement.findById(req.params.id);
+  if (!disbursement) { res.status(404); throw new Error('Disbursement not found'); }
+  if (disbursement.status !== 'pending') { res.status(400); throw new Error(`Can only act on pending disbursements. Status: ${disbursement.status}`); }
+
+  if (action === 'decline') {
+    disbursement.status = 'declined';
+    disbursement.declineReason = declineReason || 'Declined by Treasurer';
+    disbursement.reviewedBy = req.user._id;
+    disbursement.reviewedAt = new Date();
+    await disbursement.save();
+    const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+    return res.json(transformDisbursement(populated));
+  }
+
+  if (action !== 'approve') { res.status(400); throw new Error('action must be: approve | decline'); }
+
+  disbursement.status = 'approved';
+  disbursement.reviewedBy = req.user._id;
+  disbursement.reviewedAt = new Date();
+
+  // Auto-credit wallet if method is wallet
+  if (disbursement.method === 'wallet') {
+    const member = await User.findById(disbursement.memberId);
+    if (!member) { res.status(404); throw new Error('Beneficiary not found'); }
+    member.walletBalance = (member.walletBalance || 0) + disbursement.amount;
+    await member.save();
+    disbursement.status = 'completed';
+    disbursement.completedAt = new Date();
+  }
+
+  await Transaction.create({
+    user: disbursement.memberId, type: 'credit', amount: disbursement.amount,
+    note: `Disbursement ${disbursement.method === 'wallet' ? '(wallet)' : `(${disbursement.method})`}: ${disbursement.reason}`,
+    relatedUser: req.user._id,
+  });
+
+  await disbursement.save();
+  const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+  res.json(transformDisbursement(populated));
+};
+
+/**
+ * @desc    Mark a disbursement as completed (for bank/cash after physical transfer)
+ * @route   PATCH /api/disbursements/:id/complete
+ * @access  Private/Treasurer/Admin
+ */
+const markCompleted = async (req, res) => {
+  const disbursement = await Disbursement.findById(req.params.id);
+  if (!disbursement) { res.status(404); throw new Error('Disbursement not found'); }
+  if (disbursement.status !== 'approved') { res.status(400); throw new Error('Only approved disbursements can be marked completed'); }
+  disbursement.status = 'completed';
+  disbursement.completedAt = new Date();
+  await disbursement.save();
+  const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+  res.json(transformDisbursement(populated));
+};
+
+/**
+ * @desc    Legacy status update
+ * @route   PATCH /api/disbursements/:id/status
+ * @access  Private/Treasurer/Admin
+ */
 const updateDisbursementStatus = async (req, res) => {
   const { status } = req.body;
-  const { id } = req.params;
-
-  if (!['pending', 'approved', 'declined', 'completed'].includes(status)) {
-    res.status(400);
-    throw new Error('Invalid status');
-  }
-
-  const disbursement = await Disbursement.findById(id);
-
-  if (disbursement) {
-    const oldStatus = disbursement.status;
-    disbursement.status = status;
-    const updatedDisbursement = await disbursement.save();
-    
-    if (oldStatus !== 'approved' && status === 'approved') {
-        await Transaction.create({
-            user: disbursement.memberId,
-            type: 'debit',
-            amount: disbursement.amount,
-            note: `Disbursement Approved: ${disbursement.reason}`,
-            relatedUser: req.user._id
-        });
-    }
-    
-    const populated = await Disbursement.findById(updatedDisbursement._id).populate('memberId', 'name');
-    res.json({
-      ...populated._doc,
-      member: populated.memberId?.name || 'Unknown'
+  const valid = ['pending','approved','declined','completed'];
+  if (!valid.includes(status)) { res.status(400); throw new Error('Invalid status'); }
+  const disbursement = await Disbursement.findById(req.params.id);
+  if (!disbursement) { res.status(404); throw new Error('Disbursement not found'); }
+  const oldStatus = disbursement.status;
+  disbursement.status = status;
+  disbursement.reviewedBy = req.user._id;
+  disbursement.reviewedAt = new Date();
+  if (status === 'completed') disbursement.completedAt = new Date();
+  if (oldStatus !== 'approved' && status === 'approved') {
+    await Transaction.create({
+      user: disbursement.memberId, type: 'credit', amount: disbursement.amount,
+      note: `Disbursement Approved: ${disbursement.reason}`, relatedUser: req.user._id,
     });
-  } else {
-    res.status(404);
-    throw new Error('Disbursement not found');
+    if (disbursement.method === 'wallet') {
+      const member = await User.findById(disbursement.memberId);
+      if (member) { member.walletBalance = (member.walletBalance || 0) + disbursement.amount; await member.save(); }
+    }
   }
+  await disbursement.save();
+  const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+  res.json(transformDisbursement(populated));
 };
 
-module.exports = { getDisbursements, addDisbursement, updateDisbursementStatus };
+module.exports = { getDisbursements, addDisbursement, treasurerAction, markCompleted, updateDisbursementStatus };

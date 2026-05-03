@@ -1,0 +1,8 @@
+{
+  "verbose": true,
+  "watch": ["index.js", "controllers/", "routes/", "models/", "middleware/", "config/"],
+  "ext": "js,mjs,json",
+  "ignore": ["node_modules/", ".git/", "public/", "client/"],
+  "delay": "500"
+}
+

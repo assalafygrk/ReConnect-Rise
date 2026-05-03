@@ -1,622 +1,383 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import {
-    Plus, X, CreditCard, FileText, Printer,
-    CheckSquare, Square, ShieldCheck, History,
-    CheckCircle2, XCircle, Clock, Search,
-    Filter, Download, Loader2, TrendingUp,
-    BadgeCheck, AlertTriangle, ArrowRightCircle,
-    UserCheck, Wallet, Fingerprint, Compass
-} from 'lucide-react';
+import { Plus, X, Loader2, Clock, CheckCircle2, XCircle, ShieldCheck, AlertTriangle, CreditCard, MessageSquare } from 'lucide-react';
 import dayjs from 'dayjs';
-import { useReactToPrint } from 'react-to-print';
-import TransactionReceipt from '../components/TransactionReceipt';
-import { fetchLoans, addLoan, recordRepayment, updateLoanStatus } from '../api/loans';
-import { fetchDashboard } from '../api/dashboard';
+import { fetchLoans, addLoan, leaderLoanAction, treasurerLoanAction, recordRepayment, memberNegotiateLoan } from '../api/loans';
 import { useAuth } from '../context/AuthContext';
-import { usePageConfig } from '../context/PageConfigContext';
 
-function formatNaira(v) {
-    return `₦${Number(v || 0).toLocaleString('en-NG')}`;
-}
+const fmt = v => `₦${Number(v||0).toLocaleString('en-NG')}`;
 
-const MOCK = [
-    { id: 1, member: 'Kola Ayoola', amount: 20000, balance: 10000, disbursedDate: '2026-02-01', status: 'active', repaymentPlan: 'Monthly ₦5k' },
-    { id: 2, member: 'Musa Haruna', amount: 15000, balance: 0, disbursedDate: '2026-01-15', status: 'repaid', repaymentPlan: 'Full at month end' },
-    { id: 3, member: 'Chidi Nwosu', amount: 30000, balance: 30000, disbursedDate: '2026-03-01', status: 'pending_treasurer', repaymentPlan: 'Weekly ₦7.5k' },
-    { id: 4, member: 'Emeka Obi', amount: 50000, balance: 50000, disbursedDate: '2026-03-20', status: 'pending_leader', repaymentPlan: 'Lump sum April' },
-];
-
-// VAULT_BALANCE now dynamically fetched
+const STATUS_STYLE = {
+  pending:         { label:'Awaiting Leader',   cls:'bg-amber-50 text-amber-600 ring-amber-600/10',   icon:Clock },
+  negotiating:     { label:'Negotiating',        cls:'bg-blue-50 text-blue-600 ring-blue-600/10',     icon:MessageSquare },
+  leader_approved: { label:'At Treasurer',       cls:'bg-indigo-50 text-indigo-600 ring-indigo-600/10', icon:Clock },
+  active:          { label:'Active',             cls:'bg-emerald-50 text-emerald-600 ring-emerald-600/10', icon:CheckCircle2 },
+  disbursed_cash:  { label:'Disbursed (Cash)',   cls:'bg-teal-50 text-teal-600 ring-teal-600/10',     icon:CheckCircle2 },
+  repaid:          { label:'Repaid',             cls:'bg-gray-50 text-gray-500 ring-gray-500/10',      icon:CheckCircle2 },
+  declined:        { label:'Declined',           cls:'bg-red-50 text-red-600 ring-red-600/10',         icon:XCircle },
+};
 
 export default function LoansPage() {
-    const { hasRole, ROLES, user } = useAuth();
-    const { config } = usePageConfig('loans');
-    const isTreasurer = hasRole(ROLES.TREASURER, ROLES.ADMIN);
-    const isLeader = hasRole(ROLES.GROUP_LEADER, ROLES.ADMIN);
-    const isMemberOnly = !isTreasurer && !isLeader && config.loansEnabled;
+  const { hasRole, user, ROLES } = useAuth();
+  const isLeader    = hasRole(ROLES.GROUP_LEADER);
+  const isTreasurer = hasRole(ROLES.TREASURER);
+  const isAdmin     = hasRole(ROLES.ADMIN, ROLES.SUPER_ADMIN);
 
+  const [loans, setLoans] = useState([]);
+  const [vault, setVault] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ amount:'', purpose:'', duration:'6', disbursementMethod:'wallet' });
+  const [repayAmt, setRepayAmt] = useState('');
+  const [showRepay, setShowRepay] = useState(false);
+  const [negotiationNotes, setNegotiationNotes] = useState('');
+  const [replyNotes, setReplyNotes] = useState('');
+  const [declineReason, setDeclineReason] = useState('');
 
-    // States
-    const [loans, setLoans] = useState([]);
-    const [vaultBalance, setVaultBalance] = useState(120000);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
-    const [showForm, setShowForm] = useState(false);
-    const [showRepayForm, setShowRepayForm] = useState(false);
-    const [repayAmt, setRepayAmt] = useState('');
-    const [form, setForm] = useState({ member: user?.name || '', amount: '', plan: '' });
-    const [selectedLoan, setSelectedLoan] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetchLoans();
+      setLoans(res.loans || res);
+      if (res.vaultBalance !== undefined) setVault(res.vaultBalance);
+    } catch { toast.error('Failed to load loans'); }
+    finally { setLoading(false); }
+  };
 
-    // Leader Review Checklist State
-    const [leaderChecks, setLeaderChecks] = useState({
-        amountVerified: false,
-        repaymentPlanVerified: false,
-        memberStandingVerified: false
-    });
+  useEffect(() => { load(); }, []);
 
-    const printRef = useRef();
-    const handlePrint = useReactToPrint({
-        contentRef: printRef,
-        documentTitle: `RR_Audit_Loan_${selectedLoan?.id || ''}`,
-    });
+  const submit = async (e) => {
+    e.preventDefault();
+    if (Number(form.amount) > vault) { toast.error(`Insufficient vault funds. Available: ${fmt(vault)}`); return; }
+    setBusy(true);
+    try {
+      const r = await addLoan({ amount:Number(form.amount), purpose:form.purpose, duration:Number(form.duration), disbursementMethod:form.disbursementMethod });
+      setLoans(p => [r, ...p]);
+      toast.success('Loan request submitted to Group Leader');
+      setShowForm(false);
+      setForm({ amount:'', purpose:'', duration:'6', disbursementMethod:'wallet' });
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    useEffect(() => {
-        loadData();
-    }, []);
+  const leaderAct = async (id, action) => {
+    setBusy(true);
+    try {
+      const r = await leaderLoanAction(id, { action, negotiationNotes, declineReason });
+      setLoans(p => p.map(l => (l._id||l.id)===id ? r : l));
+      if ((selected?._id||selected?.id)===id) setSelected(r);
+      toast.success(`Action: ${action}`);
+      setNegotiationNotes(''); setDeclineReason('');
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [data, dashboardData] = await Promise.all([
-                fetchLoans(),
-                fetchDashboard().catch(() => null)
-            ]);
-            setLoans(data);
-            if (dashboardData?.stats?.loanFundBalance !== undefined) {
-                setVaultBalance(dashboardData.stats.loanFundBalance);
-            }
-        } catch (err) {
-            setLoans(MOCK);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const treasurerAct = async (id, action) => {
+    if (action==='decline' && !declineReason.trim()) { toast.error('Enter decline reason'); return; }
+    setBusy(true);
+    try {
+      const r = await treasurerLoanAction(id, { action, declineReason });
+      setLoans(p => p.map(l => (l._id||l.id)===id ? r : l));
+      if ((selected?._id||selected?.id)===id) setSelected(r);
+      toast.success(action==='disburse' ? 'Loan disbursed!' : 'Loan declined');
+      setDeclineReason('');
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const handleAdd = async (e) => {
-        e.preventDefault();
-        setActionLoading(true);
-        try {
-            const data = await addLoan({
-                amount: Number(form.amount),
-                purpose: form.plan,
-                duration: 6, // default 6 month duration
-            });
-            setLoans((prev) => [data, ...prev]);
-            toast.success('Loan application committed to registry');
-            setShowForm(false);
-            setForm({ member: user?.name || '', amount: '', plan: '' });
-        } catch (err) {
-            toast.error(err.message);
-        } finally {
-            setActionLoading(false);
-        }
-    };
+  const doRepay = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const id = selected?._id || selected?.id;
+      const r = await recordRepayment(id, Number(repayAmt));
+      setLoans(p => p.map(l => (l._id||l.id)===id ? r : l));
+      setSelected(r); setShowRepay(false); setRepayAmt('');
+      toast.success('Repayment recorded');
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const handleApproval = async (id, newStatus) => {
-        setActionLoading(true);
-        try {
-            // Map frontend status labels to backend status values
-            const backendStatus = newStatus === 'active' ? 'disbursed' : newStatus;
-            const updated = await updateLoanStatus(id, backendStatus);
-            const frontendLoan = { ...updated, status: newStatus };
-            setLoans((prev) => prev.map(l => l.id === id || l._id === id ? frontendLoan : l));
-            if (selectedLoan?.id === id || selectedLoan?._id === id) setSelectedLoan(frontendLoan);
-            toast.success(`Loan registry updated: ${newStatus.replace('_', ' ')}`);
-        } catch (err) {
-            toast.error(err.message || 'Audit update failed');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+  const replyNegotiation = async (e) => {
+    e.preventDefault();
+    if (!replyNotes.trim()) { toast.error('Enter your response'); return; }
+    setBusy(true);
+    try {
+      const id = selected?._id || selected?.id;
+      const r = await memberNegotiateLoan(id, replyNotes);
+      setLoans(p => p.map(l => (l._id||l.id)===id ? r : l));
+      setSelected(r); setReplyNotes('');
+      toast.success('Response sent back to Group Leader');
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const handleRepaySubmission = async (e) => {
-        e.preventDefault();
-        setActionLoading(true);
-        try {
-            await recordRepayment(selectedLoan.id, Number(repayAmt));
-            setLoans((prev) => prev.map((l) =>
-                l.id === selectedLoan.id
-                    ? { ...l, balance: Math.max(0, l.balance - Number(repayAmt)), status: l.balance - Number(repayAmt) <= 0 ? 'repaid' : 'active' }
-                    : l
-            ));
-            toast.success('Repayment formalized successfully');
-            setShowRepayForm(false);
-            setRepayAmt('');
-            setSelectedLoan(null);
-        } catch (err) {
-            toast.error(err.message);
-        } finally {
-            setActionLoading(false);
-        }
-    };
+  if (loading) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <Loader2 className="animate-spin text-[#E8820C]" size={40}/>
+      <p className="text-xs font-black uppercase tracking-widest text-black/30">Loading Loan Registry...</p>
+    </div>
+  );
 
-    if (loading) return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="animate-spin text-[#E8820C]" size={40} />
-            <p className="text-sm font-bold text-black/40 uppercase tracking-widest text-center px-4">Accessing Loan Registry...</p>
-        </div>
-    );
+  const myLoans = loans.filter(l => String(l.user?._id||l.user)===String(user?.id));
+  const visible = (isLeader||isTreasurer||isAdmin) ? loans : myLoans;
+  const leaderQueue    = loans.filter(l => ['pending','negotiating'].includes(l.status));
+  const treasurerQueue = loans.filter(l => l.status==='leader_approved');
 
-    // Derived values
-    const filteredLoans = loans.filter(l => {
-        const memberName = l.member?.toLowerCase() || '';
-        const matchesSearch = memberName.includes(searchQuery.toLowerCase());
-        const matchesFilter = filterStatus === 'all' || l.status === filterStatus;
-        const matchesRole = isTreasurer || isLeader || l.member === (user?.name || user?.id);
-        return matchesSearch && matchesFilter && matchesRole;
-    });
-
-
-    const totalLoaned = loans.filter(l => l.status !== 'declined').reduce((sum, l) => sum + l.amount, 0);
-    const activeBalance = loans.filter(l => l.status === 'active').reduce((sum, l) => sum + l.balance, 0);
-
-    const stats = [
-        { label: 'Total Loaned', value: totalLoaned, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Outstanding', value: activeBalance, icon: Wallet, color: 'text-red-600', bg: 'bg-red-50' },
-        { label: 'Pending Audit', value: loans.filter(l => l.status.startsWith('pending')).length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', isMoney: false },
-        { label: 'Vault Ready', value: vaultBalance, icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    ];
-
-    const getStatusStyle = (status) => {
-        switch (status) {
-            case 'repaid': return 'bg-emerald-50 text-emerald-600 ring-emerald-600/10';
-            case 'active': return 'bg-blue-50 text-blue-600 ring-blue-600/10';
-            case 'pending_leader':
-            case 'pending_treasurer': return 'bg-amber-50 text-amber-600 ring-amber-600/10';
-            case 'declined': return 'bg-red-50 text-red-600 ring-red-600/10';
-            default: return 'bg-gray-50 text-gray-600 ring-gray-600/10';
-        }
-    };
-
-    return (
-        <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4">
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-[#1A1A2E] p-10 text-white shadow-2xl border border-white/5">
-                {/* Decorative background elements */}
-                <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[100px] opacity-10 pointer-events-none bg-[#E8820C]" />
-                <div className="absolute bottom-[-20%] left-[10%] w-[300px] h-[300px] rounded-full blur-[80px] opacity-5 pointer-events-none bg-blue-500" />
-
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#F5A623] text-[10px] font-black uppercase tracking-widest">
-                            <Compass size={12} />
-                            Credit & Reliability
-                        </div>
-                        <div>
-                            <h1 className="text-4xl font-serif font-black tracking-tight flex items-center gap-3">
-                                {config.pageHeadline}
-                                <Fingerprint size={24} className="text-white/20" />
-                            </h1>
-                            <p className="text-white/40 text-sm font-medium mt-2 max-w-md">
-                                {config.pageSubtitle}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <button
-                            onClick={() => toast.success('Exporting audited records...')}
-                            className="bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-white/10 transition-all backdrop-blur-sm"
-                        >
-                            <Download size={14} /> Export Audit
-                        </button>
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="bg-[#E8820C] text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-[#E8820C]/20"
-                        >
-                            <Plus size={14} /> {isTreasurer ? 'New Registry Entry' : 'Request Loan'}
-                        </button>
-                    </div>
+  return (
+    <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-[#1A1A2E] p-10 text-white shadow-2xl border border-white/5">
+        <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-[100px] opacity-10 bg-[#E8820C] pointer-events-none"/>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-serif font-black tracking-tight">Loan Registry</h1>
+            <p className="text-white/40 text-sm">Member → Group Leader → Treasurer</p>
+            <div className="flex gap-4 pt-2">
+              {[['Vault',fmt(vault),'text-emerald-400'],['Active',loans.filter(l=>l.status==='active').length,'text-blue-400'],['Pending',leaderQueue.length,'text-amber-400']].map(([l,v,c])=>(
+                <div key={l} className="bg-white/5 rounded-xl px-4 py-2 border border-white/10 text-center">
+                  <p className={`text-xl font-black ${c}`}>{v}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/30">{l}</p>
                 </div>
+              ))}
             </div>
+          </div>
+          <button onClick={()=>setShowForm(true)}
+            className="bg-[#E8820C] text-white px-7 py-4 rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:opacity-90 active:scale-95 transition-all">
+            <Plus size={16}/> Request Loan
+          </button>
+        </div>
+      </div>
 
-            {config.loanRulesNotice && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <ShieldCheck size={20} className="text-blue-600" />
-                    <p className="text-sm font-bold text-blue-800">
-                        {config.loanRulesNotice}
-                    </p>
+      {/* Leader Queue */}
+      {isLeader && leaderQueue.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-[2rem] p-6 space-y-4">
+          <h3 className="text-sm font-black text-amber-800 uppercase tracking-widest">Group Leader Queue ({leaderQueue.length})</h3>
+          {leaderQueue.map(l => (
+            <div key={l._id||l.id} className="bg-white rounded-2xl p-5 border border-amber-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-black text-[#1A1A2E]">{l.member} — <span className="font-normal text-black/50">{l.purpose}</span></p>
+                  <p className="text-sm font-black text-[#E8820C] mt-1">{fmt(l.amount)} · {l.duration} months · via {l.disbursementMethod}</p>
                 </div>
-            )}
+                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ring-1 ${STATUS_STYLE[l.status]?.cls}`}>{STATUS_STYLE[l.status]?.label}</span>
+              </div>
+              <textarea value={negotiationNotes} onChange={e=>setNegotiationNotes(e.target.value)} rows={2} placeholder="Negotiation notes / agreed terms (optional)"
+                className="w-full bg-gray-50 border-2 border-transparent focus:border-amber-400 rounded-xl px-4 py-3 text-xs font-medium outline-none resize-none"/>
+              <div className="flex gap-3">
+                <button onClick={()=>leaderAct(l._id||l.id,'approve')} disabled={busy}
+                  className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  {busy?<Loader2 size={12} className="animate-spin"/>:<ShieldCheck size={12}/>} Approve → Treasurer
+                </button>
+                <button onClick={()=>leaderAct(l._id||l.id,'negotiate')} disabled={busy}
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50">
+                  Negotiate
+                </button>
+                <button onClick={()=>{ setDeclineReason(''); leaderAct(l._id||l.id,'decline'); }} disabled={busy}
+                  className="py-3 px-5 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50">
+                  Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-            {/* Financial Insights */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className={`${stat.bg} ${stat.color} p-3 rounded-2xl`}>
-                                <stat.icon size={20} />
-                            </div>
-                            <span className="text-[10px] font-black text-black/20 uppercase tracking-widest">System</span>
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mb-1">{stat.label}</p>
-                            <h4 className="text-2xl font-serif font-black text-[#1A1A2E]">
-                                {stat.isMoney === false ? stat.value : formatNaira(stat.value)}
-                            </h4>
-                        </div>
-                    </div>
+      {/* Treasurer Queue */}
+      {isTreasurer && treasurerQueue.length > 0 && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-[2rem] p-6 space-y-4">
+          <h3 className="text-sm font-black text-indigo-800 uppercase tracking-widest">Treasurer Queue ({treasurerQueue.length})</h3>
+          {treasurerQueue.map(l => (
+            <div key={l._id||l.id} className="bg-white rounded-2xl p-5 border border-indigo-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-black text-[#1A1A2E]">{l.member} — <span className="font-normal text-black/50">{l.purpose}</span></p>
+                  <p className="text-sm font-black text-[#E8820C] mt-1">{fmt(l.amount)} · via {l.disbursementMethod}</p>
+                  {l.negotiationNotes && <p className="text-xs text-indigo-700 bg-indigo-50 rounded-lg px-3 py-1.5 mt-2">📋 {l.negotiationNotes}</p>}
+                </div>
+              </div>
+              {Number(l.amount) > vault && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-100">
+                  <AlertTriangle size={14} className="text-red-600"/><p className="text-xs font-bold text-red-700">Vault insufficient: {fmt(vault)} available</p>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <input value={declineReason} onChange={e=>setDeclineReason(e.target.value)} placeholder="Decline reason (if declining)"
+                  className="flex-1 bg-gray-50 border-2 border-transparent focus:border-red-400 rounded-xl px-4 py-3 text-xs font-medium outline-none"/>
+                <button onClick={()=>treasurerAct(l._id||l.id,'disburse')} disabled={busy||Number(l.amount)>vault}
+                  className="py-3 px-5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2">
+                  {busy?<Loader2 size={12} className="animate-spin"/>:null} Disburse
+                </button>
+                <button onClick={()=>treasurerAct(l._id||l.id,'decline')} disabled={busy}
+                  className="py-3 px-5 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50">
+                  Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* All Loans Table */}
+      <div className="bg-white rounded-[2.5rem] shadow-sm border border-black/5 overflow-hidden">
+        <div className="p-6 border-b border-black/5">
+          <h3 className="text-lg font-serif font-bold text-[#1A1A2E]">All Loans</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 text-left">
+              <tr>
+                {['Borrower','Purpose','Status','Amount','Balance','Date'].map(h=>(
+                  <th key={h} className="px-6 py-4 text-[10px] font-black text-black/30 uppercase tracking-widest">{h}</th>
                 ))}
-            </div>
-
-            {/* Main Content Area */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-black/5 overflow-hidden">
-                <div className="p-8 border-b border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/30">
-                    <div className="flex items-center gap-4">
-                        <div className="relative group">
-                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Audit search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-white border-2 border-transparent focus:border-[#E8820C] rounded-2xl pl-12 pr-4 py-2.5 text-xs font-bold outline-none transition-all w-full sm:w-64 shadow-inner"
-                            />
-                        </div>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-white border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-2.5 text-xs font-bold outline-none transition-all shadow-inner"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="active">Active Loans</option>
-                            <option value="repaid">Fully Repaid</option>
-                            <option value="pending_leader">Leader Audit</option>
-                            <option value="pending_treasurer">Treasurer Audit</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 text-left border-b border-black/5 whitespace-nowrap">
-                            <tr>
-                                <th className="px-8 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Entry Ref</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Borrower</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Status / Location</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Loan Amount</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Balance</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Execute Date</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-black/5 whitespace-nowrap">
-                            {filteredLoans.map((loan) => (
-                                <tr
-                                    key={loan.id}
-                                    onClick={() => setSelectedLoan(loan)}
-                                    className="hover:bg-gray-50 transition-colors cursor-pointer group"
-                                >
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-[#1A1A2E]/5 flex items-center justify-center text-[#1A1A2E] group-hover:bg-[#1A1A2E] group-hover:text-white transition-all">
-                                                <History size={14} />
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-black/40">#LON-{String(loan.id).padStart(4, '0')}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-sm font-bold text-[#1A1A2E]">{loan.member}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${getStatusStyle(loan.status)}`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${loan.status === 'repaid' ? 'bg-emerald-600' :
-                                                loan.status === 'active' ? 'bg-blue-600' :
-                                                    loan.status.startsWith('pending') ? 'bg-amber-600' : 'bg-red-600'
-                                                }`} />
-                                            {loan.status.replace('_', ' ')}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-right font-bold text-black/40 text-xs">
-                                        {formatNaira(loan.amount)}
-                                    </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <span className={`text-sm font-black ${loan.balance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                            {formatNaira(loan.balance)}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-5 text-right font-bold text-black/30 text-xs">
-                                        {dayjs(loan.disbursedDate).format('DD MMM YYYY')}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Meticulous Modals */}
-            {/* Record Form Modal */}
-            {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowForm(false)} />
-                    <div className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
-                            <div className="space-y-1">
-                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">{isTreasurer ? 'New Loan Registry' : 'Apply for Credit'}</h3>
-                                <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                    <CreditCard size={12} className="text-[#E8820C]" /> Formal Registry Entry
-                                </p>
-                            </div>
-                            <button onClick={() => setShowForm(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleAdd} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Borrower/Member</label>
-                                    <div className="relative group">
-                                        <UserCheck size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" />
-                                        <input
-                                            required
-                                            disabled={isMemberOnly}
-                                            value={form.member}
-                                            onChange={(e) => setForm({ ...form, member: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-12 pr-5 py-4 text-xs font-bold outline-none transition-all disabled:opacity-50"
-                                            placeholder="Enter full name"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Principal Amount</label>
-                                    <div className="relative group">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 text-xs">₦</span>
-                                        <input
-                                            required
-                                            type="number"
-                                            min="1000"
-                                            max={config.maxLoanAmount || undefined}
-                                            value={form.amount}
-                                            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                            placeholder={`Min: 1000 ${config.maxLoanAmount ? `| Max: ${formatNaira(config.maxLoanAmount)}` : ''}`}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="flex items-center gap-2 text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">
-                                    Proposed Repayment Plan
-                                    {config.repaymentPeriodLabel && (
-                                        <span className="text-[#E8820C]">({config.repaymentPeriodLabel})</span>
-                                    )}
-                                    {config.interestRate > 0 && (
-                                        <span className="text-red-500">({config.interestRate}% Interest)</span>
-                                    )}
-                                </label>
-                                <textarea
-                                    required
-                                    value={form.plan}
-                                    onChange={(e) => setForm({ ...form, plan: e.target.value })}
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-[2rem] px-6 py-5 text-xs font-bold outline-none transition-all resize-none leading-relaxed"
-                                    rows={3}
-                                    placeholder="Detail how and when this amount will be repaid to the group treasury..."
-                                />
-                            </div>
-
-                            {Number(form.amount) > vaultBalance && (
-                                <div className="bg-red-50 rounded-2xl p-4 flex gap-3 border border-red-100 items-start">
-                                    <AlertTriangle size={18} className="text-red-600 flex-shrink-0" />
-                                    <p className="text-[10px] font-bold text-red-800 leading-normal uppercase">
-                                        Treasury Alert: Requested amount exceeds current liquid vault balance. Disbursement may be delayed.
-                                    </p>
-                                </div>
-                            )}
-
-                            <div className="flex gap-4 pt-4">
-                                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:bg-gray-50 rounded-2xl transition-all">Cancel</button>
-                                <button
-                                    type="submit"
-                                    disabled={actionLoading}
-                                    className="flex-[2] py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-[#1A1A2E]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                                    style={{ background: '#1A1A2E' }}
-                                >
-                                    {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                    Commit Application
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Loan Detail & Audit View */}
-            {selectedLoan && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => { setSelectedLoan(null); setShowRepayForm(false); }} />
-                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
-                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
-                            <div className="space-y-1">
-                                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Financial Audit</h3>
-                                <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                    <History size={12} className="text-blue-500" /> Reference #LON-{String(selectedLoan.id).padStart(4, '0')}
-                                </p>
-                            </div>
-                            <button onClick={() => { setSelectedLoan(null); setShowRepayForm(false); }} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                            <div className="bg-gray-50 p-6 rounded-[2rem] border border-black/[0.03] space-y-4">
-                                <p className="text-[10px] font-black text-black/20 uppercase tracking-widest">Registry Metadata</p>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-black/40">Status:</span>
-                                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${getStatusStyle(selectedLoan.status)}`}>
-                                            {selectedLoan.status.replace('_', ' ')}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-black/40">Borrower:</span>
-                                        <span className="text-xs font-black text-[#1A1A2E]">{selectedLoan.member}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-black/40">Execute Date:</span>
-                                        <span className="text-xs font-black text-[#1A1A2E]">{dayjs(selectedLoan.disbursedDate).format('DD MMM YYYY')}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-[#1A1A2E] p-6 rounded-[2rem] text-white flex flex-col justify-center items-center text-center space-y-2 relative overflow-hidden">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Outstanding Balance</p>
-                                <h2 className="text-3xl font-serif font-black">{formatNaira(selectedLoan.balance)}</h2>
-                                <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Principal: {formatNaira(selectedLoan.amount)}</p>
-                                {selectedLoan.balance === 0 && (
-                                    <div className="absolute font-black opacity-10 rotate-12 text-6xl select-none">REPAID</div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Treasurer Review - Verification Phase */}
-                        {selectedLoan.status === 'pending_treasurer' && isTreasurer && (
-                            <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 space-y-6 mb-8 text-center">
-                                <h4 className="text-[10px] font-black text-emerald-800 uppercase tracking-widest flex items-center justify-center gap-2">
-                                    <UserCheck size={14} /> Treasury Verification
-                                </h4>
-                                <p className="text-xs font-bold text-emerald-700/60 uppercase tracking-wide">Validate member eligibility and vault capacity.</p>
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => handleApproval(selectedLoan.id, 'pending_leader')}
-                                        className="flex-1 py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
-                                    >
-                                        <BadgeCheck size={16} /> Verify & Pass to Leader
-                                    </button>
-                                    <button
-                                        onClick={() => handleApproval(selectedLoan.id, 'declined')}
-                                        className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Leader Review - Final Approval Phase */}
-                        {selectedLoan.status === 'pending_leader' && isLeader && (
-                            <div className="bg-amber-50 p-8 rounded-[2.5rem] border border-amber-100 space-y-6 mb-8">
-                                <h4 className="text-[10px] font-black text-amber-800 uppercase tracking-widest flex items-center gap-2">
-                                    <ShieldCheck size={14} /> Final Executive Authorization
-                                </h4>
-                                <p className="text-xs font-bold text-amber-700/60 uppercase tracking-wide text-center">Treasurer verification complete. Secure final approval.</p>
-                                <div className="space-y-4">
-                                    {[
-                                        { id: 'amountVerified', label: 'Requested amount is proportionate to member earnings' },
-                                        { id: 'repaymentPlanVerified', label: 'Proposed timeline is verified and realistic' },
-                                        { id: 'memberStandingVerified', label: 'Member is currently in good financial standing' }
-                                    ].map((check) => (
-                                        <button
-                                            key={check.id}
-                                            onClick={() => setLeaderChecks(prev => ({ ...prev, [check.id]: !prev[check.id] }))}
-                                            className="w-full flex items-center gap-3 p-4 bg-white rounded-2xl border border-amber-200 hover:border-amber-400 transition-all text-left"
-                                        >
-                                            {leaderChecks[check.id] ? <CheckSquare size={18} className="text-amber-600" /> : <Square size={18} className="text-black/10" />}
-                                            <span className="text-xs font-bold text-black/60">{check.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="flex gap-4 pt-4">
-                                    <button
-                                        disabled={!leaderChecks.amountVerified || !leaderChecks.repaymentPlanVerified || !leaderChecks.memberStandingVerified}
-                                        onClick={() => handleApproval(selectedLoan.id, 'active')}
-                                        className="flex-1 py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg disabled:opacity-30 disabled:grayscale transition-all active:scale-95"
-                                    >
-                                        Authorize & Disburse
-                                    </button>
-                                    <button
-                                        onClick={() => handleApproval(selectedLoan.id, 'declined')}
-                                        className="px-8 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-
-                        {/* Purpose/Plan Log */}
-                        <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-black/5 space-y-4 mb-8">
-                            <h4 className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1 flex items-center gap-2">
-                                <FileText size={14} className="text-[#E8820C]" /> Repayment Commitment
-                            </h4>
-                            <p className="text-sm font-medium text-black/70 italic leading-relaxed">
-                                "{selectedLoan.repaymentPlan || 'No detailed plan logged'}"
-                            </p>
-                        </div>
-
-                        {/* Repayment Action */}
-                        {!showRepayForm && selectedLoan.status === 'active' && (isTreasurer || isLeader) && (
-                            <button
-                                onClick={() => setShowRepayForm(true)}
-                                className="w-full py-5 bg-[#1A1A2E] text-white rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[#1A1A2E]/20 flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 mb-4"
-                            >
-                                <CreditCard size={16} /> Record Repayment
-                            </button>
-                        )}
-
-                        {showRepayForm && (
-                            <form onSubmit={handleRepaySubmission} className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 space-y-4 mb-4 animate-in slide-in-from-bottom-4 duration-300">
-                                <div className="flex items-center justify-between">
-                                    <h4 className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Input Repayment Amount</h4>
-                                    <button type="button" onClick={() => setShowRepayForm(false)} className="text-emerald-800/40 hover:text-emerald-800"><X size={14} /></button>
-                                </div>
-                                <div className="relative group">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-emerald-800/20 text-xs">₦</span>
-                                    <input
-                                        required
-                                        type="number"
-                                        autoFocus
-                                        value={repayAmt}
-                                        onChange={(e) => setRepayAmt(e.target.value)}
-                                        className="w-full bg-white border-2 border-emerald-200 focus:border-emerald-500 rounded-2xl pl-12 pr-6 py-4 text-xs font-bold outline-none transition-all shadow-inner"
-                                        placeholder="Enter amount repaid"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={actionLoading}
-                                    className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                    Formalize Payment
-                                </button>
-                            </form>
-                        )}
-
-                        <div className="flex gap-4 pt-4 border-t border-black/5">
-                            <button
-                                onClick={handlePrint}
-                                className="flex-1 py-4 border-2 border-[#1A1A2E] text-[#1A1A2E] rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
-                            >
-                                <Printer size={16} /> Print Audit
-                            </button>
-                            <button
-                                onClick={() => { setSelectedLoan(null); setShowRepayForm(false); }}
-                                className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:bg-gray-50 rounded-2xl transition-all"
-                            >
-                                Close Audit
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Hidden Print Wrapper */}
-            <div className="hidden">
-                <TransactionReceipt ref={printRef} data={selectedLoan} type="loan" />
-            </div>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {visible.map(l=>{
+                const st=STATUS_STYLE[l.status]||STATUS_STYLE.pending;
+                return (
+                  <tr key={l._id||l.id} onClick={()=>setSelected(l)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                    <td className="px-6 py-4 font-bold text-sm text-[#1A1A2E]">{l.member}</td>
+                    <td className="px-6 py-4 text-xs text-black/50 max-w-[180px] truncate">{l.purpose}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ring-1 ${st.cls}`}>
+                        <st.icon size={9}/> {st.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-black/50">{fmt(l.amount)}</td>
+                    <td className="px-6 py-4 text-sm font-black text-[#1A1A2E]">{fmt(l.balance)}</td>
+                    <td className="px-6 py-4 text-xs text-black/30">{dayjs(l.createdAt).format('DD MMM YY')}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {visible.length===0 && (
+            <div className="py-16 text-center"><p className="text-xs font-black uppercase tracking-widest text-black/20">No loans found</p></div>
+          )}
         </div>
-    );
+      </div>
+
+      {/* Request Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#1A1A2E]/90 backdrop-blur-xl" onClick={()=>!busy&&setShowForm(false)}/>
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">Loan Request</h3>
+              <button onClick={()=>setShowForm(false)} className="p-3 bg-gray-50 rounded-2xl text-black/20 hover:text-black"><X size={20}/></button>
+            </div>
+            {Number(form.amount)>vault && form.amount && (
+              <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 rounded-xl border border-red-100">
+                <AlertTriangle size={14} className="text-red-600 shrink-0"/>
+                <p className="text-xs font-bold text-red-700">Amount exceeds vault: {fmt(vault)} available</p>
+              </div>
+            )}
+            <form onSubmit={submit} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Amount (₦)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-black/20">₦</span>
+                    <input required type="number" min="1" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})}
+                      className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl pl-9 pr-4 py-4 font-bold outline-none" placeholder="0"/>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Duration (months)</label>
+                  <input type="number" min="1" max="24" value={form.duration} onChange={e=>setForm({...form,duration:e.target.value})}
+                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 font-bold outline-none"/>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Receive via</label>
+                <div className="flex gap-3">
+                  {['wallet','cash'].map(m=>(
+                    <button type="button" key={m} onClick={()=>setForm({...form,disbursementMethod:m})}
+                      className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${form.disbursementMethod===m?'bg-[#1A1A2E] text-white':'bg-gray-50 text-black/40'}`}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Purpose & Repayment Plan</label>
+                <textarea required value={form.purpose} onChange={e=>setForm({...form,purpose:e.target.value})} rows={3}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-5 py-4 text-sm font-medium outline-none resize-none"
+                  placeholder="State purpose and how you plan to repay..."/>
+              </div>
+              <button type="submit" disabled={busy||Number(form.amount)>vault}
+                className="w-full py-5 bg-[#1A1A2E] text-white rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                {busy?<Loader2 size={18} className="animate-spin"/>:<CreditCard size={18}/>} Submit to Group Leader
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Loan Detail Modal */}
+      {selected && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={()=>{setSelected(null);setShowRepay(false);}}/>
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-serif font-black text-[#1A1A2E]">Loan Detail</h3>
+              <button onClick={()=>{setSelected(null);setShowRepay(false);}} className="p-3 bg-gray-50 rounded-2xl text-black/20 hover:text-black"><X size={20}/></button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 p-4 rounded-2xl space-y-1">
+                <p className="text-[9px] font-black text-black/30 uppercase tracking-widest">Borrower</p>
+                <p className="font-black text-[#1A1A2E]">{selected.member}</p>
+              </div>
+              <div className="bg-[#1A1A2E] p-4 rounded-2xl text-white space-y-1">
+                <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Balance</p>
+                <p className="text-2xl font-black">{fmt(selected.balance)}</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-2xl mb-6">
+              <p className="text-[9px] font-black text-black/30 uppercase tracking-widest mb-1">Purpose</p>
+              <p className="text-sm font-medium text-black/70">{selected.purpose}</p>
+              {selected.negotiationNotes && <p className="text-xs text-indigo-700 bg-indigo-50 rounded-lg px-3 py-2 mt-2">📋 {selected.negotiationNotes}</p>}
+              {selected.declineReason && <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2 mt-2">❌ {selected.declineReason}</p>}
+            </div>
+            {/* Repayment */}
+            {['active','disbursed_cash'].includes(selected.status) && (isTreasurer||isAdmin) && (
+              showRepay ? (
+                <form onSubmit={doRepay} className="space-y-3 mb-4">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-black/20">₦</span>
+                    <input required type="number" min="1" autoFocus value={repayAmt} onChange={e=>setRepayAmt(e.target.value)}
+                      className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-2xl pl-9 pr-4 py-4 font-bold outline-none" placeholder="Repayment amount"/>
+                  </div>
+                  <button type="submit" disabled={busy} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+                    {busy?<Loader2 size={14} className="animate-spin"/>:null} Record Repayment
+                  </button>
+                </form>
+              ) : (
+                <button onClick={()=>setShowRepay(true)} className="w-full py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-4">
+                  <CreditCard size={16}/> Record Repayment
+                </button>
+              )
+            )}
+            
+            {/* Negotiation Reply for Borrower */}
+            {selected.status === 'negotiating' && String(selected.user?._id||selected.user) === String(user?.id||user?._id) && (
+              <form onSubmit={replyNegotiation} className="space-y-3 mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#E8820C]">Reply to Leader's Notes</p>
+                <textarea required value={replyNotes} onChange={e=>setReplyNotes(e.target.value)} rows={2}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-xl px-4 py-3 text-xs font-medium outline-none resize-none" placeholder="Your response..."/>
+                <button type="submit" disabled={busy} className="w-full py-4 bg-[#E8820C] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+                  {busy?<Loader2 size={14} className="animate-spin"/>:null} Send Response
+                </button>
+              </form>
+            )}
+
+            <button onClick={()=>{setSelected(null);setShowRepay(false);setReplyNotes('');}} className="w-full py-4 bg-gray-100 text-black/40 rounded-2xl font-black text-xs uppercase tracking-widest">Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

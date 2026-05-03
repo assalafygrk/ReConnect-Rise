@@ -1,525 +1,317 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import {
-    ShieldCheck, Plus, X, FileText, Printer,
-    ArrowUpCircle, ArrowDownCircle, History,
-    CheckCircle2, XCircle, Clock, Search,
-    Filter, Download, Loader2, CreditCard,
-    TrendingDown, BadgeCheck, AlertTriangle, Fingerprint, Compass, User
-} from 'lucide-react';
+import { Plus, X, Loader2, CheckCircle2, XCircle, Clock, Search, Building2, Wallet } from 'lucide-react';
 import dayjs from 'dayjs';
-import { useReactToPrint } from 'react-to-print';
-import TransactionReceipt from '../components/TransactionReceipt';
-import { fetchDisbursements, addDisbursement, updateDisbursementStatus } from '../api/disbursements';
+import { fetchDisbursements, addDisbursement, treasurerDisbursementAction, markDisbursementCompleted } from '../api/disbursements';
 import { fetchMembers } from '../api/members';
 import { useAuth } from '../context/AuthContext';
-import { usePageConfig } from '../context/PageConfigContext';
 
-function formatNaira(v) {
-    return `₦${Number(v || 0).toLocaleString('en-NG')}`;
-}
+const fmt = v => `₦${Number(v||0).toLocaleString('en-NG')}`;
 
-
+const STATUS_STYLE = {
+  pending:   { label:'Awaiting Treasurer', cls:'bg-amber-50 text-amber-600 ring-amber-600/10',   icon:Clock },
+  approved:  { label:'Approved',           cls:'bg-emerald-50 text-emerald-600 ring-emerald-600/10', icon:CheckCircle2 },
+  completed: { label:'Completed',          cls:'bg-blue-50 text-blue-600 ring-blue-600/10',       icon:CheckCircle2 },
+  declined:  { label:'Declined',           cls:'bg-red-50 text-red-600 ring-red-600/10',           icon:XCircle },
+};
 
 export default function DisbursementsPage() {
-    const { hasRole, ROLES } = useAuth();
-    const { config } = usePageConfig('disbursements');
-    const isTreasurer = hasRole(ROLES.TREASURER, ROLES.ADMIN);
-    const isGroupLeader = hasRole(ROLES.GROUP_LEADER);
-    const canManage = isTreasurer || isGroupLeader;
+  const { hasRole, ROLES } = useAuth();
+  const isLeader    = hasRole(ROLES.GROUP_LEADER);
+  const isTreasurer = hasRole(ROLES.TREASURER);
+  const isAdmin     = hasRole(ROLES.ADMIN, ROLES.SUPER_ADMIN);
 
+  const [disbursements, setDisbursements] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [declineReason, setDeclineReason] = useState('');
+  const [search, setSearch] = useState('');
+  const [form, setForm] = useState({
+    memberId:'', amount:'', reason:'', type:'general',
+    method:'wallet', bankAccountNumber:'', bankName:'', bankAccountName:''
+  });
 
-    // States
-    const [items, setItems] = useState([]);
-    const [membersList, setMembersList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
-    const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ memberId: '', amount: '', reason: '', type: 'welfare', method: 'Bank Transfer' });
-    const [selectedItem, setSelectedItem] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [d, m] = await Promise.all([fetchDisbursements(), fetchMembers().catch(()=>[])]);
+      setDisbursements(Array.isArray(d) ? d : []);
+      setMembers(Array.isArray(m) ? m : []);
+    } catch { toast.error('Failed to load disbursements'); }
+    finally { setLoading(false); }
+  };
 
-    const printRef = useRef();
-    const handlePrint = useReactToPrint({
-        contentRef: printRef,
-        documentTitle: `RR_Receipt_Disbursement_${selectedItem?.id || ''}`,
-    });
+  useEffect(() => { load(); }, []);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.memberId) { toast.error('Select a member'); return; }
+    setBusy(true);
+    try {
+      const r = await addDisbursement(form);
+      setDisbursements(p => [r, ...p]);
+      toast.success('Disbursement request sent to Treasurer');
+      setShowForm(false);
+      setForm({ memberId:'', amount:'', reason:'', type:'general', method:'wallet', bankAccountNumber:'', bankName:'', bankAccountName:'' });
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [data, members] = await Promise.all([
-                fetchDisbursements(),
-                fetchMembers().catch(() => []),
-            ]);
-            setItems(data);
-            setMembersList(members);
-        } catch (err) {
-            toast.error('Failed to load financial registry');
-            setItems([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const act = async (id, action) => {
+    if (action==='decline' && !declineReason.trim()) { toast.error('Enter decline reason'); return; }
+    setBusy(true);
+    try {
+      const r = await treasurerDisbursementAction(id, { action, declineReason });
+      setDisbursements(p => p.map(d => (d._id||d.id)===id ? r : d));
+      if ((selected?._id||selected?.id)===id) setSelected(r);
+      toast.success(action==='approve' ? 'Disbursement approved!' : 'Disbursement declined');
+      setDeclineReason('');
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const handleAdd = async (e) => {
-        e.preventDefault();
-        if (!form.memberId) { toast.error('Please select a member'); return; }
-        setActionLoading(true);
-        try {
-            const payload = {
-                memberId: form.memberId,
-                amount: Number(form.amount),
-                reason: form.reason,
-                type: form.type || 'welfare',
-                method: form.method || 'Bank Transfer',
-                status: isTreasurer ? 'approved' : 'pending',
-            };
-            const data = await addDisbursement(payload);
-            setItems((prev) => [data, ...prev]);
-            toast.success(isTreasurer ? 'Transaction finalized successfully' : 'Request logged for review');
-            setShowForm(false);
-            setForm({ memberId: '', amount: '', reason: '', type: 'welfare', method: 'Bank Transfer' });
-        } catch (err) {
-            toast.error(err.message || 'Failed to add disbursement');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+  const complete = async (id) => {
+    setBusy(true);
+    try {
+      const r = await markDisbursementCompleted(id);
+      setDisbursements(p => p.map(d => (d._id||d.id)===id ? r : d));
+      if ((selected?._id||selected?.id)===id) setSelected(r);
+      toast.success('Marked as completed');
+    } catch(err) { toast.error(err.message); }
+    finally { setBusy(false); }
+  };
 
-    const handleApproval = async (id, newStatus) => {
-        setActionLoading(true);
-        try {
-            const updated = await updateDisbursementStatus(id, newStatus);
-            setItems((prev) => prev.map(item => item._id === id || item.id === id ? updated : item));
-            if (selectedItem?._id === id || selectedItem?.id === id) setSelectedItem(updated);
-            toast.success(`Disbursement registry updated: ${newStatus}`);
-        } catch (err) {
-            toast.error(err.message || 'Audit update failed');
-        } finally {
-            setActionLoading(false);
-        }
-    };
+  if (loading) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <Loader2 className="animate-spin text-[#E8820C]" size={40}/>
+      <p className="text-xs font-black uppercase tracking-widest text-black/30">Loading Disbursements...</p>
+    </div>
+  );
 
-    if (loading) return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="animate-spin text-[#E8820C]" size={40} />
-            <p className="text-sm font-bold text-black/40 uppercase tracking-widest text-center px-4">Loading Financial Registry...</p>
+  const pendingQueue = disbursements.filter(d => d.status==='pending');
+  const filtered = disbursements.filter(d =>
+    d.member?.toLowerCase().includes(search.toLowerCase()) ||
+    d.reason?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-[#1A1A2E] p-10 text-white shadow-2xl border border-white/5">
+        <div className="absolute top-0 right-0 w-80 h-80 rounded-full blur-[100px] opacity-10 bg-[#E8820C] pointer-events-none"/>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-serif font-black tracking-tight">Disbursements</h1>
+            <p className="text-white/40 text-sm">Group Leader creates · Treasurer approves</p>
+            <div className="flex gap-4 pt-2">
+              {[['Pending',pendingQueue.length,'text-amber-400'],['Total',disbursements.length,'text-white'],['Completed',disbursements.filter(d=>d.status==='completed').length,'text-emerald-400']].map(([l,v,c])=>(
+                <div key={l} className="bg-white/5 rounded-xl px-4 py-2 border border-white/10 text-center">
+                  <p className={`text-xl font-black ${c}`}>{v}</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-white/30">{l}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          {(isLeader||isAdmin) && (
+            <button onClick={()=>setShowForm(true)}
+              className="bg-[#E8820C] text-white px-7 py-4 rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-xl hover:opacity-90 active:scale-95 transition-all">
+              <Plus size={16}/> New Disbursement
+            </button>
+          )}
         </div>
-    );
+      </div>
 
-    // Derived values
-    const filteredItems = items.filter(item => {
-        const memberName = item.member?.toLowerCase() || '';
-        const reason = item.reason?.toLowerCase() || '';
-        const matchesSearch = memberName.includes(searchQuery.toLowerCase()) ||
-            reason.includes(searchQuery.toLowerCase());
-        const matchesFilter = filterStatus === 'all' || item.status === filterStatus;
-        return matchesSearch && matchesFilter;
-    });
-
-    const totalDisbursed = items.filter(i => i.status === 'approved').reduce((sum, i) => sum + i.amount, 0);
-    const pendingTotal = items.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.amount, 0);
-
-    const stats = [
-        { label: 'Total Payouts', value: totalDisbursed, icon: TrendingDown, color: 'text-red-600', bg: 'bg-red-50' },
-        { label: 'Awaiting Action', value: pendingTotal, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-        { label: 'Registry Count', value: items.length, icon: History, color: 'text-blue-600', bg: 'bg-blue-50', isMoney: false },
-        { label: 'Audit Health', value: '100%', icon: BadgeCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', isMoney: false },
-    ];
-
-    const getStatusStyle = (status) => {
-        switch (status) {
-            case 'approved': return 'bg-emerald-50 text-emerald-600 ring-emerald-600/10';
-            case 'pending': return 'bg-amber-50 text-amber-600 ring-amber-600/10';
-            case 'declined': return 'bg-red-50 text-red-600 ring-red-600/10';
-            default: return 'bg-gray-50 text-gray-600 ring-gray-600/10';
-        }
-    };
-
-    return (
-        <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4">
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-[#1A1A2E] p-10 text-white shadow-2xl border border-white/5">
-                {/* Decorative background elements */}
-                <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full blur-[100px] opacity-10 pointer-events-none bg-[#E8820C]" />
-                <div className="absolute bottom-[-20%] left-[10%] w-[300px] h-[300px] rounded-full blur-[80px] opacity-5 pointer-events-none bg-blue-500" />
-
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#F5A623] text-[10px] font-black uppercase tracking-widest">
-                            <Compass size={12} />
-                            Treasury Oversight
-                        </div>
-                        <div>
-                            <h1 className="text-4xl font-serif font-black tracking-tight flex items-center gap-3">
-                                {config.pageHeadline}
-                                <Fingerprint size={24} className="text-white/20" />
-                            </h1>
-                            <p className="text-white/40 text-sm font-medium mt-2 max-w-md">
-                                {config.pageSubtitle}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <button
-                            onClick={() => toast.success('Exporting audited records...')}
-                            className="bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-white/10 transition-all backdrop-blur-sm"
-                        >
-                            <Download size={14} /> Export Audit
-                        </button>
-                        {canManage && (
-                            <button
-                                onClick={() => setShowForm(true)}
-                                className="bg-[#E8820C] text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-[#E8820C]/20"
-                            >
-                                <Plus size={14} /> Commit Entry
-                            </button>
-                        )}
-                    </div>
+      {/* Treasurer pending queue */}
+      {isTreasurer && pendingQueue.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-[2rem] p-6 space-y-4">
+          <h3 className="text-sm font-black text-amber-800 uppercase tracking-widest">Pending Approval ({pendingQueue.length})</h3>
+          {pendingQueue.map(d => (
+            <div key={d._id||d.id} className="bg-white rounded-2xl p-5 border border-amber-100 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-black text-[#1A1A2E]">{d.member}</p>
+                  <p className="text-xs text-black/50 mt-0.5">{d.reason}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <p className="text-sm font-black text-[#E8820C]">{fmt(d.amount)}</p>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-black/30 bg-gray-50 px-2 py-1 rounded-lg">{d.method}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-black/30 bg-gray-50 px-2 py-1 rounded-lg">{d.type}</span>
+                  </div>
+                  {d.method==='bank_transfer' && d.bankName && (
+                    <p className="text-xs text-black/40 mt-1">🏦 {d.bankName} · {d.bankAccountNumber} · {d.bankAccountName}</p>
+                  )}
                 </div>
+                <p className="text-[10px] text-black/30 shrink-0">{dayjs(d.createdAt).format('DD MMM YY')}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <input value={declineReason} onChange={e=>setDeclineReason(e.target.value)} placeholder="Decline reason (if declining)"
+                  className="flex-1 bg-gray-50 border-2 border-transparent focus:border-red-400 rounded-xl px-4 py-2.5 text-xs font-medium outline-none"/>
+                <button onClick={()=>act(d._id||d.id,'approve')} disabled={busy}
+                  className="py-2.5 px-5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-1">
+                  {busy?<Loader2 size={11} className="animate-spin"/>:null} Approve
+                </button>
+                <button onClick={()=>act(d._id||d.id,'decline')} disabled={busy}
+                  className="py-2.5 px-4 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50">
+                  Decline
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {config.approvalNotice && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <ShieldCheck size={20} className="text-blue-600" />
-                    <p className="text-sm font-bold text-blue-800">
-                        {config.approvalNotice}
-                    </p>
-                </div>
-            )
-            }
-
-            {/* Financial Insights */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-black/5 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className={`${stat.bg} ${stat.color} p-3 rounded-2xl`}>
-                                <stat.icon size={20} />
-                            </div>
-                            <span className="text-[10px] font-black text-black/20 uppercase tracking-widest">System</span>
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mb-1">{stat.label}</p>
-                            <h4 className="text-2xl font-serif font-black text-[#1A1A2E]">
-                                {stat.isMoney === false ? stat.value : formatNaira(stat.value)}
-                            </h4>
-                        </div>
-                    </div>
+      {/* All disbursements table */}
+      <div className="bg-white rounded-[2.5rem] shadow-sm border border-black/5 overflow-hidden">
+        <div className="p-6 border-b border-black/5 flex items-center justify-between gap-4">
+          <h3 className="text-lg font-serif font-bold text-[#1A1A2E]">All Disbursements</h3>
+          <div className="relative">
+            <Search size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20"/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..."
+              className="bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none w-48"/>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 text-left">
+              <tr>
+                {['Member','Reason','Type','Method','Status','Amount','Date'].map(h=>(
+                  <th key={h} className="px-6 py-4 text-[10px] font-black text-black/30 uppercase tracking-widest">{h}</th>
                 ))}
-            </div>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {filtered.map(d => {
+                const st = STATUS_STYLE[d.status]||STATUS_STYLE.pending;
+                return (
+                  <tr key={d._id||d.id} onClick={()=>setSelected(d)} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                    <td className="px-6 py-4 font-bold text-sm text-[#1A1A2E]">{d.member}</td>
+                    <td className="px-6 py-4 text-xs text-black/50 max-w-[160px] truncate">{d.reason}</td>
+                    <td className="px-6 py-4 text-[10px] font-black uppercase text-black/40">{d.type}</td>
+                    <td className="px-6 py-4">
+                      <span className="flex items-center gap-1 text-[10px] font-black uppercase text-black/40">
+                        {d.method==='wallet'?<Wallet size={11}/>:<Building2 size={11}/>} {d.method}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ring-1 ${st.cls}`}>
+                        <st.icon size={9}/> {st.label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-black text-[#E8820C]">{fmt(d.amount)}</td>
+                    <td className="px-6 py-4 text-xs text-black/30">{dayjs(d.createdAt).format('DD MMM YY')}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filtered.length===0 && (
+            <div className="py-16 text-center"><p className="text-xs font-black uppercase tracking-widest text-black/20">No disbursements</p></div>
+          )}
+        </div>
+      </div>
 
-            {/* Main Content Area */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-black/5 overflow-hidden">
-                <div className="p-8 border-b border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/30">
-                    <div className="flex items-center gap-4">
-                        <div className="relative group">
-                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Audit search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-white border-2 border-transparent focus:border-[#E8820C] rounded-2xl pl-12 pr-4 py-2.5 text-xs font-bold outline-none transition-all w-full sm:w-64 shadow-inner"
-                            />
-                        </div>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-white border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-2.5 text-xs font-bold outline-none transition-all shadow-inner"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending Audit</option>
-                            <option value="approved">Finalized</option>
-                            <option value="declined">Rejected</option>
-                        </select>
-                    </div>
+      {/* Create Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#1A1A2E]/90 backdrop-blur-xl" onClick={()=>!busy&&setShowForm(false)}/>
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">New Disbursement</h3>
+              <button onClick={()=>setShowForm(false)} className="p-3 bg-gray-50 rounded-2xl text-black/20 hover:text-black"><X size={20}/></button>
+            </div>
+            <form onSubmit={submit} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Beneficiary</label>
+                <select required value={form.memberId} onChange={e=>setForm({...form,memberId:e.target.value})}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 font-bold outline-none">
+                  <option value="">Select member...</option>
+                  {members.map(m=><option key={m._id} value={m._id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Amount (₦)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-black/20">₦</span>
+                    <input required type="number" min="1" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})}
+                      className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl pl-9 pr-4 py-4 font-bold outline-none" placeholder="0"/>
+                  </div>
                 </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 text-left border-b border-black/5 whitespace-nowrap">
-                            <tr>
-                                <th className="px-8 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Transaction Ref</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Beneficiary</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Purpose</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest">Status</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Amount</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-black/30 uppercase tracking-widest text-right">Date</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-black/5 whitespace-nowrap">
-                            {filteredItems.map((item) => (
-                                <tr
-                                    key={item._id || item.id}
-                                    onClick={() => setSelectedItem(item)}
-                                    className="hover:bg-gray-50 transition-colors cursor-pointer group"
-                                >
-                                    <td className="px-8 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-[#1A1A2E]/5 flex items-center justify-center text-[#1A1A2E] group-hover:bg-[#1A1A2E] group-hover:text-white transition-all">
-                                                <CreditCard size={14} />
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-black/40">#DSB-{String(item.id).padStart(4, '0')}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <span className="text-sm font-bold text-[#1A1A2E]">{item.member}</span>
-                                    </td>
-                                    <td className="px-6 py-5 max-w-xs truncate">
-                                        <span className="text-xs font-medium text-black/60 italic">"{item.reason}"</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${getStatusStyle(item.status)}`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'approved' ? 'bg-emerald-600' :
-                                                item.status === 'pending' ? 'bg-amber-600' : 'bg-red-600'
-                                                }`} />
-                                            {item.status}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <span className="text-sm font-black text-[#1A1A2E]">{formatNaira(item.amount)}</span>
-                                    </td>
-                                    <td className="px-8 py-5 text-right font-bold text-black/30 text-xs">
-                                        {dayjs(item.date).format('DD MMM YYYY')}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Type</label>
+                  <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}
+                    className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 font-bold outline-none">
+                    {['general','welfare','loan','other'].map(t=><option key={t}>{t}</option>)}
+                  </select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Payment Method</label>
+                <div className="flex gap-3">
+                  {['wallet','bank_transfer','cash'].map(m=>(
+                    <button type="button" key={m} onClick={()=>setForm({...form,method:m})}
+                      className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${form.method===m?'bg-[#1A1A2E] text-white':'bg-gray-50 text-black/40'}`}>
+                      {m.replace('_',' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {form.method==='bank_transfer' && (
+                <div className="space-y-3 bg-gray-50 p-4 rounded-2xl">
+                  <input value={form.bankName} onChange={e=>setForm({...form,bankName:e.target.value})} placeholder="Bank name"
+                    className="w-full bg-white border-2 border-transparent focus:border-[#E8820C] rounded-xl px-4 py-3 text-xs font-bold outline-none"/>
+                  <input value={form.bankAccountNumber} onChange={e=>setForm({...form,bankAccountNumber:e.target.value})} placeholder="Account number"
+                    className="w-full bg-white border-2 border-transparent focus:border-[#E8820C] rounded-xl px-4 py-3 text-xs font-bold outline-none"/>
+                  <input value={form.bankAccountName} onChange={e=>setForm({...form,bankAccountName:e.target.value})} placeholder="Account name"
+                    className="w-full bg-white border-2 border-transparent focus:border-[#E8820C] rounded-xl px-4 py-3 text-xs font-bold outline-none"/>
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-black/40 uppercase tracking-widest">Reason</label>
+                <textarea required value={form.reason} onChange={e=>setForm({...form,reason:e.target.value})} rows={2}
+                  className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-5 py-4 text-sm font-medium outline-none resize-none"
+                  placeholder="State reason for disbursement..."/>
+              </div>
+              <button type="submit" disabled={busy}
+                className="w-full py-5 bg-[#1A1A2E] text-white rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                {busy?<Loader2 size={18} className="animate-spin"/>:null} Send to Treasurer
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selected && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={()=>setSelected(null)}/>
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl relative animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-serif font-black text-[#1A1A2E]">Disbursement Detail</h3>
+              <button onClick={()=>setSelected(null)} className="p-3 bg-gray-50 rounded-2xl text-black/20 hover:text-black"><X size={20}/></button>
             </div>
-
-            {/* Meticulous Modals */}
-            {/* Record Form Modal */}
-            {
-                showForm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setShowForm(false)} />
-                        <div className="bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                            <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
-                                <div className="space-y-1">
-                                    <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">New Financial Outlay</h3>
-                                    <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                        <ShieldCheck size={12} className="text-[#E8820C]" /> Registry Entry Mode
-                                    </p>
-                                </div>
-                                <button onClick={() => setShowForm(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleAdd} className="space-y-5">
-                                {/* Beneficiary Select */}
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Beneficiary / Recipient *</label>
-                                    <div className="relative">
-                                        <User size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 pointer-events-none" />
-                                        <select
-                                            required
-                                            value={form.memberId}
-                                            onChange={(e) => setForm({ ...form, memberId: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-12 pr-5 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            <option value="">-- Select a member --</option>
-                                            {membersList.map(m => (
-                                                <option key={m._id} value={m._id}>{m.name} ({m.email})</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Amount */}
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Amount *</label>
-                                    <div className="relative">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 text-xs">₦</span>
-                                        <input
-                                            required
-                                            type="number"
-                                            min="100"
-                                            max={config.maxDisburseAmount || undefined}
-                                            value={form.amount}
-                                            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl pl-10 pr-5 py-4 text-xs font-bold outline-none transition-all"
-                                            placeholder="Min: 100"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Type & Method */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Type</label>
-                                        <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer">
-                                            <option value="welfare">Welfare</option>
-                                            <option value="loan">Loan</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Method</label>
-                                        <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 text-xs font-bold outline-none transition-all appearance-none cursor-pointer">
-                                            <option value="Bank Transfer">Bank Transfer</option>
-                                            <option value="Cash">Cash</option>
-                                            <option value="Mobile Money">Mobile Money</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Reason */}
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest ml-1">Verified Purpose / Reason *</label>
-                                    <textarea
-                                        required
-                                        value={form.reason}
-                                        onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-[2rem] px-6 py-5 text-xs font-bold outline-none transition-all resize-none leading-relaxed"
-                                        rows={3}
-                                        placeholder="Provide detailed justification for this disbursement..."
-                                    />
-                                </div>
-
-                                {Number(form.amount) > 5000 && (
-                                    <div className="bg-amber-50 rounded-2xl p-4 flex gap-3 border border-amber-100 items-start">
-                                        <AlertTriangle size={18} className="text-amber-600 flex-shrink-0" />
-                                        <p className="text-[10px] font-bold text-amber-800 leading-normal uppercase">
-                                            Threshold Warning: Requests exceeding ₦5,000 are subject to multi-stage Executive Review.
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="flex gap-4 pt-2">
-                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 hover:bg-gray-50 rounded-2xl transition-all">Cancel</button>
-                                    <button
-                                        type="submit"
-                                        disabled={actionLoading || !form.memberId}
-                                        className="flex-[2] py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                                        style={{ background: '#1A1A2E' }}
-                                    >
-                                        {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                        Commit Entry
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Transaction Detail & Audit View */}
-            {
-                selectedItem && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setSelectedItem(null)} />
-                        <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
-                            <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 py-1">
-                                <div className="space-y-1">
-                                    <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E]">Transaction Audit</h3>
-                                    <p className="text-xs text-black/30 font-medium tracking-wide flex items-center gap-1.5 uppercase">
-                                        <History size={12} className="text-blue-500" /> Reference #{String(selectedItem._id || selectedItem.id).slice(-6).toUpperCase()}
-                                    </p>
-                                </div>
-                                <button onClick={() => setSelectedItem(null)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors text-black/20 hover:text-black">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                                <div className="bg-gray-50 p-6 rounded-[2rem] border border-black/[0.03] space-y-4">
-                                    <p className="text-[10px] font-black text-black/20 uppercase tracking-widest">Entry Metadata</p>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-black/40">Status:</span>
-                                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${getStatusStyle(selectedItem.status)}`}>
-                                                {selectedItem.status}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-black/40">Beneficiary:</span>
-                                            <span className="text-xs font-black text-[#1A1A2E]">{selectedItem.member}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-black/40">Execute Date:</span>
-                                            <span className="text-xs font-black text-[#1A1A2E]">{dayjs(selectedItem.date).format('DD MMMM YYYY')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="bg-[#1A1A2E] p-6 rounded-[2rem] text-white flex flex-col justify-center items-center text-center space-y-2">
-                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Audited Amount</p>
-                                    <h2 className="text-3xl font-serif font-black">{formatNaira(selectedItem.amount)}</h2>
-                                    <div className="flex items-center gap-1.5 py-1.5 px-4 bg-white/5 rounded-full mt-2">
-                                        <BadgeCheck size={12} className="text-emerald-400" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Vault Cleared</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gray-50 p-8 rounded-[2.5rem] border border-black/5 space-y-4 mb-8">
-                                <h4 className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1 flex items-center gap-2">
-                                    <FileText size={14} className="text-[#E8820C]" /> Purpose Log
-                                </h4>
-                                <p className="text-sm font-medium text-black/70 italic leading-relaxed">
-                                    "{selectedItem.reason}"
-                                </p>
-                            </div>
-
-                            <div className="space-y-4 pt-4">
-                                {selectedItem.status === 'pending' && isTreasurer && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button
-                                            onClick={() => handleApproval(selectedItem._id || selectedItem.id, 'approved')}
-                                            disabled={actionLoading}
-                                            className="py-4 bg-[#15803D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/10 hover:opacity-90 active:scale-95 transition-all"
-                                        >
-                                            {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                                            Authorize Outlay
-                                        </button>
-                                        <button
-                                            onClick={() => handleApproval(selectedItem._id || selectedItem.id, 'declined')}
-                                            disabled={actionLoading}
-                                            className="py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-red-900/10 hover:opacity-90 active:scale-95 transition-all"
-                                        >
-                                            <XCircle size={16} /> Veto Entry
-                                        </button>
-                                    </div>
-                                )}
-
-                                {selectedItem.status === 'approved' && (
-                                    <div className="flex gap-4">
-                                        <button
-                                            onClick={handlePrint}
-                                            className="flex-1 py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl hover:opacity-90 active:scale-95 transition-all"
-                                        >
-                                            <Printer size={16} /> Official Receipt
-                                        </button>
-                                        <button
-                                            onClick={() => toast.success('Dispatching audit report...')}
-                                            className="flex-1 py-4 border-2 border-[#1A1A2E] text-[#1A1A2E] rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95"
-                                        >
-                                            <Download size={16} /> Audit Export
-                                        </button>
-                                    </div>
-                                )}
-
-                                <button onClick={() => setSelectedItem(null)} className="w-full text-center py-2 text-[10px] font-black text-black/20 uppercase tracking-widest hover:text-black transition-colors">Close Audit View</button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Hidden Print Wrapper */}
-            <div className="hidden">
-                <TransactionReceipt ref={printRef} data={selectedItem} type="disbursement" />
+            <div className="space-y-3 mb-6">
+              {[['Beneficiary',selected.member],['Amount',fmt(selected.amount)],['Method',selected.method],['Type',selected.type],['Reason',selected.reason],selected.bankName&&['Bank',`${selected.bankName} · ${selected.bankAccountNumber}`]].filter(Boolean).map(([l,v])=>(
+                <div key={l} className="flex justify-between items-start py-2 border-b border-black/5">
+                  <span className="text-[10px] font-black text-black/30 uppercase tracking-widest">{l}</span>
+                  <span className="text-xs font-bold text-[#1A1A2E] text-right max-w-[60%]">{v}</span>
+                </div>
+              ))}
+              {selected.declineReason && <p className="text-xs text-red-700 bg-red-50 rounded-xl px-4 py-3">❌ {selected.declineReason}</p>}
             </div>
-        </div >
-    );
+            {/* Mark complete for approved bank/cash */}
+            {selected.status==='approved' && selected.method!=='wallet' && (isTreasurer||isAdmin) && (
+              <button onClick={()=>complete(selected._id||selected.id)} disabled={busy}
+                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 mb-3 disabled:opacity-50">
+                {busy?<Loader2 size={14} className="animate-spin"/>:null} Mark as Completed
+              </button>
+            )}
+            <button onClick={()=>setSelected(null)} className="w-full py-4 bg-gray-100 text-black/40 rounded-2xl font-black text-xs uppercase tracking-widest">Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
