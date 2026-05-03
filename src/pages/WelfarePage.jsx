@@ -81,7 +81,7 @@ export default function WelfarePage() {
         setActionLoading(true);
         try {
             const data = await submitRequest(form);
-            setRequests((prev) => [{ ...data, submittedBy: user?.name || 'Member' }, ...prev]);
+            setRequests((prev) => [{ ...data, member: user?.name || 'Member' }, ...prev]);
             toast.success('Support application registered successfully');
             setShowForm(false);
             setForm({ type: 'Medical', amount: '', description: '' });
@@ -97,8 +97,8 @@ export default function WelfarePage() {
         setActionLoading(true);
         try {
             await updateRequestStatus(id, status);
-            setRequests((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
-            if (selectedRequest?.id === id) setSelectedRequest(prev => ({ ...prev, status }));
+            setRequests((prev) => prev.map((r) => r._id === id ? { ...r, status } : r));
+            if (selectedRequest?._id === id) setSelectedRequest(prev => ({ ...prev, status }));
             toast.success(`Case formalized as ${status.toUpperCase()}`);
             if (status !== 'pending') setSelectedRequest(null);
         } catch (err) {
@@ -120,10 +120,10 @@ export default function WelfarePage() {
     );
 
     const officerFiltered = requests.filter(r => {
-        const submittedBy = r.submittedBy?.toLowerCase() || '';
+        const member = r.member?.toLowerCase() || '';
         const type = r.type?.toLowerCase() || '';
         const description = r.description?.toLowerCase() || '';
-        const matchesSearch = submittedBy.includes(searchQuery.toLowerCase()) ||
+        const matchesSearch = member.includes(searchQuery.toLowerCase()) ||
             type.includes(searchQuery.toLowerCase()) ||
             description.includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === 'all' || r.status === filterStatus;
@@ -131,9 +131,9 @@ export default function WelfarePage() {
     });
 
     const publicTransparency = requests.filter(r => r.status === 'approved').sort((a, b) => dayjs(b.date).unix() - dayjs(a.date).unix());
-    const myHistory = requests.filter(r => r.submittedBy === (user?.name || user?.id));
+    const myHistory = requests.filter(r => r.member === (user?.name || user?.id));
 
-    const myPendingCount = requests.filter(r => r.submittedBy === (user?.name || user?.id) && r.status === 'pending').length;
+    const myPendingCount = requests.filter(r => r.member === (user?.name || user?.id) && r.status === 'pending').length;
     const globalPendingCount = requests.filter(r => r.status === 'pending').length;
     const canApply = !config.maxPendingPerMember || myPendingCount < Number(config.maxPendingPerMember);
     const totalDisbursed = requests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0);
@@ -281,13 +281,13 @@ export default function WelfarePage() {
                                     {officerFiltered.map((req) => {
                                         const st = statusStyles[req.status] || statusStyles.pending;
                                         return (
-                                            <tr key={req.id} onClick={() => setSelectedRequest(req)} className="group hover:bg-gray-50 transition-colors cursor-pointer">
+                                            <tr key={req._id} onClick={() => setSelectedRequest(req)} className="group hover:bg-gray-50 transition-colors cursor-pointer">
                                                 <td className="px-10 py-6">
-                                                    <span className="text-[11px] font-black text-black/20 font-mono tracking-tighter">#RR-W-{String(req.id).padStart(4, '0')}</span>
+                                                    <span className="text-[11px] font-black text-black/20 font-mono tracking-tighter">#RR-W-{String(req._id).slice(-4)}</span>
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <div className="flex flex-col">
-                                                        <span className="text-sm font-black text-[#1A1A2E]">{req.submittedBy}</span>
+                                                        <span className="text-sm font-black text-[#1A1A2E]">{req.member}</span>
                                                         <span className="text-[9px] font-bold text-black/30 uppercase truncate max-w-[120px]">{req.description}</span>
                                                     </div>
                                                 </td>
@@ -357,7 +357,7 @@ export default function WelfarePage() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Authorized Aid</p>
-                                                    <h5 className="text-lg font-black text-[#1A1A2E]">{req.submittedBy}</h5>
+                                                    <h5 className="text-lg font-black text-[#1A1A2E]">{req.member}</h5>
                                                     <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mt-1">{req.type} Support • {dayjs(req.date).format('DD MMM YYYY')}</p>
                                                 </div>
                                             </div>
@@ -442,7 +442,7 @@ export default function WelfarePage() {
                                 {myHistory.map((req) => {
                                     const st = statusStyles[req.status] || statusStyles.pending;
                                     return (
-                                        <div key={req.id} onClick={() => setSelectedRequest(req)} className="bg-white p-8 rounded-[3rem] border border-black/5 hover:border-[#1A1A2E]/20 transition-all shadow-sm cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-8 group">
+                                        <div key={req._id} onClick={() => setSelectedRequest(req)} className="bg-white p-8 rounded-[3rem] border border-black/5 hover:border-[#1A1A2E]/20 transition-all shadow-sm cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-8 group">
                                             <div className="flex items-center gap-6">
                                                 <div className={`w-16 h-16 rounded-[1.5in] flex items-center justify-center transition-all group-hover:rotate-6 ${st.bg} ${st.color} border ${st.ring}`}>
                                                     <st.icon size={32} strokeWidth={2.5} />
@@ -452,7 +452,7 @@ export default function WelfarePage() {
                                                         <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ring-1 ${st.bg} ${st.color} ${st.ring}`}>
                                                             {st.label}
                                                         </span>
-                                                        <span className="text-[10px] font-black text-black/20 font-mono">#REQ-{req.id}</span>
+                                                        <span className="text-[10px] font-black text-black/20 font-mono">#REQ-{String(req._id).slice(-4)}</span>
                                                     </div>
                                                     <h5 className="text-xl font-black text-[#1A1A2E]">{req.type} Support</h5>
                                                     <p className="text-[10px] font-bold text-black/30 uppercase tracking-widest mt-1 italic leading-relaxed line-clamp-1">{req.description}</p>
@@ -575,7 +575,7 @@ export default function WelfarePage() {
                             <div className="space-y-2">
                                 <h3 className="text-3xl font-serif font-black text-[#1A1A2E]">Case Audit</h3>
                                 <p className="text-[10px] text-black/30 font-black tracking-[0.4em] flex items-center gap-2 uppercase">
-                                    <ClipboardCheck size={14} className="text-[#E8820C]" /> Protocol #RR-W-{String(selectedRequest.id).padStart(4, '0')}
+                                    <ClipboardCheck size={14} className="text-[#E8820C]" /> Protocol #RR-W-{String(selectedRequest._id).slice(-4)}
                                 </p>
                             </div>
                             <button onClick={() => setSelectedRequest(null)} className="p-4 bg-gray-50 rounded-2xl text-black/20 hover:text-black transition-all hover:rotate-90">
@@ -589,10 +589,10 @@ export default function WelfarePage() {
                                     <p className="text-[10px] font-black text-black/20 uppercase tracking-widest">Biological Identification</p>
                                     <div className="flex items-center gap-5">
                                         <div className="w-16 h-16 bg-[#1A1A2E] rounded-[1.5rem] flex items-center justify-center text-[#F5A623] text-xl font-serif italic shadow-xl">
-                                            {selectedRequest.submittedBy.split(' ').map(n => n[0]).join('')}
+                                            {selectedRequest.member ? selectedRequest.member.split(' ').map(n => n[0]).join('') : 'U'}
                                         </div>
                                         <div>
-                                            <p className="text-lg font-black text-[#1A1A2E]">{selectedRequest.submittedBy}</p>
+                                            <p className="text-lg font-black text-[#1A1A2E]">{selectedRequest.member || 'Unknown'}</p>
                                             <p className="text-[10px] font-black text-[#E8820C] uppercase tracking-widest mt-1">Official Member</p>
                                         </div>
                                     </div>
@@ -641,7 +641,7 @@ export default function WelfarePage() {
                                     </h4>
                                     <div className="grid grid-cols-2 gap-6">
                                         <button
-                                            onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
+                                            onClick={() => handleStatusUpdate(selectedRequest._id, 'approved')}
                                             disabled={actionLoading}
                                             className="py-6 bg-emerald-600 text-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:bg-emerald-700 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                                         >
@@ -649,7 +649,7 @@ export default function WelfarePage() {
                                             Authorize Aid
                                         </button>
                                         <button
-                                            onClick={() => handleStatusUpdate(selectedRequest.id, 'declined')}
+                                            onClick={() => handleStatusUpdate(selectedRequest._id, 'declined')}
                                             disabled={actionLoading}
                                             className="py-6 bg-red-600 text-white rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.3em] shadow-[0_20px_50px_rgba(220,38,38,0.3)] hover:bg-red-700 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                                         >
@@ -708,7 +708,7 @@ export default function WelfarePage() {
                                     ref={reportRef}
                                     members={members}
                                     disbursements={requests.filter(r => r.status === 'approved').map(r => ({
-                                        member: r.submittedBy,
+                                        member: r.member,
                                         reason: r.type,
                                         date: r.date,
                                         amount: r.amount

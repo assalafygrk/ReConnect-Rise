@@ -10,16 +10,21 @@ export const ROLES = {
     MEMBER: 'member',
 };
 
+import { 
+    Crown, ShieldCheck, Shield, Star, Activity, UserCircle, 
+    Landmark, Scale, HeartHandshake, Zap
+} from 'lucide-react';
+
 export const ROLE_CLASSES = {
-    [ROLES.SUPER_ADMIN]: { class: 'Supreme', label: 'Super Admin' },
-    [ROLES.ADMIN]: { class: 'Super', label: 'Admin' },
-    [ROLES.GROUP_LEADER]: { class: 'Class A', label: 'Group Leader' },
-    [ROLES.TREASURER]: { class: 'Class B', label: 'Treasurer' },
-    [ROLES.SPECIAL_ADVISOR]: { class: 'Class C Upper', label: 'Special Advisor' },
-    [ROLES.WELFARE]: { class: 'Class C Lower', label: 'Welfare' },
-    [ROLES.MEETING_ORGANIZER]: { class: 'Class C Lower', label: 'Meeting Organizer' },
-    [ROLES.OFFICIAL_MEMBER]: { class: 'Class D', label: 'Official Member' },
-    [ROLES.MEMBER]: { class: 'Class E', label: 'Member' },
+    [ROLES.SUPER_ADMIN]: { class: 'Supreme', label: 'Super Admin', icon: Crown, color: '#E8820C' },
+    [ROLES.ADMIN]: { class: 'Super', label: 'Admin', icon: ShieldCheck, color: '#3B82F6' },
+    [ROLES.GROUP_LEADER]: { class: 'Class A', label: 'Group Leader', icon: Crown, color: '#F5A623' },
+    [ROLES.TREASURER]: { class: 'Class B', label: 'Treasurer', icon: ShieldCheck, color: '#10B981' },
+    [ROLES.SPECIAL_ADVISOR]: { class: 'Class C Upper', label: 'Special Advisor', icon: Star, color: '#8B5CF6' },
+    [ROLES.WELFARE]: { class: 'Class C Lower', label: 'Welfare', icon: Shield, color: '#14B8A6' },
+    [ROLES.MEETING_ORGANIZER]: { class: 'Class C Lower', label: 'Meeting Organizer', icon: Activity, color: '#F43F5E' },
+    [ROLES.OFFICIAL_MEMBER]: { class: 'Class D', label: 'Official Member', icon: UserCircle, color: '#6B7280' },
+    [ROLES.MEMBER]: { class: 'Class E', label: 'Member', icon: UserCircle, color: '#9CA3AF' },
 };
 
 export const ROLE_HIERARCHY = {

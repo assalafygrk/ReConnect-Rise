@@ -9,25 +9,6 @@ import {
 import { fetchMembers, createMember, updateMemberStatus, deleteMember } from '../api/members';
 import { useAuth } from '../context/AuthContext';
 
-const roleBadge = {
-    super_admin: { label: 'Supreme Admin', icon: Crown, color: '#E8820C' },
-    admin: { label: 'Admin', icon: ShieldCheck, color: '#3B82F6' },
-    group_leader: { label: 'Group Leader', icon: Crown, color: '#F5A623' },
-    groupleader: { label: 'Group Leader', icon: Crown, color: '#F5A623' },
-    'financial-secretary': { label: 'Financial Secretary', icon: Landmark, color: '#10B981' },
-    financial_secretary: { label: 'Financial Secretary', icon: Landmark, color: '#10B981' },
-    treasurer: { label: 'Treasurer', icon: ShieldCheck, color: '#10B981' },
-    auditor: { label: 'Auditor', icon: Scale, color: '#F5A623' },
-    welfare: { label: 'Welfare Officer', icon: Shield, color: '#14B8A6' },
-    'special-advisor': { label: 'Special Advisor', icon: Star, color: '#8B5CF6' },
-    special_advisor: { label: 'Special Advisor', icon: Star, color: '#8B5CF6' },
-    'meeting-organizer': { label: 'Meeting Organizer', icon: Activity, color: '#F43F5E' },
-    meeting_organizer: { label: 'Meeting Organizer', icon: Activity, color: '#F43F5E' },
-    'official-member': { label: 'Official Member', icon: UserCircle, color: '#6B7280' },
-    official_member: { label: 'Official Member', icon: UserCircle, color: '#6B7280' },
-    member: { label: 'Member', icon: UserCircle, color: '#9CA3AF' },
-};
-
 const BLANK_FORM = {
     firstName: '', lastName: '', middleName: '',
     email: '', phone: '', password: '',
@@ -159,7 +140,7 @@ export default function MembersPage() {
                         className="w-full bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-14 pr-6 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 transition-all appearance-none cursor-pointer"
                     >
                         <option value="all">All Roles</option>
-                        {Object.entries(roleBadge).map(([role, { label }]) => (
+                        {Object.entries(ROLE_CLASSES).map(([role, { label }]) => (
                             <option key={role} value={role}>{label}</option>
                         ))}
                     </select>
@@ -170,7 +151,7 @@ export default function MembersPage() {
             {filteredMembers.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredMembers.map((member) => {
-                        const badge = roleBadge[member.role] || roleBadge.member;
+                        const badge = ROLE_CLASSES[member.role] || ROLE_CLASSES.member;
                         const Icon = badge.icon;
                         const initials = (member.name || 'RR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                         const isActive = member.status === 'active';
@@ -316,7 +297,7 @@ export default function MembersPage() {
                             <div className="text-center space-y-1">
                                 <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">{viewMember.name}</h3>
                                 <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 text-[#E8820C]">
-                                    {roleBadge[viewMember.role]?.label || 'Member'}
+                                    {ROLE_CLASSES[viewMember.role]?.label || 'Member'}
                                 </div>
                             </div>
 
