@@ -13,11 +13,11 @@ export async function fetchWallet() {
 }
 
 // ─── Transfer Funds ───────────────────────────────────────────────────────────
-export async function transferFunds(to, amount, note) {
+export async function transferFunds(to, amount, note, pin) {
     const res = await fetch(`${BASE_URL}/wallet/transfer`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ to, amount, note }),
+        body: JSON.stringify({ to, amount, note, pin }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Transfer failed');
@@ -37,11 +37,11 @@ export async function depositFunds(amount, note) {
 }
 
 // ─── Withdraw Funds ───────────────────────────────────────────────────────────
-export async function withdrawFunds(amount, note) {
+export async function withdrawFunds(amount, bankName, accountNumber, note, pin) {
     const res = await fetch(`${BASE_URL}/wallet/withdraw`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ amount, note }),
+        body: JSON.stringify({ amount, bankName, accountNumber, note, pin }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Withdrawal failed');
@@ -49,11 +49,11 @@ export async function withdrawFunds(amount, note) {
 }
 
 // ─── Pay Weekly Contribution ──────────────────────────────────────────────────
-export async function payWeeklyContribution() {
+export async function payWeeklyContribution(pin) {
     const res = await fetch(`${BASE_URL}/wallet/contribute/weekly`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({}),
+        body: JSON.stringify({ pin }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Contribution failed');
@@ -61,11 +61,11 @@ export async function payWeeklyContribution() {
 }
 
 // ─── Pay General Contribution ─────────────────────────────────────────────────
-export async function payGeneralContribution(amount, note) {
+export async function payGeneralContribution(amount, note, pin) {
     const res = await fetch(`${BASE_URL}/wallet/contribute/general`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ amount, note }),
+        body: JSON.stringify({ amount, note, pin }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Contribution failed');

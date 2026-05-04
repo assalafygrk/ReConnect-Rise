@@ -2,6 +2,7 @@ const Contribution = require('../models/Contribution');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
+const bcrypt = require('bcryptjs');
 
 // ─── Week Utilities ────────────────────────────────────────────────────────
 
@@ -220,6 +221,9 @@ const markPaid = async (req, res) => {
  * @access  Private (any member)
  */
 const payViaWallet = async (req, res) => {
+  const { pin } = req.body;
+  if (!pin || pin.length !== 4) { res.status(400); throw new Error('Valid 4-digit transaction PIN is required'); }
+
   const userId = req.user._id;
   const weekId = getWeekId();
   const deadline = getWeekDeadline();
@@ -239,10 +243,13 @@ const payViaWallet = async (req, res) => {
     throw new Error('You have already paid your contribution for this week');
   }
 
-  const member = await User.findById(userId);
+  const member = await User.findById(userId).select('+transactionPin');
   if (!member) {
     res.status(404);
     throw new Error('User not found');
+  }
+  if (!member.transactionPin || !(await bcrypt.compare(pin, member.transactionPin))) {
+    res.status(401); throw new Error('Invalid transaction PIN');
   }
   if (member.walletBalance < baseAmount) {
     res.status(400);

@@ -125,3 +125,27 @@ export async function apiUpdatePassword(password) {
     if (!res.ok) throw new Error(data.message || 'Failed to update password');
     return data;
 }
+
+// ─── Set Transaction PIN ──────────────────────────────────────────────────────
+export async function apiSetTransactionPin(pin) {
+    const token = localStorage.getItem('rr_token');
+    const res = await fetch(`${BASE_URL}/users/profile/pin`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pin }),
+    });
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Failed to set transaction PIN');
+    return data;
+}

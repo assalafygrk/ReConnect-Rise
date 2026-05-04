@@ -217,7 +217,7 @@ export default function SettingsPage() {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-6">
                 <div className="w-12 h-12 border-4 border-[#E8820C]/10 border-t-[#E8820C] rounded-full animate-spin"></div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1A1A2E]/40">Accessing Protocols...</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1A1A2E] dark:text-white/90/40">Accessing Protocols...</p>
             </div>
         );
     }
@@ -225,8 +225,8 @@ export default function SettingsPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-12">
             
-            <div className="bg-[#1A1A2E] rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-14 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8820C] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
+            <div className="bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-14 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8820C] dark:bg-[#F5A623] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
                 <div className="space-y-4 text-center lg:text-left">
                     <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight">System Control Panel</h1>
                     <p className="text-white/40 text-lg font-serif italic max-w-xl leading-relaxed">Universal configuration of brotherhood operational protocols and security parameters.</p>
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                 <button
                     onClick={handleSaveProtocols}
                     disabled={saving}
-                    className="w-full lg:w-auto flex items-center justify-center gap-4 px-12 py-6 rounded-[2rem] bg-[#E8820C] text-white text-[12px] font-black uppercase tracking-[0.3em] shadow-xl hover:bg-[#F5A623] transition-all active:scale-95 disabled:opacity-50"
+                    className="w-full lg:w-auto flex items-center justify-center gap-4 px-12 py-6 rounded-[2rem] bg-[#E8820C] dark:bg-[#F5A623] text-white text-[12px] font-black uppercase tracking-[0.3em] shadow-xl hover:bg-[#F5A623] transition-all active:scale-95 disabled:opacity-50"
                 >
                     {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                     {saving ? 'Synchronizing...' : 'Save All Protocols'}
@@ -244,11 +244,11 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-8 space-y-10">
                     {isAdmin && (
-                        <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-lg border border-black/5">
-                            <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5">
+                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-lg border border-black/5 dark:border-white/10">
+                            <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
                                 <div className="space-y-1">
-                                    <h3 className="text-2xl font-black font-serif text-[#1A1A2E]">Executive Council Registry</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30">Institutional Access Management</p>
+                                    <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Executive Council Registry</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Institutional Access Management</p>
                                 </div>
                                 <Users size={24} className="text-black/10" />
                             </div>
@@ -257,14 +257,14 @@ export default function SettingsPage() {
                                     <button
                                         key={member._id || member.id}
                                         onClick={() => setSelectedMember(member)}
-                                        className="aspect-square bg-gray-50 rounded-[2rem] border border-black/5 p-6 flex flex-col items-center justify-center text-center gap-4 hover:bg-white hover:shadow-2xl hover:-translate-y-1 transition-all group"
+                                        className="aspect-square bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-black/5 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center gap-4 hover:bg-white dark:bg-[#111827] hover:shadow-2xl hover:-translate-y-1 transition-all group"
                                     >
-                                        <div className="w-16 h-16 rounded-2xl bg-white border border-black/5 flex items-center justify-center text-lg font-black text-[#1A1A2E] group-hover:bg-[#E8820C] group-hover:text-white transition-all shadow-sm">
+                                        <div className="w-16 h-16 rounded-2xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 flex items-center justify-center text-lg font-black text-[#1A1A2E] dark:text-white/90 group-hover:bg-[#E8820C] dark:bg-[#F5A623] group-hover:text-white transition-all shadow-sm">
                                             {(member.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black text-[#1A1A2E] line-clamp-1">{member.name}</p>
-                                            <p className="text-[9px] font-bold text-black/30 uppercase tracking-widest mt-1">{(member.role || 'Member').replace(/[-_]/g, ' ')}</p>
+                                            <p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 line-clamp-1">{member.name}</p>
+                                            <p className="text-[9px] font-bold text-black/30 dark:text-white/30 uppercase tracking-widest mt-1">{(member.role || 'Member').replace(/[-_]/g, ' ')}</p>
                                         </div>
                                     </button>
                                 ))}
@@ -273,19 +273,19 @@ export default function SettingsPage() {
                     )}
 
                     {isTreasurer && (
-                        <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-lg border border-black/5">
-                            <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5">
+                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-lg border border-black/5 dark:border-white/10">
+                            <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
                                 <div className="space-y-1">
-                                    <h3 className="text-2xl font-black font-serif text-[#1A1A2E]">Monetary Statutes</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30">Financial Guardrails & Compliance</p>
+                                    <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Monetary Statutes</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Financial Guardrails & Compliance</p>
                                 </div>
                                 <Database size={24} className="text-black/10" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 ml-4">Monthly Savings Target</label>
-                                    <div className="flex items-center gap-4 bg-gray-50 p-6 rounded-3xl border border-black/5">
-                                        <span className="text-xl font-black font-serif text-black/20">₦</span>
+                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Monthly Savings Target</label>
+                                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10">
+                                        <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">₦</span>
                                         <input
                                             type="number"
                                             value={settings.monthlySavingsTarget}
@@ -295,15 +295,15 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 ml-4">Loan Interest Rate (%)</label>
-                                    <div className="flex items-center gap-4 bg-gray-50 p-6 rounded-3xl border border-black/5">
+                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Loan Interest Rate (%)</label>
+                                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10">
                                         <input
                                             type="number"
                                             value={settings.loanInterestRate}
                                             onChange={e => setSettings({ ...settings, loanInterestRate: e.target.value })}
                                             className="w-full bg-transparent text-2xl font-black font-serif outline-none text-right"
                                         />
-                                        <span className="text-xl font-black font-serif text-black/20">%</span>
+                                        <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">%</span>
                                     </div>
                                 </div>
                             </div>
@@ -312,7 +312,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="lg:col-span-4 space-y-10">
-                    <div className="bg-[#1A1A2E] rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 space-y-8">
+                    <div className="bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 dark:border-white/10 space-y-8">
                         <div className="border-b border-white/10 pb-6">
                             <h3 className="text-2xl font-black font-serif">Security & Access</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mt-1">Credential Protection Protocols</p>
@@ -327,10 +327,10 @@ export default function SettingsPage() {
                                 <button
                                     key={item.id}
                                     onClick={item.action}
-                                    className="w-full flex items-center justify-between p-6 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-left group"
+                                    className="w-full flex items-center justify-between p-6 rounded-2xl bg-white dark:bg-[#111827]/5 border border-white/5 dark:border-white/10 hover:bg-white dark:bg-[#111827]/10 transition-all text-left group"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <item.icon size={18} className="text-[#E8820C] group-hover:scale-110 transition-transform" />
+                                        <item.icon size={18} className="text-[#E8820C] dark:text-[#F5A623] group-hover:scale-110 transition-transform" />
                                         <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
                                     </div>
                                     <ChevronRight size={14} className="text-white/20 group-hover:translate-x-1 transition-transform" />
@@ -346,9 +346,9 @@ export default function SettingsPage() {
                                     </div>
                                     <button
                                         onClick={() => setSettings({ ...settings, allowProfilePhotoChange: !settings.allowProfilePhotoChange })}
-                                        className={`w-12 h-7 rounded-full p-1 transition-all ${settings.allowProfilePhotoChange ? 'bg-[#E8820C]' : 'bg-white/10'}`}
+                                        className={`w-12 h-7 rounded-full p-1 transition-all ${settings.allowProfilePhotoChange ? 'bg-[#E8820C] dark:bg-[#F5A623]' : 'bg-white dark:bg-[#111827]/10'}`}
                                     >
-                                        <div className={`w-5 h-5 rounded-full bg-white shadow-xl transform transition-transform ${settings.allowProfilePhotoChange ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                        <div className={`w-5 h-5 rounded-full bg-white dark:bg-[#111827] shadow-xl transform transition-transform ${settings.allowProfilePhotoChange ? 'translate-x-5' : 'translate-x-0'}`}></div>
                                     </button>
                                 </div>
                             </div>
@@ -356,21 +356,21 @@ export default function SettingsPage() {
                     </div>
 
                     {isAdmin && (
-                        <div className="bg-white rounded-[2.5rem] p-10 shadow-lg border border-black/5 space-y-6">
-                            <div className="flex items-center justify-between border-b border-black/5 pb-6">
-                                <h3 className="text-xl font-black font-serif text-[#1A1A2E]">Audit Ledger</h3>
+                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-10 shadow-lg border border-black/5 dark:border-white/10 space-y-6">
+                            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-6">
+                                <h3 className="text-xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Audit Ledger</h3>
                                 <Fingerprint size={20} className="text-black/10" />
                             </div>
                             <div className="space-y-4">
                                 {auditLogs.slice(0, 4).map(log => (
-                                    <div key={log.id} className="p-4 bg-gray-50 rounded-2xl border border-black/5 space-y-1">
-                                        <p className="text-[10px] font-black text-[#E8820C] uppercase tracking-widest">{log.category}</p>
-                                        <p className="text-xs font-black text-[#1A1A2E] line-clamp-1">{log.action}</p>
-                                        <p className="text-[9px] font-bold text-black/20 italic">{log.timeDisplay}</p>
+                                    <div key={log.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1">
+                                        <p className="text-[10px] font-black text-[#E8820C] dark:text-[#F5A623] uppercase tracking-widest">{log.category}</p>
+                                        <p className="text-xs font-black text-[#1A1A2E] dark:text-white/90 line-clamp-1">{log.action}</p>
+                                        <p className="text-[9px] font-bold text-black/20 dark:text-white/20 italic">{log.timeDisplay}</p>
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={() => setShowFullLedger(true)} className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] transition-all active:scale-95">Open Full Manifest</button>
+                            <button onClick={() => setShowFullLedger(true)} className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] dark:bg-[#0F172A] transition-all active:scale-95">Open Full Manifest</button>
                         </div>
                     )}
                 </div>
@@ -379,27 +379,27 @@ export default function SettingsPage() {
             {/* Modals */}
             {selectedMember && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-[#1A1A2E]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
-                    <div className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
-                        <div className="bg-[#1A1A2E] p-10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
+                    <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
+                        <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 relative overflow-hidden">
                             <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white transition-all"><X size={24} /></button>
                             <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center text-2xl font-black text-[#1A1A2E]">
+                                <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-[#111827] flex items-center justify-center text-2xl font-black text-[#1A1A2E] dark:text-white/90">
                                     {(selectedMember.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black text-white font-serif">{selectedMember.name}</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] mt-1">Council Member Records</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Council Member Records</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="p-10 space-y-8 bg-gray-50/50">
+                        <div className="p-10 space-y-8 bg-gray-50 dark:bg-white/5/50">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Access Level (Role)</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30 ml-4">Access Level (Role)</label>
                                 <select
                                     value={selectedMember.role || 'member'}
                                     onChange={(e) => handleRoleUpdate(selectedMember._id || selectedMember.id, e.target.value)}
-                                    className="w-full bg-white border-2 border-black/5 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
+                                    className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
                                 >
                                     {Object.entries(ROLES).map(([key, value]) => (
                                         <option key={value} value={value}>
@@ -408,9 +408,9 @@ export default function SettingsPage() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="p-8 bg-white border border-black/5 rounded-[2.5rem] space-y-4">
-                                <div className="flex items-center gap-3"><Mail size={14} className="text-[#E8820C]" /><p className="text-sm font-black text-[#1A1A2E]">{selectedMember.email}</p></div>
-                                <div className="flex items-center gap-3"><UserCheck size={14} className="text-[#E8820C]" /><p className="text-sm font-black text-[#1A1A2E] uppercase tracking-widest">{selectedMember.status || 'Active'}</p></div>
+                            <div className="p-8 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[2.5rem] space-y-4">
+                                <div className="flex items-center gap-3"><Mail size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90">{selectedMember.email}</p></div>
+                                <div className="flex items-center gap-3"><UserCheck size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest">{selectedMember.status || 'Active'}</p></div>
                             </div>
                         </div>
                     </div>
@@ -419,10 +419,10 @@ export default function SettingsPage() {
 
             {activeModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-[#1A1A2E]/95 backdrop-blur-md" onClick={() => setActiveModal(null)}></div>
-                    <div className="relative bg-white w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
-                        <div className="bg-[#1A1A2E] p-10 flex items-center gap-6">
-                            <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#E8820C]">
+                    <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/95 backdrop-blur-md" onClick={() => setActiveModal(null)}></div>
+                    <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
+                        <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 flex items-center gap-6">
+                            <div className="w-16 h-16 bg-white dark:bg-[#111827]/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#E8820C] dark:text-[#F5A623]">
                                 {activeModal === 'password' && <Lock size={28} />}
                                 {activeModal === '2fa' && <ShieldCheck size={28} />}
                                 {activeModal === 'pin' && <Wallet size={28} />}
@@ -430,16 +430,16 @@ export default function SettingsPage() {
                             </div>
                             <div>
                                 <h3 className="text-2xl font-black text-white font-serif capitalize">{activeModal.replace('-', ' ')}</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] mt-1">Institutional Security Protocol</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Institutional Security Protocol</p>
                             </div>
                         </div>
 
-                        <div className="p-10 bg-gray-50/50">
+                        <div className="p-10 bg-gray-50 dark:bg-white/5/50">
                             {activeModal === '2fa' && (
                                 <div className="space-y-10">
                                     <div className="space-y-4">
-                                        <h4 className="text-sm font-black text-[#1A1A2E] uppercase tracking-widest text-center">Step 1: Synchronize Authenticator</h4>
-                                        <div className="mx-auto w-48 h-48 bg-white p-4 rounded-3xl border border-black/10 shadow-2xl flex items-center justify-center relative overflow-hidden">
+                                        <h4 className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest text-center">Step 1: Synchronize Authenticator</h4>
+                                        <div className="mx-auto w-48 h-48 bg-white dark:bg-[#111827] p-4 rounded-3xl border border-black/10 shadow-2xl flex items-center justify-center relative overflow-hidden">
                                             {twoFactorData.otpauth && (
                                                 <QRCodeCanvas 
                                                     value={twoFactorData.otpauth} 
@@ -449,15 +449,15 @@ export default function SettingsPage() {
                                             )}
                                         </div>
                                         <div className="flex flex-col items-center gap-2">
-                                            <p className="text-[10px] font-black uppercase text-black/30 tracking-widest">Secret Key</p>
-                                            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-black/5">
-                                                <code className="text-xs font-black text-[#1A1A2E]">{twoFactorData.secret}</code>
-                                                <button onClick={() => { navigator.clipboard.writeText(twoFactorData.secret); toast.success('Secret key copied'); }} className="text-[#E8820C] hover:scale-110 transition-transform"><Copy size={14} /></button>
+                                            <p className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 tracking-widest">Secret Key</p>
+                                            <div className="flex items-center gap-3 bg-white dark:bg-[#111827] px-4 py-2 rounded-xl border border-black/5 dark:border-white/10">
+                                                <code className="text-xs font-black text-[#1A1A2E] dark:text-white/90">{twoFactorData.secret}</code>
+                                                <button onClick={() => { navigator.clipboard.writeText(twoFactorData.secret); toast.success('Secret key copied'); }} className="text-[#E8820C] dark:text-[#F5A623] hover:scale-110 transition-transform"><Copy size={14} /></button>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-4 pt-8 border-t border-black/5">
-                                        <h4 className="text-sm font-black text-[#1A1A2E] uppercase tracking-widest text-center">Step 2: Verify Access Code</h4>
+                                    <div className="space-y-4 pt-8 border-t border-black/5 dark:border-white/10">
+                                        <h4 className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest text-center">Step 2: Verify Access Code</h4>
                                         <div className="flex gap-2 justify-center">
                                             {otpDigits.map((d, i) => (
                                                 <input
@@ -468,7 +468,7 @@ export default function SettingsPage() {
                                                     value={d}
                                                     onChange={e => handleOtpChange(i, e.target.value)}
                                                     onKeyDown={e => handleOtpKeyDown(i, e)}
-                                                    className="w-10 h-14 text-center bg-white border-2 border-black/5 rounded-xl text-xl font-black outline-none focus:border-[#E8820C]"
+                                                    className="w-10 h-14 text-center bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-xl text-xl font-black outline-none focus:border-[#E8820C]"
                                                     placeholder="-"
                                                 />
                                             ))}
@@ -476,7 +476,7 @@ export default function SettingsPage() {
                                         <button 
                                             onClick={confirm2FA}
                                             disabled={otpSaving}
-                                            className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50"
+                                            className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50"
                                         >
                                             {otpSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirm Biometric Link'}
                                         </button>
@@ -487,14 +487,14 @@ export default function SettingsPage() {
                             {activeModal === 'password' && (
                                 <form onSubmit={handlePwChange} className="space-y-6">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-black/30 ml-4">Current Master Key</label>
-                                        <input type="password" required value={pwForm.current} onChange={e => setPwForm({ ...pwForm, current: e.target.value })} className="w-full bg-white border-2 border-black/5 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="••••••••" />
+                                        <label className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 ml-4">Current Master Key</label>
+                                        <input type="password" required value={pwForm.current} onChange={e => setPwForm({ ...pwForm, current: e.target.value })} className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="••••••••" />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-black/30 ml-4">New Encrypted Key</label>
-                                        <input type="password" required value={pwForm.next} onChange={e => setPwForm({ ...pwForm, next: e.target.value })} className="w-full bg-white border-2 border-black/5 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="Min. 8 characters" />
+                                        <label className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 ml-4">New Encrypted Key</label>
+                                        <input type="password" required value={pwForm.next} onChange={e => setPwForm({ ...pwForm, next: e.target.value })} className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="Min. 8 characters" />
                                     </div>
-                                    <button type="submit" disabled={pwSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
+                                    <button type="submit" disabled={pwSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
                                         {pwSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Synchronize Master Key'}
                                     </button>
                                 </form>
@@ -510,10 +510,10 @@ export default function SettingsPage() {
                                                 newPin[i] = val;
                                                 setPinDigits(newPin);
                                                 if (val && i < 3) document.getElementById(`pin-modal-${i + 1}`)?.focus();
-                                            }} className="w-16 h-20 text-center bg-white border-2 border-black/5 rounded-2xl text-3xl font-black outline-none focus:border-[#E8820C]/30" placeholder="-" />
+                                            }} className="w-16 h-20 text-center bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-2xl text-3xl font-black outline-none focus:border-[#E8820C]/30" placeholder="-" />
                                         ))}
                                     </div>
-                                    <button type="submit" disabled={pinSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
+                                    <button type="submit" disabled={pinSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
                                         {pinSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Lock Transaction Vault'}
                                     </button>
                                 </form>

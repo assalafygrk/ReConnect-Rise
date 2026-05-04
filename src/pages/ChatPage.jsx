@@ -104,7 +104,7 @@ export default function ChatPage() {
     const currentBrother = brothers.find(b => b.id === activeTab);
 
     return (
-        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 bg-white relative mx-2 md:mx-0">
+        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#0B1221] relative mx-2 md:mx-0">
 
             {/* Sidebar Toggle Overlay (Mobile) */}
             {showSidebar && (
@@ -115,18 +115,18 @@ export default function ChatPage() {
             )}
 
             {/* Chat Sidebar: Node Registry */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-80 border-r border-black/5 flex flex-col bg-gray-50/50 backdrop-blur-xl transition-all duration-500 md:relative md:translate-x-0 ${showSidebar ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="p-8 border-b border-black/5 bg-white/80">
+            <div className={`fixed inset-y-0 left-0 z-50 w-80 border-r border-black/5 dark:border-white/10 flex flex-col bg-gray-50 dark:bg-[#111827] backdrop-blur-xl transition-all duration-500 md:relative md:translate-x-0 ${showSidebar ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-8 border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#0B1221]">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-3xl font-black font-serif text-[#1A1A2E] leading-none">{config.channelName || 'Registry'}</h2>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] mt-2">Active Comms Nodes</p>
+                            <h2 className="text-3xl font-black font-serif text-[#1A1A2E] dark:text-white leading-none">{config.channelName || 'Registry'}</h2>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#E8820C] mt-2">Active Comms Nodes</p>
                         </div>
-                        <button onClick={() => setShowSidebar(false)} className="md:hidden text-black/20 hover:text-black/60"><X size={20} /></button>
+                        <button onClick={() => setShowSidebar(false)} className="md:hidden text-black/20 dark:text-white/20 hover:text-black/60 dark:hover:text-white/60"><X size={20} /></button>
                     </div>
                     <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#E8820C] transition-colors" size={16} />
-                        <input className="w-full bg-gray-100 border-2 border-transparent focus:border-[#E8820C]/20 rounded-2xl pl-12 pr-4 py-4 text-[10px] outline-none transition-all font-black uppercase tracking-widest placeholder:text-black/10" placeholder="Locate Brother..." />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] dark:group-focus-within:text-[#E8820C] transition-colors" size={16} />
+                        <input className="w-full bg-gray-100 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/20 rounded-2xl pl-12 pr-4 py-4 text-[10px] dark:text-white outline-none transition-all font-black uppercase tracking-widest placeholder:text-black/10 dark:placeholder:text-white/10" placeholder="Locate Brother..." />
                     </div>
                 </div>
 
@@ -134,9 +134,9 @@ export default function ChatPage() {
                     {/* Configured Announcement */}
                     {config.pinnedAnnouncement && (
                         <div className="mb-6">
-                            <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-start gap-3">
-                                <ShieldAlert size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                                <p className="text-xs font-bold text-blue-800">{config.pinnedAnnouncement}</p>
+                            <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 p-4 rounded-2xl flex items-start gap-3">
+                                <ShieldAlert size={16} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                <p className="text-xs font-bold text-blue-800 dark:text-blue-300">{config.pinnedAnnouncement}</p>
                             </div>
                         </div>
                     )}
@@ -144,7 +144,7 @@ export default function ChatPage() {
                     {/* Pinned Section */}
                     {pinnedChats.length > 0 && (
                         <div className="mb-8">
-                            <p className="px-4 text-[9px] uppercase font-black text-[#E8820C] tracking-[0.4em] mb-4 flex items-center gap-2">
+                            <p className="px-4 text-[9px] uppercase font-black text-[#E8820C] dark:text-[#E8820C] tracking-[0.4em] mb-4 flex items-center gap-2">
                                 <ShieldAlert size={12} /> Strategic Locks
                             </p>
                             <div className="space-y-2">
@@ -155,16 +155,16 @@ export default function ChatPage() {
                                         <button
                                             key={id}
                                             onClick={() => { setActiveTab(id); setShowSidebar(false); }}
-                                            className={`w-full flex items-center gap-5 p-5 rounded-[2.5rem] transition-all relative ${activeTab === id ? 'bg-white shadow-2xl shadow-black/10 border border-black/5' : 'hover:bg-white/50 opacity-60'}`}
+                                            className={`w-full flex items-center gap-5 p-5 rounded-[2.5rem] transition-all relative ${activeTab === id ? 'bg-white dark:bg-[#1A1A2E] shadow-2xl shadow-black/10 dark:shadow-black/40 border border-black/5 dark:border-white/10' : 'hover:bg-white dark:hover:bg-white/5 opacity-60'}`}
                                         >
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${activeTab === id ? 'bg-[#1A1A2E] text-white shadow-lg' : 'bg-white text-black/20 border border-black/5'}`}>
-                                                {isPublic ? <Signal size={24} className="text-[#E8820C]" /> : b?.name.split(' ').map(n => n[0]).join('')}
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${activeTab === id ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] shadow-lg' : 'bg-white dark:bg-white/5 text-black/20 dark:text-white/20 border border-black/5 dark:border-white/10'}`}>
+                                                {isPublic ? <Signal size={24} className="text-[#E8820C] dark:text-[#E8820C]" /> : b?.name.split(' ').map(n => n[0]).join('')}
                                             </div>
                                             <div className="text-left flex-1 min-w-0">
-                                                <p className="text-sm font-black text-[#1A1A2E] truncate tracking-tight">{isPublic ? 'Brotherhood Core' : b?.name}</p>
-                                                <p className="text-[9px] text-[#E8820C] font-black uppercase tracking-widest mt-1">High Bandwidth</p>
+                                                <p className="text-sm font-black text-[#1A1A2E] dark:text-white truncate tracking-tight">{isPublic ? 'Brotherhood Core' : b?.name}</p>
+                                                <p className="text-[9px] text-[#E8820C] dark:text-[#E8820C] font-black uppercase tracking-widest mt-1">High Bandwidth</p>
                                             </div>
-                                            {activeTab === id && <div className="w-2 h-2 rounded-full bg-[#E8820C] animate-pulse shadow-[0_0_10px_#E8820C]"></div>}
+                                            {activeTab === id && <div className="w-2 h-2 rounded-full bg-[#E8820C] dark:bg-[#E8820C] animate-pulse shadow-[0_0_10px_#E8820C]"></div>}
                                         </button>
                                     );
                                 })}
@@ -173,23 +173,23 @@ export default function ChatPage() {
                     )}
 
                     <div className="mb-6">
-                        <p className="px-4 text-[9px] uppercase font-black text-black/20 tracking-[0.4em] mb-4">Relay History</p>
+                        <p className="px-4 text-[9px] uppercase font-black text-black/20 dark:text-white/20 tracking-[0.4em] mb-4">Relay History</p>
                         <div className="space-y-2">
                             {brothers.filter(b => !pinnedChats.includes(b.id)).map(b => (
                                 <button
                                     key={b.id}
                                     onClick={() => { setActiveTab(b.id); setShowSidebar(false); }}
-                                    className={`w-full flex items-center gap-5 p-5 rounded-[2.5rem] transition-all relative ${activeTab === b.id ? 'bg-white shadow-2xl shadow-black/10 border border-black/5' : 'hover:bg-white/50 opacity-60 group'}`}
+                                    className={`w-full flex items-center gap-5 p-5 rounded-[2.5rem] transition-all relative ${activeTab === b.id ? 'bg-white dark:bg-[#1A1A2E] shadow-2xl shadow-black/10 dark:shadow-black/40 border border-black/5 dark:border-white/10' : 'hover:bg-white dark:hover:bg-white/5 opacity-60 group'}`}
                                 >
                                     <div className="relative">
-                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${activeTab === b.id ? 'bg-[#E8820C] text-white' : 'bg-white text-black/20 border border-black/5'}`}>
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xs transition-all ${activeTab === b.id ? 'bg-[#E8820C] dark:bg-[#E8820C] text-white' : 'bg-white dark:bg-white/5 text-black/20 dark:text-white/20 border border-black/5 dark:border-white/10'}`}>
                                             {b.name.split(' ').map(n => n[0]).join('')}
                                         </div>
-                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-4 border-white rounded-full"></div>
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-4 border-white dark:border-[#111827] rounded-full"></div>
                                     </div>
                                     <div className="text-left flex-1 min-w-0">
-                                        <p className="text-sm font-black text-[#1A1A2E] truncate tracking-tight">{b.name}</p>
-                                        <p className="text-[10px] text-black/30 truncate font-medium italic mt-1 leading-tight">{b.lastMsg}</p>
+                                        <p className="text-sm font-black text-[#1A1A2E] dark:text-white truncate tracking-tight">{b.name}</p>
+                                        <p className="text-[10px] text-black/30 dark:text-white/30 truncate font-medium italic mt-1 leading-tight">{b.lastMsg}</p>
                                     </div>
                                 </button>
                             ))}
@@ -199,30 +199,30 @@ export default function ChatPage() {
             </div>
 
             {/* Main Chat Area: Tactical Interface */}
-            <div className="flex-1 flex flex-col bg-white relative">
+            <div className="flex-1 flex flex-col bg-white dark:bg-[#0B1221] relative">
                 {/* Chat Header: Current Focus */}
-                <div className="h-20 md:h-28 px-2 md:px-10 border-b border-black/5 flex items-center justify-between bg-white/90 backdrop-blur-xl z-20 overflow-hidden">
+                <div className="h-20 md:h-28 px-2 md:px-10 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#0B1221]/90 backdrop-blur-xl z-20 overflow-hidden">
                     <div className="flex items-center gap-2 md:gap-6 min-w-0">
                         <button
                             onClick={() => setShowSidebar(true)}
-                            className="md:hidden p-2.5 bg-gray-100 rounded-xl text-[#1A1A2E] hover:bg-[#E8820C] hover:text-white transition-all shadow-sm shrink-0"
+                            className="md:hidden p-2.5 bg-gray-100 dark:bg-white/5 rounded-xl text-[#1A1A2E] dark:text-white hover:bg-[#E8820C] dark:hover:bg-[#E8820C] hover:text-white transition-all shadow-sm shrink-0"
                         >
                             <Menu size={18} />
                         </button>
 
                         <div className="relative group">
-                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-[2rem] bg-[#1A1A2E] flex items-center justify-center text-white shadow-2xl relative z-10 group-hover:scale-105 transition-transform">
-                                {activeTab === 'public' ? <Signal size={24} className="text-[#E8820C] md:size-8" /> : <User size={24} className="md:size-8" />}
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-[2rem] bg-[#1A1A2E] dark:bg-white flex items-center justify-center text-white dark:text-[#1A1A2E] shadow-2xl relative z-10 group-hover:scale-105 transition-transform">
+                                {activeTab === 'public' ? <Signal size={24} className="text-[#E8820C] dark:text-[#E8820C] md:size-8" /> : <User size={24} className="md:size-8" />}
                             </div>
-                            <div className="absolute -inset-2 md:-inset-3 bg-[#E8820C]/10 rounded-2xl md:rounded-[2.5rem] blur opacity-50 group-hover:opacity-80 transition-opacity"></div>
+                            <div className="absolute -inset-2 md:-inset-3 bg-[#E8820C] dark:bg-[#E8820C]/20 rounded-2xl md:rounded-[2.5rem] blur opacity-50 group-hover:opacity-80 transition-opacity"></div>
                         </div>
 
                         <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                                <h3 className="text-base md:text-2xl font-black text-[#1A1A2E] tracking-tight truncate font-serif">
+                                <h3 className="text-base md:text-2xl font-black text-[#1A1A2E] dark:text-white tracking-tight truncate font-serif">
                                     {activeTab === 'public' ? 'Strategic Room' : currentBrother?.name}
                                 </h3>
-                                <button onClick={() => togglePin(activeTab)} className={`p-1 rounded-lg md:rounded-xl transition-all ${pinnedChats.includes(activeTab) ? 'text-[#E8820C] bg-[#E8820C]/10 shadow-inner' : 'text-black/10 hover:text-black/30'}`}>
+                                <button onClick={() => togglePin(activeTab)} className={`p-1 rounded-lg md:rounded-xl transition-all ${pinnedChats.includes(activeTab) ? 'text-[#E8820C] dark:text-[#E8820C] bg-[#E8820C]/10 shadow-inner' : 'text-black/10 hover:text-black/30 dark:text-white/30'}`}>
                                     <ShieldAlert size={14} className="md:size-4" />
                                 </button>
                             </div>
@@ -236,8 +236,8 @@ export default function ChatPage() {
 
                     <div className="flex items-center gap-3">
                         {isSearchOpen ? (
-                            <div className="flex items-center gap-3 bg-gray-50 px-5 py-3 rounded-2xl border border-black/5 shadow-inner animate-in slide-in-from-right-8 w-64">
-                                <Search size={16} className="text-[#E8820C]" />
+                            <div className="flex items-center gap-3 bg-gray-50 dark:bg-white/5 px-5 py-3 rounded-2xl border border-black/5 dark:border-white/10 shadow-inner animate-in slide-in-from-right-8 w-64">
+                                <Search size={16} className="text-[#E8820C] dark:text-[#E8820C]" />
                                 <input
                                     autoFocus
                                     value={searchQuery}
@@ -245,19 +245,19 @@ export default function ChatPage() {
                                     placeholder="Search archive..."
                                     className="bg-transparent border-0 outline-none text-[10px] font-black uppercase tracking-widest w-full"
                                 />
-                                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-1 hover:bg-black/5 rounded-lg"><X size={14} /></button>
+                                <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg text-black/40 dark:text-white/40"><X size={14} /></button>
                             </div>
                         ) : (
                             <button
                                 onClick={() => setIsSearchOpen(true)}
-                                className="hidden sm:flex p-4 rounded-2xl border border-black/5 text-black/20 hover:text-[#1A1A2E] hover:bg-gray-50 transition-all font-black text-[10px] uppercase tracking-[0.4em] gap-3"
+                                className="hidden sm:flex p-4 rounded-2xl border border-black/5 dark:border-white/10 text-black/20 dark:text-white/20 hover:text-[#1A1A2E] dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all font-black text-[10px] uppercase tracking-[0.4em] gap-3"
                             >
                                 <Search size={18} /> Archive
                             </button>
                         )}
                         <button
                             onClick={() => setShowMedia(!showMedia)}
-                            className={`p-4 rounded-2xl border border-black/5 transition-all shadow-sm ${showMedia ? 'bg-[#1A1A2E] text-[#F5A623] border-[#F5A623]/20' : 'text-black/20 hover:text-[#1A1A2E]'}`}
+                            className={`p-4 rounded-2xl border border-black/5 dark:border-white/10 transition-all shadow-sm ${showMedia ? 'bg-[#1A1A2E] dark:bg-white text-[#E8820C] dark:text-[#E8820C] border-[#E8820C]/20' : 'text-black/20 dark:text-white/20 hover:text-[#1A1A2E] dark:hover:text-white'}`}
                         >
                             <MoreVertical size={20} />
                         </button>
@@ -266,12 +266,12 @@ export default function ChatPage() {
 
                 {/* Messages Container: The Relay */}
                 <div className="flex-1 flex overflow-hidden relative">
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 md:p-16 space-y-6 md:space-y-12 bg-gray-50/20 scroll-smooth relative z-10">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 md:p-16 space-y-6 md:space-y-12 bg-gray-50 dark:bg-white/5/20 scroll-smooth relative z-10">
 
                         {loading ? (
                             <div className="flex h-full items-center justify-center flex-col gap-6">
                                 <div className="w-16 h-16 border-4 border-[#E8820C]/10 border-t-[#E8820C] rounded-full animate-spin"></div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#1A1A2E]/30 animate-pulse">Establishing Secure Relay...</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#1A1A2E] dark:text-white/30 animate-pulse">Establishing Secure Relay...</p>
                             </div>
                         ) : filteredMessages.length > 0 ? (
                             filteredMessages.map((msg, i) => {
@@ -279,20 +279,20 @@ export default function ChatPage() {
                                 return (
                                     <div key={msg.id} className={`flex items-end gap-2 md:gap-5 ${msg.isMe ? 'justify-end' : 'justify-start'} ${!showAvatar && !msg.isMe ? 'ml-12 md:ml-[76px]' : ''}`}>
                                         {showAvatar && (
-                                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#1A1A2E] text-white flex items-center justify-center text-[10px] md:text-[12px] font-black shadow-2xl mb-8 shrink-0 border-2 border-white">
+                                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] flex items-center justify-center text-[10px] md:text-[12px] font-black shadow-2xl mb-8 shrink-0 border-2 border-white dark:border-[#111827]">
                                                 {msg.sender?.split(' ').map(n => n[0]).join('')}
                                             </div>
                                         )}
 
 
                                         <div className={`max-w-[80%] md:max-w-xl flex flex-col ${msg.isMe ? 'items-end' : 'items-start'}`}>
-                                            {showAvatar && <p className="text-[9px] font-black text-[#E8820C] mb-2 uppercase tracking-[0.4em] ml-2">{msg.sender}</p>}
+                                            {showAvatar && <p className="text-[9px] font-black text-[#E8820C] dark:text-[#E8820C] mb-2 uppercase tracking-[0.4em] ml-2">{msg.sender}</p>}
 
 
 
                                             <div className={`p-3 md:p-8 text-sm md:text-base leading-relaxed shadow-xl transition-all hover:shadow-2xl relative overflow-hidden group/bubble ${msg.isMe
-                                                ? 'bg-[#1A1A2E] text-white rounded-2xl md:rounded-[3rem] rounded-br-none border border-white/5'
-                                                : 'bg-white border border-black/5 text-[#1A1A2E] rounded-2xl md:rounded-[3rem] rounded-bl-none'
+                                                ? 'bg-[#1A1A2E] dark:bg-[#1A1A2E] text-white rounded-2xl md:rounded-[3rem] rounded-br-none border border-white/5 dark:border-white/10'
+                                                : 'bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 text-[#1A1A2E] dark:text-white rounded-2xl md:rounded-[3rem] rounded-bl-none'
                                                 }`}>
 
 
@@ -309,13 +309,13 @@ export default function ChatPage() {
                                                     </div>
                                                 ) : msg.type === 'voice' ? (
                                                     <div className="flex items-center gap-5 min-w-[200px] relative z-10">
-                                                        <button className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${msg.isMe ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-[#E8820C] text-white hover:bg-[#F5A623]'}`}>
+                                                        <button className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 ${msg.isMe ? 'bg-white dark:bg-white/10 text-[#1A1A2E] dark:text-white hover:bg-white/90' : 'bg-[#E8820C] dark:bg-[#E8820C] text-white hover:bg-[#E8820C]/90'}`}>
                                                             <Play size={24} fill="currentColor" />
                                                         </button>
                                                         <div className="flex-1 space-y-3">
                                                             <div className="flex items-center gap-1">
                                                                 {[1, 0.6, 0.8, 0.4, 0.9, 0.5, 0.7, 0.3].map((h, k) => (
-                                                                    <div key={k} className={`flex-1 rounded-full transition-all duration-1000 ${msg.isMe ? 'bg-white/20' : 'bg-[#1A1A2E]/5'}`} style={{ height: `${h * 16}px` }}></div>
+                                                                    <div key={k} className={`flex-1 rounded-full transition-all duration-1000 ${msg.isMe ? 'bg-white/20 dark:bg-white/10' : 'bg-[#1A1A2E]/10 dark:bg-white/5'}`} style={{ height: `${h * 16}px` }}></div>
                                                                 ))}
                                                             </div>
                                                             <p className="text-[9px] font-black uppercase opacity-40 tracking-[0.3em]">{msg.content?.duration || '0:00'} Secure Recording</p>
@@ -324,7 +324,7 @@ export default function ChatPage() {
                                                 ) : msg.type === 'poll' ? (
                                                     <div className="space-y-6 relative z-10 min-w-[250px]">
                                                         <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-2">
-                                                            <BarChart3 size={20} className="text-[#E8820C]" />
+                                                            <BarChart3 size={20} className="text-[#E8820C] dark:text-[#E8820C]" />
                                                             <p className="font-black text-sm md:text-lg font-serif">{msg.text}</p>
                                                         </div>
 
@@ -338,8 +338,8 @@ export default function ChatPage() {
                                                                         <span>{opt}</span>
                                                                         <span>{pct}%</span>
                                                                     </div>
-                                                                    <div className={`h-3 w-full rounded-full ${msg.isMe ? 'bg-white/10' : 'bg-gray-50'} overflow-hidden border border-white/5`}>
-                                                                        <div className="h-full bg-[#E8820C] rounded-full transition-all duration-1000 shadow-[0_0_15px_#E8820C]" style={{ width: `${pct}%` }}></div>
+                                                                    <div className={`h-3 w-full rounded-full ${msg.isMe ? 'bg-white/10 dark:bg-white/5' : 'bg-gray-50 dark:bg-white/5'} overflow-hidden border border-white/5 dark:border-white/10`}>
+                                                                        <div className="h-full bg-[#E8820C] dark:bg-[#E8820C] rounded-full transition-all duration-1000 shadow-[0_0_15px_#E8820C]" style={{ width: `${pct}%` }}></div>
                                                                     </div>
                                                                 </div>
                                                             )
@@ -347,15 +347,15 @@ export default function ChatPage() {
                                                         <p className="text-[9px] opacity-30 italic font-black uppercase tracking-widest text-center">Protocol: Single Vote Authorization</p>
                                                     </div>
                                                 ) : msg.type === 'document' ? (
-                                                    <div className="flex items-center gap-6 p-4 bg-white/5 rounded-[2.5rem] border border-white/10 relative z-10">
-                                                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${msg.isMe ? 'bg-white/10' : 'bg-[#1A1A2E]/5'} text-[#E8820C] shadow-inner`}>
+                                                    <div className="flex items-center gap-6 p-4 bg-white dark:bg-white/5 rounded-[2.5rem] border border-white/10 relative z-10">
+                                                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${msg.isMe ? 'bg-white dark:bg-white/10' : 'bg-[#1A1A2E] dark:bg-white/5'} text-[#E8820C] dark:text-[#E8820C] shadow-inner`}>
                                                             <FileText size={32} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-black truncate tracking-tight">{msg.content?.text}</p>
                                                             <p className="text-[10px] opacity-40 uppercase font-black tracking-widest mt-1">{msg.content?.size} • Verified</p>
                                                         </div>
-                                                        <button className="w-12 h-12 flex items-center justify-center hover:bg-white/10 rounded-2xl transition-all active:scale-95">
+                                                        <button className="w-12 h-12 flex items-center justify-center hover:bg-white dark:hover:bg-white/10 rounded-2xl transition-all active:scale-95">
                                                             <Download size={20} />
                                                         </button>
                                                     </div>
@@ -366,7 +366,7 @@ export default function ChatPage() {
                                             </div>
 
                                             <div className={`flex items-center gap-3 mt-4 ${msg.isMe ? 'mr-4' : 'ml-4'}`}>
-                                                <p className="text-[9px] text-black/20 font-black uppercase tracking-[0.4em]">{msg.time}</p>
+                                                <p className="text-[9px] text-black/20 dark:text-white/20 font-black uppercase tracking-[0.4em]">{msg.time}</p>
                                                 {msg.isMe && <div className="text-emerald-500 flex items-center gap-1">
                                                     <CheckCircle2 size={12} strokeWidth={4} />
                                                     <span className="text-[8px] font-black uppercase tracking-[0.2em]">Relayed</span>
@@ -378,13 +378,13 @@ export default function ChatPage() {
                             })
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-center space-y-8 max-w-sm mx-auto opacity-40">
-                                <div className="w-24 h-24 rounded-[2.5rem] bg-[#1A1A2E] flex items-center justify-center text-[#E8820C] shadow-2xl relative">
+                                <div className="w-24 h-24 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-white flex items-center justify-center text-[#E8820C] dark:text-[#E8820C] shadow-2xl relative">
                                     <MessageSquare size={48} />
-                                    <div className="absolute -inset-4 bg-[#E8820C]/10 rounded-[3rem] blur animate-pulse"></div>
+                                    <div className="absolute -inset-4 bg-[#E8820C] dark:bg-[#E8820C]/20 rounded-[3rem] blur animate-pulse"></div>
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="font-serif text-3xl font-black text-[#1A1A2E]">Tactical Silence</h4>
-                                    <p className="text-sm font-black uppercase tracking-[0.2em] leading-relaxed text-[#1A1A2E]/60">
+                                    <h4 className="font-serif text-3xl font-black text-[#1A1A2E] dark:text-white">Tactical Silence</h4>
+                                    <p className="text-sm font-black uppercase tracking-[0.2em] leading-relaxed text-[#1A1A2E] dark:text-white/40">
                                         Establish communication. Collective intelligence is the bedrock of sovereignty.
                                     </p>
                                 </div>
@@ -394,26 +394,26 @@ export default function ChatPage() {
 
                     {/* Media Archive Sidebar */}
                     {showMedia && (
-                        <div className="w-96 border-l border-black/5 bg-white p-10 animate-in slide-in-from-right-16 hidden lg:block overflow-y-auto z-20 shadow-2xl relative">
-                            <div className="flex items-center gap-4 mb-10 border-b border-black/5 pb-6">
-                                <Image size={24} className="text-[#E8820C]" />
-                                <h4 className="text-xl font-black font-serif text-[#1A1A2E]">Shared Archive</h4>
+                        <div className="w-96 border-l border-black/5 dark:border-white/10 bg-white dark:bg-[#0B1221] p-10 animate-in slide-in-from-right-16 hidden lg:block overflow-y-auto z-20 shadow-2xl relative">
+                            <div className="flex items-center gap-4 mb-10 border-b border-black/5 dark:border-white/10 pb-6">
+                                <Image size={24} className="text-[#E8820C] dark:text-[#E8820C]" />
+                                <h4 className="text-xl font-black font-serif text-[#1A1A2E] dark:text-white">Shared Archive</h4>
                             </div>
 
                             <div className="grid grid-cols-2 gap-5 mb-10">
                                 {[1, 2, 3, 4, 5, 6].map(i => (
-                                    <div key={i} className="aspect-square bg-gray-50 rounded-[2rem] border-2 border-transparent hover:border-[#E8820C]/30 overflow-hidden flex items-center justify-center text-black/5 hover:text-[#E8820C] transition-all cursor-pointer shadow-sm group">
+                                    <div key={i} className="aspect-square bg-gray-50 dark:bg-white/5 rounded-[2rem] border-2 border-transparent hover:border-[#E8820C]/30 overflow-hidden flex items-center justify-center text-black/5 hover:text-[#E8820C] dark:text-[#F5A623] transition-all cursor-pointer shadow-sm group">
                                         <Lock size={32} className="group-hover:scale-110 transition-transform" />
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="p-8 bg-[#1A1A2E] rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 p-6 opacity-[0.03]">
+                            <div className="p-8 bg-[#1A1A2E] dark:bg-white rounded-[3rem] text-white dark:text-[#1A1A2E] shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-6 opacity-[0.03] dark:opacity-[0.1]">
                                     <ShieldAlert size={80} />
                                 </div>
-                                <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#F5A623] mb-4">Encryption Protocol v4</h5>
-                                <p className="text-[11px] text-white/50 leading-relaxed font-serif italic">
+                                <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C] dark:text-[#E8820C] mb-4">Encryption Protocol v4</h5>
+                                <p className="text-[11px] text-white/50 dark:text-[#1A1A2E]/50 leading-relaxed font-serif italic">
                                     All transmissions within this registry are secured via end-to-end brotherhood verification keys. No data leaks, no compromise.
                                 </p>
                             </div>
@@ -422,11 +422,11 @@ export default function ChatPage() {
                 </div>
 
                 {/* Message Input: Transmission Uplink */}
-                <div className="p-4 md:p-10 bg-white border-t border-black/5 relative z-30">
+                <div className="p-4 md:p-10 bg-white dark:bg-[#0B1221] border-t border-black/5 dark:border-white/10 relative z-30">
 
                     {/* Multi-functional Attachment Menu */}
                     {showAttachments && (
-                        <div className="absolute bottom-[100%] left-2 right-2 md:left-10 md:right-10 mb-4 md:mb-8 p-4 md:p-8 bg-white/90 backdrop-blur-2xl rounded-[2rem] md:rounded-[4rem] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] border border-black/5 animate-in slide-in-from-bottom-12 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2 sm:gap-3 md:gap-6 z-50">
+                        <div className="absolute bottom-[100%] left-2 right-2 md:left-10 md:right-10 mb-4 md:mb-8 p-4 md:p-8 bg-white dark:bg-[#111827] backdrop-blur-2xl rounded-[2rem] md:rounded-[4rem] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] border border-black/5 dark:border-white/10 animate-in slide-in-from-bottom-12 grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2 sm:gap-3 md:gap-6 z-50">
                             {[
                                 { id: 'voice', icon: Mic, label: 'Voice', color: '#E8820C' },
                                 { id: 'image', icon: Image, label: 'Visual', color: '#1A1A2E' },
@@ -443,12 +443,12 @@ export default function ChatPage() {
                                     key={item.id}
                                     type="button"
                                     onClick={() => handleAttachmentClick(item.id)}
-                                    className="flex flex-col items-center gap-3 p-4 rounded-3xl hover:bg-white transition-all group/item hover:shadow-2xl hover:-translate-y-2"
+                                    className="flex flex-col items-center gap-3 p-4 rounded-3xl hover:bg-white dark:hover:bg-white/5 transition-all group/item hover:shadow-2xl hover:-translate-y-2"
                                 >
-                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl group-hover/item:rotate-12 transition-all" style={{ background: item.color }}>
+                                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl group-hover/item:rotate-12 transition-all dark:bg-white/10" style={{ background: item.color }}>
                                         <item.icon size={24} />
                                     </div>
-                                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-black/30 group-hover/item:text-[#1A1A2E]">{item.label}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-black/30 dark:text-white/30 group-hover/item:text-[#1A1A2E] dark:group-hover:text-white">{item.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -456,11 +456,11 @@ export default function ChatPage() {
 
                     <form onSubmit={(e) => handleSend(e)} className="relative group max-w-6xl mx-auto">
                         <div className="absolute -inset-1.5 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[3rem] blur opacity-5 group-focus-within:opacity-20 transition duration-700"></div>
-                        <div className="relative bg-gray-50 border-2 border-transparent focus-within:border-[#E8820C]/20 rounded-[1.5rem] md:rounded-[2.5rem] p-1.5 md:p-3 flex items-center gap-1.5 md:gap-2 transition-all focus-within:bg-white focus-within:shadow-2xl">
+                        <div className="relative bg-gray-50 dark:bg-white/5 border-2 border-transparent focus-within:border-[#E8820C]/20 rounded-[1.5rem] md:rounded-[2.5rem] p-1.5 md:p-3 flex items-center gap-1.5 md:gap-2 transition-all focus-within:bg-white dark:focus-within:bg-[#111827] focus-within:shadow-2xl">
                             <button
                                 type="button"
                                 onClick={() => setShowAttachments(!showAttachments)}
-                                className={`w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-xl md:rounded-[1.5rem] flex items-center justify-center transition-all shadow-lg active:scale-90 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] text-white hover:bg-[#252545]'}`}
+                                className={`w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-xl md:rounded-[1.5rem] flex items-center justify-center transition-all shadow-lg active:scale-90 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] hover:opacity-90'}`}
                             >
                                 <Plus size={20} className="md:size-6" />
                             </button>
@@ -469,7 +469,7 @@ export default function ChatPage() {
                             <input
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[12px] md:text-lg font-serif italic py-2 md:py-3 px-2 md:px-6 text-[#1A1A2E] placeholder:text-black/10"
+                                className="flex-1 min-w-0 bg-transparent border-0 outline-none text-[12px] md:text-lg font-serif italic py-2 md:py-3 px-2 md:px-6 text-[#1A1A2E] dark:text-white/90 placeholder:text-black/10"
                                 placeholder={activeTab === 'public' ? "Draft strategy..." : `Uplink with ${currentBrother?.name?.split(' ')[0]}...`}
                             />
 
@@ -477,7 +477,7 @@ export default function ChatPage() {
                             <button
                                 type="submit"
                                 disabled={!inputText.trim() || sending}
-                                className={`w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-xl md:rounded-[1.5rem] bg-[#E8820C] text-white shadow-2xl shadow-[#E8820C]/40 hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-20 flex items-center justify-center`}
+                                className={`w-10 h-10 md:w-16 md:h-16 shrink-0 rounded-xl md:rounded-[1.5rem] bg-[#E8820C] dark:bg-[#E8820C] text-white shadow-2xl shadow-[#E8820C]/40 hover:opacity-90 hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-20 flex items-center justify-center`}
                             >
                                 {sending ? <Loader2 size={18} className="animate-spin md:size-6" /> : <Send size={18} strokeWidth={3} className="md:size-6" />}
                             </button>
@@ -485,11 +485,11 @@ export default function ChatPage() {
                         </div>
                     </form>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-6">
-                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-black/20 italic">
+                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-black/20 dark:text-white/20 italic">
                             <Lock size={10} /> End-to-End Encryption Active
                         </div>
                         <div className="w-1 h-1 rounded-full bg-black/10"></div>
-                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-black/20 italic">
+                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.4em] text-black/20 dark:text-white/20 italic">
                             <Zap size={10} /> Ultra-low Latency Uplink
                         </div>
                     </div>

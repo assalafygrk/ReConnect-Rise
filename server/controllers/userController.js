@@ -227,10 +227,33 @@ const updatePassword = async (req, res) => {
   }
 };
 
+// @desc    Set/Update Transaction PIN
+// @route   PATCH /api/users/profile/pin
+// @access  Private
+const setTransactionPin = async (req, res) => {
+  const { pin } = req.body;
+  
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    res.status(400);
+    throw new Error('Transaction PIN must be exactly 4 digits');
+  }
+
+  const user = await User.findById(req.user._id);
+  if (user) {
+    user.transactionPin = pin;
+    await user.save();
+    res.json({ message: 'Transaction PIN updated successfully' });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+};
+
 module.exports = {
   authUser,
   registerUser,
   getUserProfile,
   updateUserProfile,
   updatePassword,
+  setTransactionPin,
 };

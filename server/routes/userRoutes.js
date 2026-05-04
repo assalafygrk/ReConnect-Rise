@@ -6,6 +6,7 @@ const {
   getUserProfile,
   updateUserProfile,
   updatePassword,
+  setTransactionPin,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -13,5 +14,6 @@ router.post('/', registerUser);
 router.post('/login', authUser);
 router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
 router.patch('/profile/password', protect, updatePassword);
+router.patch('/profile/pin', protect, setTransactionPin);
 
 module.exports = router;

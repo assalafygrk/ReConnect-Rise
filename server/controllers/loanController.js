@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Settings = require('../models/Settings');
 const Disbursement = require('../models/Disbursement');
+const bcrypt = require('bcryptjs');
 
 // ─── Helper ───────────────────────────────────────────────────────────────
 
@@ -332,6 +333,53 @@ const updateLoanStatus = async (req, res) => {
   res.json(transformLoan(populated));
 };
 
+/**
+ * @desc    Member repays loan via wallet
+ * @route   POST /api/loans/:id/repay-wallet
+ * @access  Private (loan owner)
+ */
+const memberRepayWallet = async (req, res) => {
+  const { amount, pin } = req.body;
+  if (!pin || pin.length !== 4) { res.status(400); throw new Error('Valid 4-digit transaction PIN is required'); }
+
+  const loan = await Loan.findById(req.params.id);
+
+  if (!loan) { res.status(404); throw new Error('Loan not found'); }
+  if (String(loan.user) !== String(req.user._id)) { res.status(403); throw new Error('Not authorized'); }
+  if (!['active', 'disbursed_cash'].includes(loan.status)) { res.status(400); throw new Error(`Cannot record repayment on loan with status: ${loan.status}`); }
+  if (Number(amount) <= 0) { res.status(400); throw new Error('Repayment amount must be positive'); }
+  if (Number(amount) > loan.balance) { res.status(400); throw new Error('Repayment amount cannot exceed loan balance'); }
+
+  const member = await User.findById(req.user._id).select('+transactionPin');
+  if (!member.transactionPin || !(await bcrypt.compare(pin, member.transactionPin))) {
+    res.status(401); throw new Error('Invalid transaction PIN');
+  }
+  if (member.walletBalance < Number(amount)) { res.status(400); throw new Error('Insufficient wallet balance for repayment'); }
+
+  member.walletBalance -= Number(amount);
+  await member.save();
+
+  loan.amountRepaid = (loan.amountRepaid || 0) + Number(amount);
+  loan.balance = Math.max(0, loan.balance - Number(amount));
+
+  if (loan.balance <= 0) {
+    loan.status = 'repaid';
+    loan.balance = 0;
+  }
+  await loan.save();
+
+  await Transaction.create({
+    user: loan.user,
+    type: 'debit',
+    amount: Number(amount),
+    note: `Loan Repayment via Wallet`,
+    relatedUser: loan.user,
+  });
+
+  const populated = await populateLoan(Loan.findById(loan._id));
+  res.json(transformLoan(populated));
+};
+
 module.exports = {
   getLoans,
   requestLoan,
@@ -339,5 +387,6 @@ module.exports = {
   memberNegotiate,
   treasurerAction,
   recordRepayment,
+  memberRepayWallet,
   updateLoanStatus,
 };

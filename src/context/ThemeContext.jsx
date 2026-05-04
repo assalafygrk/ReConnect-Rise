@@ -1,30 +1,24 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
-export function ThemeProvider({ children }) {
-    const [theme, setTheme] = useState(() => {
-        // Retrieve stored theme, or default to system preference, or light
-        const stored = localStorage.getItem('app-theme');
-        if (stored) return stored;
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
-    });
+export const ThemeProvider = ({ children }) => {
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
     useEffect(() => {
         const root = window.document.documentElement;
         if (theme === 'dark') {
             root.classList.add('dark');
+            document.body.classList.add('dark');
         } else {
             root.classList.remove('dark');
+            document.body.classList.remove('dark');
         }
-        localStorage.setItem('app-theme', theme);
+        localStorage.setItem('theme', theme);
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+        setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
     };
 
     return (
@@ -32,12 +26,12 @@ export function ThemeProvider({ children }) {
             {children}
         </ThemeContext.Provider>
     );
-}
+};
 
-export function useTheme() {
+export const useTheme = () => {
     const context = useContext(ThemeContext);
     if (!context) {
         throw new Error('useTheme must be used within a ThemeProvider');
     }
     return context;
-}
+};

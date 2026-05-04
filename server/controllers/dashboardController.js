@@ -8,12 +8,16 @@ const Vision = require('../models/Vision');
 const Meeting = require('../models/Meeting');
 const AuditLog = require('../models/AuditLog');
 const Request = require('../models/Request');
+const { syncOverdueLoans } = require('../utils/loanSync');
 
 // @desc    Get dashboard summary
 // @route   GET /api/dashboard
 // @access  Private
 const getDashboardSummary = async (req, res) => {
   try {
+    // Run automated overdue loan sync/deduction
+    await syncOverdueLoans();
+
     const memberCount = await User.countDocuments({});
     
     // Get all confirmed contributions

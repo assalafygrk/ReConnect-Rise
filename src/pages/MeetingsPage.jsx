@@ -110,8 +110,8 @@ export default function MeetingsPage() {
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.4em] mb-2">
                         <Calendar size={14} /> Assembly & Summits
                     </div>
-                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">{config.pageHeadline}</h1>
-                    <p className="text-sm text-black/40 font-medium max-w-xl leading-relaxed">
+                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] dark:text-white tracking-tight">{config.pageHeadline}</h1>
+                    <p className="text-sm text-black/40 dark:text-white/40 font-medium max-w-xl leading-relaxed">
                         {config.pageSubtitle}
                     </p>
                 </div>
@@ -131,9 +131,9 @@ export default function MeetingsPage() {
             </div>
 
             {config.attendanceRequirement && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <ShieldCheck size={20} className="text-blue-600 shrink-0" />
-                    <p className="text-sm font-bold text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300">
                         {config.attendanceRequirement}
                     </p>
                 </div>
@@ -141,12 +141,12 @@ export default function MeetingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Upcoming Assemblies', value: upcoming.length, icon: Clock, color: 'text-[#E8820C]', bg: 'bg-[#E8820C]/5' },
-                    { label: 'Archived Minutes', value: past.filter(m => m.minutes).length, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Attendance Rate', value: '94%', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    { label: 'Registry Health', value: 'Verified', icon: ShieldCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
+                    { label: 'Upcoming Assemblies', value: upcoming.length, icon: Clock, color: 'text-[#E8820C]', bg: 'bg-[#E8820C]/5 dark:bg-[#E8820C]/10' },
+                    { label: 'Archived Minutes', value: past.filter(m => m.minutes).length, icon: FileText, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/10' },
+                    { label: 'Attendance Rate', value: '94%', icon: Users, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/10' },
+                    { label: 'Registry Health', value: 'Verified', icon: ShieldCheck, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/10' },
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-[2rem] border border-black/5 shadow-sm space-y-4 group hover:shadow-xl transition-all duration-500">
+                    <div key={i} className="bg-white dark:bg-[#0B1221] p-6 rounded-[2rem] border border-black/5 dark:border-white/10 shadow-sm space-y-4 group hover:shadow-xl transition-all duration-500">
                         <div className="flex items-center justify-between">
                             <div className={`${stat.bg} ${stat.color} p-3 rounded-2xl`}>
                                 <stat.icon size={20} />
@@ -154,8 +154,8 @@ export default function MeetingsPage() {
                             <MoreHorizontal size={16} className="text-black/10" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1">{stat.label}</p>
-                            <h4 className="text-2xl font-serif font-black text-[#1A1A2E]">{stat.value}</h4>
+                            <p className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest mb-1">{stat.label}</p>
+                            <h4 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">{stat.value}</h4>
                         </div>
                     </div>
                 ))}
@@ -169,16 +169,16 @@ export default function MeetingsPage() {
                         placeholder="SEARCH SUMMIT ARCHIVE..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white border border-black/5 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all"
+                        className="w-full bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all placeholder:text-black/10 dark:placeholder:text-white/20"
                     />
                 </div>
 
-                <div className="flex items-center gap-3 p-2 bg-white rounded-[1.5rem] border border-black/5 shadow-sm">
+                <div className="flex items-center gap-3 p-2 bg-white dark:bg-[#111827] rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-sm">
                     {['all', 'upcoming', 'past'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setActiveFilter(f)}
-                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${activeFilter === f ? 'bg-[#1A1A2E] text-white shadow-lg' : 'text-black/30 hover:bg-gray-50 hover:text-black'
+                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${activeFilter === f ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] shadow-lg' : 'text-black/30 dark:text-white/40 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
                                 }`}
                         >
                             {f}
@@ -200,8 +200,8 @@ export default function MeetingsPage() {
                                     <div className="relative z-10 space-y-6">
                                         <div className="flex justify-between items-start gap-4">
                                             <div className="space-y-1">
-                                                <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">{m.title}</h3>
-                                                <div className="flex items-center gap-4 text-xs font-bold text-black/30">
+                                                <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">{m.title}</h3>
+                                                <div className="flex items-center gap-4 text-xs font-bold text-black/30 dark:text-white/30">
                                                     <span className="flex items-center gap-2"><Clock size={14} className="text-[#E8820C]" /> {dayjs(m.date).format('D MMMM YYYY')}</span>
                                                     <span className="flex items-center gap-2"><MapPin size={14} className="text-[#E8820C]" /> {m.venue}</span>
                                                 </div>
@@ -215,11 +215,11 @@ export default function MeetingsPage() {
                                         </div>
 
                                         {m.agenda?.length > 0 && (
-                                            <div className="space-y-3 pt-6 border-t border-black/5">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-black/20">Summit Objectives</p>
+                                            <div className="space-y-3 pt-6 border-t border-black/5 dark:border-white/10">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-black/20 dark:text-white/20">Summit Objectives</p>
                                                 <ul className="grid grid-cols-1 gap-2">
                                                     {m.agenda.map((item, i) => (
-                                                        <li key={i} className="flex items-center gap-3 text-sm font-bold text-[#1A1A2E]">
+                                                        <li key={i} className="flex items-center gap-3 text-sm font-bold text-[#1A1A2E] dark:text-white">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-[#E8820C]" />
                                                             {item}
                                                         </li>
@@ -228,7 +228,7 @@ export default function MeetingsPage() {
                                             </div>
                                         )}
 
-                                        <button className="w-full py-4 rounded-xl border border-black/5 text-[9px] font-black uppercase tracking-[0.2em] text-black/30 group-hover:text-[#1A1A2E] group-hover:border-[#1A1A2E]/10 transition-all flex items-center justify-center gap-2">
+                                        <button className="w-full py-4 rounded-xl border border-black/5 dark:border-white/10 text-[9px] font-black uppercase tracking-[0.2em] text-black/30 dark:text-white/30 group-hover:text-[#1A1A2E] dark:group-hover:text-white group-hover:border-[#1A1A2E]/10 dark:group-hover:border-white/10 transition-all flex items-center justify-center gap-2">
                                             Register Attendance <ChevronRight size={14} />
                                         </button>
                                     </div>
@@ -243,15 +243,15 @@ export default function MeetingsPage() {
                         <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-black/30 ml-2">Archived Registry</h2>
                         <div className="grid grid-cols-1 gap-4">
                             {past.map((m) => (
-                                <div key={m.id} className="bg-white rounded-[1.5rem] p-6 border border-black/5 flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-md transition-all">
+                                <div key={m.id} className="bg-white dark:bg-[#111827] rounded-[1.5rem] p-6 border border-black/5 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-md transition-all">
                                     <div className="flex items-center gap-6 w-full md:w-auto">
-                                        <div className="w-14 h-14 rounded-2xl bg-gray-50 flex flex-col items-center justify-center border border-black/5">
-                                            <span className="text-[8px] font-black uppercase text-black/30">{dayjs(m.date).format('MMM')}</span>
-                                            <span className="text-xl font-serif font-black text-[#1A1A2E]">{dayjs(m.date).format('DD')}</span>
+                                        <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-white/5 flex flex-col items-center justify-center border border-black/5 dark:border-white/10">
+                                            <span className="text-[8px] font-black uppercase text-black/30 dark:text-white/30">{dayjs(m.date).format('MMM')}</span>
+                                            <span className="text-xl font-serif font-black text-[#1A1A2E] dark:text-white">{dayjs(m.date).format('DD')}</span>
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-serif font-bold text-[#1A1A2E]">{m.title}</h3>
-                                            <p className="text-xs font-bold text-black/30 uppercase tracking-widest">{dayjs(m.date).format('YYYY')} • ARCHIVED SUMMIT</p>
+                                            <h3 className="text-lg font-serif font-bold text-[#1A1A2E] dark:text-white">{m.title}</h3>
+                                            <p className="text-xs font-bold text-black/30 dark:text-white/30 uppercase tracking-widest">{dayjs(m.date).format('YYYY')} • ARCHIVED SUMMIT</p>
                                         </div>
                                     </div>
 
@@ -259,7 +259,7 @@ export default function MeetingsPage() {
                                         {m.minutes ? (
                                             <button
                                                 onClick={() => setExpandedMinutes(expandedMinutes === m.id ? null : m.id)}
-                                                className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-[#1A1A2E]/5 text-[#1A1A2E] text-[9px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] hover:text-white transition-all flex items-center gap-2">
+                                                className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-[#1A1A2E]/5 dark:bg-white/5 text-[#1A1A2E] dark:text-white text-[9px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] dark:hover:bg-white hover:text-white dark:hover:text-[#1A1A2E] transition-all flex items-center gap-2">
                                                 <FileText size={14} /> {expandedMinutes === m.id ? 'Close Minutes' : 'View Minutes'}
                                             </button>
                                         ) : (
@@ -271,16 +271,16 @@ export default function MeetingsPage() {
                                                 </button>
                                             )
                                         )}
-                                        <button className="p-3 bg-gray-50 text-black/20 hover:text-black/60 rounded-xl transition-all"><Globe size={18} /></button>
+                                        <button className="p-3 bg-gray-50 dark:bg-white/5 text-black/20 dark:text-white/20 hover:text-black/60 dark:hover:text-white/60 rounded-xl transition-all"><Globe size={18} /></button>
                                     </div>
 
                                     {expandedMinutes === m.id && m.minutes && (
-                                        <div className="w-full mt-4 p-8 bg-gray-50 rounded-2xl border border-black/5 animate-in slide-in-from-top-4 duration-300">
+                                        <div className="w-full mt-4 p-8 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 animate-in slide-in-from-top-4 duration-300">
                                             <div className="flex items-center gap-2 text-[8px] font-black text-[#E8820C] uppercase tracking-widest mb-4">
                                                 <ShieldCheck size={12} /> Official Minutes Entry
                                             </div>
-                                            <p className="text-sm font-medium text-[#1A1A2E] leading-relaxed whitespace-pre-wrap">{m.minutes}</p>
-                                            <div className="mt-8 pt-6 border-t border-black/5 flex justify-between items-center text-[10px] font-bold text-black/20 uppercase tracking-widest">
+                                            <p className="text-sm font-medium text-[#1A1A2E] dark:text-white leading-relaxed whitespace-pre-wrap">{m.minutes}</p>
+                                            <div className="mt-8 pt-6 border-t border-black/5 dark:border-white/10 flex justify-between items-center text-[10px] font-bold text-black/20 dark:text-white/20 uppercase tracking-widest">
                                                 <span>Recorded by Archive System</span>
                                                 <span>Finalized Record</span>
                                             </div>
@@ -294,43 +294,43 @@ export default function MeetingsPage() {
             </div>
 
             {showForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 backdrop-blur-md overflow-hidden">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto">
-                        <div className="flex items-center justify-between p-6 sm:p-8 border-b border-black/5 sticky top-0 bg-white z-10 py-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 dark:bg-black/80 backdrop-blur-md overflow-hidden">
+                    <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto border border-black/5 dark:border-white/10">
+                        <div className="flex items-center justify-between p-6 sm:p-8 border-b border-black/5 dark:border-white/10 sticky top-0 bg-white dark:bg-[#111827] z-10 py-4">
                             <div>
-                                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#1A1A2E]">Schedule Assembly</h3>
-                                <p className="text-[10px] text-black/30 font-black uppercase tracking-widest mt-1">Authorized Summit Dispatch</p>
+                                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#1A1A2E] dark:text-white">Schedule Assembly</h3>
+                                <p className="text-[10px] text-black/30 dark:text-white/30 font-black uppercase tracking-widest mt-1">Authorized Summit Dispatch</p>
                             </div>
-                            <button onClick={() => setShowForm(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-black/40 hover:text-black"><X size={24} /></button>
+                            <button onClick={() => setShowForm(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-colors text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"><X size={24} /></button>
                         </div>
                         <form onSubmit={handleAdd}>
                             <div className="p-8 space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest mb-2 ml-1">Assembly Title</label>
+                                    <label className="block text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest mb-2 ml-1">Assembly Title</label>
                                     <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required
-                                        className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all placeholder:text-black/5" placeholder="e.g. ANNUAL GENERAL SUMMIT 2026" />
+                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] focus:bg-white dark:focus:bg-[#1A1A2E] rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all placeholder:text-black/5" placeholder="e.g. ANNUAL GENERAL SUMMIT 2026" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest mb-2 ml-1">Registry Date</label>
+                                        <label className="block text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest mb-2 ml-1">Registry Date</label>
                                         <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all" />
+                                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] focus:bg-white dark:focus:bg-[#1A1A2E] rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all" />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest mb-2 ml-1">Archive Time</label>
+                                        <label className="block text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest mb-2 ml-1">Archive Time</label>
                                         <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all" />
+                                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] focus:bg-white dark:focus:bg-[#1A1A2E] rounded-2xl px-6 py-4 text-sm font-bold dark:text-white outline-none transition-all" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-black/40 uppercase tracking-widest mb-2 ml-1">Summit Objectives</label>
+                                    <label className="block text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest mb-2 ml-1">Summit Objectives</label>
                                     <div className="space-y-3">
                                         {agendaItems.map((item, idx) => (
                                             <div key={idx} className="flex gap-2 group">
                                                 <input value={item} onChange={(e) => { const newItems = [...agendaItems]; newItems[idx] = e.target.value; setAgendaItems(newItems); }}
-                                                    className="flex-1 bg-gray-50 border border-black/5 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#E8820C] transition-all" placeholder={`OBJECTIVE ${idx + 1}`} />
+                                                    className="flex-1 bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-3 text-xs font-bold dark:text-white outline-none focus:border-[#E8820C] transition-all" placeholder={`OBJECTIVE ${idx + 1}`} />
                                                 {agendaItems.length > 1 && (
-                                                    <button type="button" onClick={() => setAgendaItems(agendaItems.filter((_, i) => i !== idx))} className="p-3 text-red-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><X size={16} /></button>
+                                                    <button type="button" onClick={() => setAgendaItems(agendaItems.filter((_, i) => i !== idx))} className="p-3 text-red-200 dark:text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><X size={16} /></button>
                                                 )}
                                             </div>
                                         ))}
@@ -351,27 +351,26 @@ export default function MeetingsPage() {
                     </div>
                 </div>
             )}
-
-            {showMinutesModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 backdrop-blur-md overflow-hidden">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto p-6 sm:p-10">
+                       {showMinutesModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 py-8 bg-[#1A1A2E]/60 dark:bg-black/80 backdrop-blur-md overflow-hidden">
+                    <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in duration-300 my-auto p-6 sm:p-10 border border-black/5 dark:border-white/10">
                         <div className="space-y-8">
                             <div className="text-center space-y-2">
-                                <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#1A1A2E]">Official Minutes</h3>
+                                <h3 className="text-2xl sm:text-3xl font-serif font-black text-[#1A1A2E] dark:text-white">Official Minutes</h3>
                                 <p className="text-[10px] font-black text-[#E8820C] uppercase tracking-[0.4em]">Historical Archive Entry</p>
                             </div>
                             <textarea
                                 value={minutesText}
                                 onChange={(e) => setMinutesText(e.target.value)}
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-[#E8820C] focus:bg-white rounded-[2rem] p-8 text-sm font-medium leading-relaxed outline-none transition-all h-64 resize-none shadow-inner"
+                                className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] focus:bg-white dark:focus:bg-[#1A1A2E] rounded-[2rem] p-8 text-sm font-medium dark:text-white leading-relaxed outline-none transition-all h-64 resize-none shadow-inner"
                                 placeholder="TRANSKRIBE SUMMIT OUTKOME HERE..."
                             />
                             <div className="flex gap-4">
-                                <button onClick={() => setShowMinutesModal(null)} className="flex-1 py-5 font-black text-[10px] uppercase tracking-widest bg-white rounded-2xl border border-black/5 hover:bg-gray-100 transition-all">Discard</button>
+                                <button onClick={() => setShowMinutesModal(null)} className="flex-1 py-5 font-black text-[10px] uppercase tracking-widest bg-white dark:bg-white/5 dark:text-white rounded-2xl border border-black/5 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-all">Discard</button>
                                 <button
                                     disabled={!minutesText.trim()}
                                     onClick={() => handleCommitMinutes(showMinutesModal)}
-                                    className="flex-[2] py-5 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-30"
+                                    className="flex-[2] py-5 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-30"
                                 >
                                     Commit to Archive
                                 </button>

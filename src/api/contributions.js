@@ -37,11 +37,11 @@ export async function markMemberPaid({ memberId, weekId, amount, paymentChannel,
 }
 
 // Member pays their own weekly contribution from their wallet
-export async function payViaWallet() {
+export async function payViaWallet(pin) {
     return handleResponse(await fetch(`${BASE_URL}/contributions/pay-via-wallet`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({}),
+        body: JSON.stringify({ pin }),
     }));
 }
 

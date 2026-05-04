@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Contribution = require('../models/Contribution');
 const Settings = require('../models/Settings');
+const bcrypt = require('bcryptjs');
 
 // ─── System Pool ──────────────────────────────────────────────────────────
 // The treasury pool is tracked via a special system user or just via
@@ -36,10 +37,15 @@ const getWalletInfo = async (req, res) => {
  * @route POST /api/wallet/transfer
  */
 const transferFunds = async (req, res) => {
-  const { to, amount, note } = req.body;
+  const { to, amount, note, pin } = req.body;
   if (!to || !amount || Number(amount) <= 0) { res.status(400); throw new Error('Recipient and a positive amount are required'); }
+  if (!pin || pin.length !== 4) { res.status(400); throw new Error('Valid 4-digit transaction PIN is required'); }
 
-  const fromUser = await User.findById(req.user._id);
+  const fromUser = await User.findById(req.user._id).select('+transactionPin');
+  if (!fromUser.transactionPin || !(await bcrypt.compare(pin, fromUser.transactionPin))) {
+    res.status(401); throw new Error('Invalid transaction PIN');
+  }
+
   // Accept recipient by id or email
   const toUser = await User.findById(to).catch(() => null) || await User.findOne({ email: to });
   if (!toUser) { res.status(404); throw new Error('Recipient not found'); }
@@ -87,10 +93,15 @@ const depositFunds = async (req, res) => {
  * @route POST /api/wallet/withdraw
  */
 const withdrawFunds = async (req, res) => {
-  const { amount, note } = req.body;
+  const { amount, note, bankName, accountNumber, pin } = req.body;
   if (!amount || Number(amount) <= 0) { res.status(400); throw new Error('Valid amount required'); }
+  if (!bankName || !accountNumber) { res.status(400); throw new Error('Bank details are required for withdrawal'); }
+  if (!pin || pin.length !== 4) { res.status(400); throw new Error('Valid 4-digit transaction PIN is required'); }
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select('+transactionPin');
+  if (!user.transactionPin || !(await bcrypt.compare(pin, user.transactionPin))) {
+    res.status(401); throw new Error('Invalid transaction PIN');
+  }
   if ((user.walletBalance || 0) < Number(amount)) { res.status(400); throw new Error('Insufficient wallet balance'); }
 
   user.walletBalance -= Number(amount);
@@ -98,7 +109,7 @@ const withdrawFunds = async (req, res) => {
 
   await Transaction.create({
     user: user._id, type: 'debit', amount: Number(amount),
-    note: note || 'Wallet Withdrawal',
+    note: note || `Withdrawal to ${bankName} (${accountNumber})`,
   });
 
   res.json({ success: true, newBalance: user.walletBalance });
@@ -119,11 +130,15 @@ const payWeeklyContribution = async (req, res) => {
  * @route POST /api/wallet/contribute/general
  */
 const payGeneralContribution = async (req, res) => {
-  const { amount, note } = req.body;
+  const { amount, note, pin } = req.body;
   if (!amount || Number(amount) <= 0) { res.status(400); throw new Error('Valid amount required'); }
+  if (!pin || pin.length !== 4) { res.status(400); throw new Error('Valid 4-digit transaction PIN is required'); }
 
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select('+transactionPin');
   if (!user) { res.status(404); throw new Error('User not found'); }
+  if (!user.transactionPin || !(await bcrypt.compare(pin, user.transactionPin))) {
+    res.status(401); throw new Error('Invalid transaction PIN');
+  }
   if ((user.walletBalance || 0) < Number(amount)) { res.status(400); throw new Error('Insufficient wallet balance'); }
 
   user.walletBalance -= Number(amount);

@@ -34,7 +34,7 @@ export default function AppLayout() {
     return (
         <PageConfigProvider>
             <div className="flex h-screen overflow-hidden bg-[#FFF8F0] dark:bg-[#0B1221] transition-colors duration-500 relative">
-                
+
                 {/* Dark Mode Ambient Blurs (only visible in dark mode) */}
                 <div className="hidden dark:block absolute top-[-10%] left-[-5%] w-[400px] h-[400px] bg-[#3B82F6] rounded-full blur-[150px] opacity-[0.03] pointer-events-none"></div>
                 <div className="hidden dark:block absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#F5A623] rounded-full blur-[150px] opacity-[0.03] pointer-events-none"></div>

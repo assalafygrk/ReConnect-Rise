@@ -32,7 +32,20 @@ body {
 
 .dark body {
   background-color: #0B1221;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #ffffff !important;
+}
+
+/* Global text contrast for dark mode */
+.dark p, .dark span, .dark label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dark .text-white, .dark .text-white\/90, .dark .text-white\/80 {
+  color: white !important;
 }
 
 h1,
@@ -51,7 +64,16 @@ h4 {
   background: #f1f1f1;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #111827;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #E8820C;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #3B82F6;
   border-radius: 3px;
 }

@@ -62,6 +62,15 @@ export async function recordRepayment(loanId, amount, paymentChannel = 'cash') {
     }));
 }
 
+// Member repay via wallet
+export async function memberRepayWalletLoan(loanId, amount, pin) {
+    return handleResponse(await fetch(`${BASE_URL}/loans/${loanId}/repay-wallet`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ amount, pin }),
+    }));
+}
+
 // Legacy — kept for compat
 export async function updateLoanStatus(id, status) {
     return handleResponse(await fetch(`${BASE_URL}/loans/${id}/status`, {

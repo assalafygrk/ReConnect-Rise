@@ -94,7 +94,7 @@ export default function MembersPage() {
     if (loading) return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
             <Zap className="animate-pulse text-[#E8820C]" size={40} />
-            <p className="text-sm font-bold text-black/40 uppercase tracking-widest">Synchronizing Brotherhood Registry...</p>
+            <p className="text-sm font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Synchronizing Brotherhood Registry...</p>
         </div>
     );
 
@@ -129,7 +129,7 @@ export default function MembersPage() {
                         placeholder="Search by name, email or phone..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all placeholder:text-black/20 dark:placeholder:text-white/20"
+                        className="w-full bg-white dark:bg-[#0B1221] border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all placeholder:text-black/20 dark:placeholder:text-white/20"
                     />
                 </div>
                 <div className="relative">
@@ -137,7 +137,7 @@ export default function MembersPage() {
                     <select
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
-                        className="w-full bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-14 pr-6 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 transition-all appearance-none cursor-pointer"
+                        className="w-full bg-white dark:bg-[#0B1221] border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-14 pr-6 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 transition-all appearance-none cursor-pointer"
                     >
                         <option value="all">All Roles</option>
                         {Object.entries(ROLE_CLASSES).map(([role, { label }]) => (
@@ -161,7 +161,7 @@ export default function MembersPage() {
                             <div
                                 key={member.id}
                                 onClick={() => setViewMember(member)}
-                                className="group bg-white dark:bg-white/5 rounded-[2.5rem] p-6 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden cursor-pointer"
+                                className="group bg-white dark:bg-[#0B1221] rounded-[2.5rem] p-6 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden cursor-pointer"
                             >
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
 
@@ -173,7 +173,7 @@ export default function MembersPage() {
                                             <img src={member.facialUpload} alt={member.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <>
-                                                <div className="absolute inset-0 bg-gradient-to-br from-[#E8820C] to-transparent opacity-20" />
+                                                <div className="absolute inset-0 bg-gradient-to-br from-[#E8820C] to-transparent opacity-30" />
                                                 <span className="relative z-10">{initials}</span>
                                             </>
                                         )}
@@ -207,7 +207,7 @@ export default function MembersPage() {
                                     </div>
 
                                     {/* Status badge */}
-                                    <div className={`w-full text-center py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' : 'bg-gray-100 dark:bg-white/5 text-gray-400'}`}>
+                                    <div className={`w-full text-center py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 text-gray-400'}`}>
                                         {member.status || 'active'}
                                     </div>
 
@@ -237,7 +237,7 @@ export default function MembersPage() {
                     })}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-white/5 rounded-[3rem] border-2 border-dashed border-black/5 dark:border-white/10 space-y-6 text-center">
+                <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-[#111827] rounded-[3rem] border-2 border-dashed border-black/5 dark:border-white/10 space-y-6 text-center">
                     <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-[2rem] flex items-center justify-center text-black/10 dark:text-white/10">
                         <Users size={48} />
                     </div>
@@ -256,7 +256,7 @@ export default function MembersPage() {
 
             {/* Confirm Delete Modal */}
             {confirmDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} />
                     <div className="relative bg-white dark:bg-[#0B1221] w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-black/5 dark:border-white/10 animate-in zoom-in-95 duration-200 space-y-6">
                         <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto">
@@ -267,7 +267,7 @@ export default function MembersPage() {
                             <p className="text-sm text-black/50 dark:text-white/50">Are you sure you want to permanently remove <strong>{confirmDelete.name}</strong> from the registry? This cannot be undone.</p>
                         </div>
                         <div className="flex gap-3">
-                            <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3 rounded-xl text-sm font-bold text-black/50 dark:text-white/50 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-all">Cancel</button>
+                            <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3 rounded-xl text-sm font-bold text-black/50 dark:text-white/50 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-all">Cancel</button>
                             <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-3 rounded-xl text-sm font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/30">Remove</button>
                         </div>
                     </div>
@@ -276,10 +276,10 @@ export default function MembersPage() {
 
             {/* Member Info Modal */}
             {viewMember && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setViewMember(null)} />
                     <div className="relative bg-white dark:bg-[#0B1221] w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl border border-black/5 dark:border-white/10 animate-in zoom-in-95 duration-300 overflow-y-auto max-h-[90vh]">
-                        <button onClick={() => setViewMember(null)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors text-black/30">
+                        <button onClick={() => setViewMember(null)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors text-black/30 dark:text-white/40">
                             <X size={20} />
                         </button>
 
@@ -296,7 +296,7 @@ export default function MembersPage() {
 
                             <div className="text-center space-y-1">
                                 <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">{viewMember.name}</h3>
-                                <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 text-[#E8820C]">
+                                <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[#E8820C]">
                                     {ROLE_CLASSES[viewMember.role]?.label || 'Member'}
                                 </div>
                             </div>
@@ -310,7 +310,7 @@ export default function MembersPage() {
                                     { icon: Activity, label: 'Status', value: viewMember.status, color: viewMember.status === 'active' ? 'text-emerald-500' : 'text-amber-500' }
                                 ].map((item, idx) => (
                                     <div key={idx} className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1">
-                                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-black/20 dark:text-white/20">
+                                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-black/20 dark:text-white/30">
                                             <item.icon size={12} /> {item.label}
                                         </div>
                                         <p className={`text-xs font-bold truncate ${item.color || 'text-[#1A1A2E] dark:text-white'}`}>{item.value}</p>
@@ -326,7 +326,7 @@ export default function MembersPage() {
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => { handleToggleStatus(viewMember); setViewMember(null); }}
-                                            className="flex-1 py-3 rounded-xl bg-white dark:bg-white/10 text-[9px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm hover:bg-gray-50 transition-all border border-black/5"
+                                            className="flex-1 py-3 rounded-xl bg-white dark:bg-[#111827]/10 text-[9px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-white/20 transition-all border border-black/5 dark:border-white/10"
                                         >
                                             {viewMember.status === 'active' ? 'Deactivate Member' : 'Activate Member'}
                                         </button>
@@ -346,7 +346,7 @@ export default function MembersPage() {
 
             {/* Add Member Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-hidden">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-8 overflow-hidden">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAddModal(false)} />
                     <div className="bg-white dark:bg-[#0B1221] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative border border-black/5 dark:border-white/10 animate-in zoom-in-95 duration-300">
                         <div className="flex items-center justify-between mb-8 sticky top-0 bg-white dark:bg-[#0B1221] z-10 py-1">
@@ -354,7 +354,7 @@ export default function MembersPage() {
                                 <h3 className="text-xl sm:text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">Brother Induction</h3>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-[#E8820C]">Formal Registry Entry</p>
                             </div>
-                            <button onClick={() => setShowAddModal(false)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-colors text-black/30 dark:text-white/30">
+                            <button onClick={() => setShowAddModal(false)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-colors text-black/30 dark:text-white/40">
                                 <X size={20} />
                             </button>
                         </div>
@@ -366,7 +366,7 @@ export default function MembersPage() {
                                         <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest ml-1">{label} *</label>
                                         <input type={type} required value={newMember[key]} maxLength={100}
                                             onChange={e => setNewMember({ ...newMember, [key]: e.target.value })}
-                                            className="w-full bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-[#1A1A2E] dark:text-white focus:ring-4 focus:ring-[#E8820C]/10 focus:bg-white dark:focus:bg-white/10 transition-all outline-none"
+                                            className="w-full bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-[#1A1A2E] dark:text-white focus:ring-4 focus:ring-[#E8820C]/10 focus:bg-white dark:focus:bg-[#111827] transition-all outline-none"
                                         />
                                     </div>
                                 ))}
@@ -427,7 +427,7 @@ export default function MembersPage() {
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest ml-1 flex items-center gap-1.5"><MapPin size={12} /> Address</label>
                                 <input type="text" value={newMember.residentialAddress} maxLength={200}
                                     onChange={e => setNewMember({ ...newMember, residentialAddress: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-[#1A1A2E] dark:text-white focus:ring-4 focus:ring-[#E8820C]/10 outline-none transition-all"
+                                    className="w-full bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-[#1A1A2E] dark:text-white focus:ring-4 focus:ring-[#E8820C]/10 outline-none transition-all dark:placeholder:text-white/10"
                                 />
                             </div>
 

@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  transactionPin: {
+    type: String,
+    select: false,
+  },
   firstName: String,
   lastName: String,
   middleName: String,

@@ -7,6 +7,7 @@ const {
   memberNegotiate,
   treasurerAction,
   recordRepayment,
+  memberRepayWallet,
   updateLoanStatus,
 } = require('../controllers/loanController');
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -28,6 +29,9 @@ router.patch('/:id/treasurer', protect, authorize('treasurer', 'admin', 'super_a
 
 // Record repayment — Treasurer/Admin
 router.post('/:id/repay', protect, authorize('treasurer', 'admin', 'super_admin'), recordRepayment);
+
+// Member: Repay via Wallet
+router.post('/:id/repay-wallet', protect, memberRepayWallet);
 
 // Legacy status update (kept for backward compat)
 router.put('/:id/status', protect, authorize('treasurer', 'admin', 'super_admin', 'groupleader', 'group_leader'), updateLoanStatus);

@@ -153,8 +153,8 @@ export default function VotesPage() {
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.4em] mb-2">
                         <VoteIcon size={14} /> Governance & Decisions
                     </div>
-                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] tracking-tight">{config.pageHeadline}</h1>
-                    <p className="text-sm text-black/40 font-medium max-w-xl leading-relaxed">
+                    <h1 className="text-5xl font-serif font-black text-[#1A1A2E] dark:text-white tracking-tight">{config.pageHeadline}</h1>
+                    <p className="text-sm text-black/40 dark:text-white/40 font-medium max-w-xl leading-relaxed">
                         {config.pageSubtitle}
                     </p>
                 </div>
@@ -174,9 +174,9 @@ export default function VotesPage() {
             </div>
 
             {config.abstentionPolicy && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <ShieldCheck size={20} className="text-blue-600 shrink-0" />
-                    <p className="text-sm font-bold text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <ShieldCheck size={20} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300">
                         {config.abstentionPolicy}
                     </p>
                 </div>
@@ -185,21 +185,21 @@ export default function VotesPage() {
             {/* Registry Insights Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Active Polls', value: votes.filter(v => v.status === 'open').length, icon: Activity, color: 'text-[#E8820C]', bg: 'bg-[#E8820C]/5' },
-                    { label: 'Participation', value: '86%', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    { label: 'Finalized', value: votes.filter(v => v.status === 'closed').length, icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: config.quorumLabel || 'Quorum Status', value: `Min ${config.quorumThreshold}%`, icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+                    { label: 'Active Polls', value: votes.filter(v => v.status === 'open').length, icon: Activity, color: 'text-[#E8820C]', bg: 'bg-[#E8820C]/10' },
+                    { label: 'Participation', value: '86%', icon: ShieldCheck, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+                    { label: 'Finalized', value: votes.filter(v => v.status === 'closed').length, icon: CheckCircle2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+                    { label: config.quorumLabel || 'Quorum Status', value: `Min ${config.quorumThreshold}%`, icon: Zap, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
                 ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-[2rem] border border-black/5 shadow-sm space-y-4 group hover:shadow-xl transition-all duration-500">
+                    <div key={i} className="bg-white dark:bg-[#111827] p-6 rounded-[2rem] border border-black/5 dark:border-white/10 shadow-sm space-y-4 group hover:shadow-xl transition-all duration-500">
                         <div className="flex items-center justify-between">
                             <div className={`${stat.bg} ${stat.color} p-3 rounded-2xl group-hover:scale-110 transition-transform`}>
                                 <stat.icon size={20} />
                             </div>
-                            <MoreHorizontal size={16} className="text-black/10" />
+                            <MoreHorizontal size={16} className="text-black/10 dark:text-white/10" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-black/30 uppercase tracking-widest mb-1">{stat.label}</p>
-                            <h4 className="text-2xl font-serif font-black text-[#1A1A2E]">{stat.value}</h4>
+                            <p className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest mb-1">{stat.label}</p>
+                            <h4 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">{stat.value}</h4>
                         </div>
                     </div>
                 ))}
@@ -214,16 +214,16 @@ export default function VotesPage() {
                         placeholder="SEARCH GOVERNANCE ARCHIVE..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-white border border-black/5 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all placeholder:text-black/10 placeholder:tracking-[0.1em]"
+                        className="w-full bg-white dark:bg-[#0B1221] border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all placeholder:text-black/10 dark:placeholder:text-white/20 placeholder:tracking-[0.1em]"
                     />
                 </div>
 
-                <div className="flex items-center gap-3 p-2 bg-white rounded-[1.5rem] border border-black/5 shadow-sm">
+                <div className="flex items-center gap-3 p-2 bg-white dark:bg-[#0B1221] rounded-[1.5rem] border border-black/5 dark:border-white/10 shadow-sm">
                     {['all', 'open', 'closed'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${filter === f ? 'bg-[#1A1A2E] text-white shadow-lg' : 'text-black/30 hover:bg-gray-50 hover:text-black'
+                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${filter === f ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] shadow-lg' : 'text-black/30 dark:text-white/40 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
                                 }`}
                         >
                             {f}
@@ -233,7 +233,7 @@ export default function VotesPage() {
 
                 <button
                     onClick={loadVotes}
-                    className="p-5 bg-white border border-black/5 text-black/20 hover:text-[#E8820C] rounded-[1.5rem] shadow-sm transition-all hover:shadow-md active:scale-95"
+                    className="p-5 bg-white dark:bg-[#0B1221] border border-black/5 dark:border-white/10 text-black/20 dark:text-white/20 hover:text-[#E8820C] rounded-[1.5rem] shadow-sm transition-all hover:shadow-md active:scale-95"
                 >
                     <RotateCcw size={20} />
                 </button>
@@ -256,13 +256,13 @@ export default function VotesPage() {
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-40 bg-white rounded-[3rem] border-2 border-dashed border-black/5 space-y-6 text-center shadow-inner">
-                    <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] flex items-center justify-center text-black/5">
+                <div className="flex flex-col items-center justify-center py-40 bg-white dark:bg-[#111827] rounded-[3rem] border-2 border-dashed border-black/5 dark:border-white/10 space-y-6 text-center shadow-inner">
+                    <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center text-black/5 dark:text-white/5">
                         <VoteIcon size={64} />
                     </div>
                     <div className="space-y-1">
-                        <h3 className="text-2xl font-serif font-black text-[#1A1A2E]">No Active Ballots</h3>
-                        <p className="text-sm text-black/30 font-medium max-w-sm">
+                        <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">No Active Ballots</h3>
+                        <p className="text-sm text-black/30 dark:text-white/30 font-medium max-w-sm">
                             The governance archive is empty for this selection. Try adjusting your parameters or issue a new ballot.
                         </p>
                     </div>
