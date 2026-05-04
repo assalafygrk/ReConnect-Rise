@@ -1,6 +1,7 @@
 const Request = require('../models/Request');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const { createNotification } = require('./notificationController');
 
 async function populateRequest(query) {
   return query
@@ -34,6 +35,16 @@ const submitRequest = async (req, res) => {
     paymentMethod: paymentMethod || 'wallet', status: 'pending',
   });
   const populated = await populateRequest(Request.findById(request._id));
+
+  // Notify Welfare Officer and Admin
+  await createNotification({
+    role: 'welfare',
+    title: 'New Welfare Request',
+    message: `Brother ${req.user.name} has submitted a welfare request for ${type} (₦${amount.toLocaleString()}).`,
+    type: 'warning',
+    link: '/requests'
+  });
+
   res.status(201).json(transformRequest(populated));
 };
 
@@ -54,6 +65,25 @@ const welfareOfficerAction = async (req, res) => {
   } else { res.status(400); throw new Error('action must be: approve | decline'); }
   await request.save();
   const populated = await populateRequest(Request.findById(request._id));
+
+  // Notifications
+  if (action === 'approve') {
+    await createNotification({
+      role: 'group_leader',
+      title: 'Welfare Request Pending Leader',
+      message: `A welfare request for ${populated.user.name} has been approved by the Welfare Officer and awaits your approval.`,
+      type: 'info',
+      link: '/requests'
+    });
+  } else {
+    await createNotification({
+      recipient: populated.user._id,
+      title: 'Welfare Request Declined',
+      message: `Your welfare request for ₦${populated.amount.toLocaleString()} was declined by the Welfare Officer.`,
+      type: 'urgent',
+      link: '/requests'
+    });
+  }
   res.json(transformRequest(populated));
 };
 
@@ -114,6 +144,16 @@ const treasurerAction = async (req, res) => {
 
   await request.save();
   const populated = await populateRequest(Request.findById(request._id));
+
+  // Notify Member
+  await createNotification({
+    recipient: memberId,
+    title: 'Welfare Funds Disbursed',
+    message: `Your welfare request for ₦${populated.amount.toLocaleString()} has been approved and funds disbursed.`,
+    type: 'success',
+    link: '/requests'
+  });
+
   res.json(transformRequest(populated));
 };
 

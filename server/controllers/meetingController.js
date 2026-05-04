@@ -1,4 +1,5 @@
 const Meeting = require('../models/Meeting');
+const { createNotification } = require('./notificationController');
 
 const getMeetings = async (req, res) => {
   const meetings = await Meeting.find({}).populate('organizer', 'name');
@@ -18,6 +19,15 @@ const addMeeting = async (req, res) => {
     organizer: req.user._id,
   });
   res.status(201).json(meeting);
+
+  // Notify all members
+  await createNotification({
+    isGlobal: true,
+    title: 'New Meeting Scheduled',
+    message: `Brotherhood meeting "${title}" is set for ${date} at ${time}.`,
+    type: 'info',
+    link: '/meetings'
+  });
 };
 
 const updateMeeting = async (req, res) => {

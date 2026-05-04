@@ -1,6 +1,7 @@
 const Disbursement = require('../models/Disbursement');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const { createNotification } = require('./notificationController');
 
 function populateDisbursement(query) {
   return query
@@ -59,6 +60,16 @@ const addDisbursement = async (req, res) => {
   });
 
   const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+
+  // Notify Treasurer and Admin
+  await createNotification({
+    role: 'treasurer',
+    title: 'Disbursement Request',
+    message: `A new disbursement request for ${amount.toLocaleString()} has been submitted for ${member || 'a member'}.`,
+    type: 'warning',
+    link: '/disbursements'
+  });
+
   res.status(201).json(transformDisbursement(populated));
 };
 
@@ -107,6 +118,26 @@ const treasurerAction = async (req, res) => {
 
   await disbursement.save();
   const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
+
+  // Notify Member
+  if (action === 'approve') {
+    await createNotification({
+      recipient: disbursement.memberId,
+      title: 'Disbursement Approved',
+      message: `Your disbursement of ₦${disbursement.amount.toLocaleString()} for "${disbursement.reason}" has been approved.`,
+      type: 'success',
+      link: '/disbursements'
+    });
+  } else {
+    await createNotification({
+      recipient: disbursement.memberId,
+      title: 'Disbursement Declined',
+      message: `Your disbursement request for ₦${disbursement.amount.toLocaleString()} was declined. Reason: ${declineReason}`,
+      type: 'urgent',
+      link: '/disbursements'
+    });
+  }
+
   res.json(transformDisbursement(populated));
 };
 

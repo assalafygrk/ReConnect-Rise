@@ -53,7 +53,7 @@ export default function AppLayout() {
                         onMenuToggle={() => setSidebarCollapsed((p) => !p)}
                         pageTitle={pageTitle}
                     />
-                    <main className="flex-1 overflow-y-auto p-4 sm:p-6 text-[#1A1A2E] dark:text-white">
+                    <main className="flex-1 overflow-y-auto p-4 sm:p-6 text-[#1A1A2E] dark:text-white relative z-0">
                         <Outlet />
                     </main>
                 </div>

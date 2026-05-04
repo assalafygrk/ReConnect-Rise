@@ -11,43 +11,6 @@ import { usePageConfig } from '../context/PageConfigContext';
 import VoteCard from '../components/VoteCard';
 import CreateVoteModal from '../components/CreateVoteModal';
 
-const MOCK = [
-    {
-        id: 'vote-1',
-        type: 'budget',
-        question: 'Medical Support Request: Dare Balogun',
-        description: 'Brother Dare Balogun is requesting emergency support for his wife\'s surgery. The amount covers 10% of the total cost as per group policy.',
-        amount: 50000,
-        status: 'open',
-        deadline: '2026-04-10',
-        myVote: null,
-        results: { yes: 18, no: 2, abstain: 1 },
-        totalEligible: 25,
-    },
-    {
-        id: 'vote-2',
-        type: 'election',
-        question: 'New Welfare Committee Lead',
-        description: 'Select the new lead for the 2026/2027 Welfare Committee session.',
-        options: ['Aliyu Musa', 'Fatima Bello', 'Ibrahim Sani'],
-        status: 'open',
-        deadline: '2026-04-15',
-        myVote: null,
-        results: { 'Aliyu Musa': 10, 'Fatima Bello': 8, 'Ibrahim Sani': 2 },
-        totalEligible: 25,
-    },
-    {
-        id: 'vote-3',
-        type: 'decision',
-        question: 'Increase Monthly Dues to ₦5,000?',
-        description: 'To accommodate rising operational costs and increase our emergency fund capacity.',
-        status: 'closed',
-        deadline: '2026-03-20',
-        myVote: 'yes',
-        results: { yes: 20, no: 4, abstain: 1 },
-        totalEligible: 25,
-    },
-];
 
 export default function VotesPage() {
     const { user, hasRole, ROLES } = useAuth();
@@ -75,9 +38,10 @@ export default function VotesPage() {
         setLoading(true);
         try {
             const data = await fetchVotes();
-            setVotes(data.length > 0 ? data : MOCK);
+            setVotes(data);
         } catch (err) {
-            setVotes(MOCK);
+            console.error('Failed to load governance archive:', err);
+            setVotes([]);
         } finally {
             setLoading(false);
         }
@@ -106,17 +70,7 @@ export default function VotesPage() {
             setVotes(prev => [newVote, ...prev]);
             toast.success('Governance ballot synchronized');
         } catch (err) {
-            const mockNew = {
-                ...voteData,
-                id: Date.now().toString(),
-                status: 'open',
-                results: voteData.options
-                    ? voteData.options.reduce((acc, opt) => ({ ...acc, [opt]: 0 }), {})
-                    : { yes: 0, no: 0, abstain: 0 },
-                myVote: null
-            };
-            setVotes(prev => [mockNew, ...prev]);
-            toast.success('Ballot Authorized (Local Sync)');
+            toast.error(err.message || 'Failed to authorize ballot');
         }
     };
 
@@ -126,10 +80,13 @@ export default function VotesPage() {
             setVotes(prev => prev.map(v => v.id === voteId ? { ...v, status: 'closed' } : v));
             toast.success('Ledger finalized: Vote closed');
         } catch (err) {
-            setVotes(prev => prev.map(v => v.id === voteId ? { ...v, status: 'closed' } : v));
-            toast.success('Ledger Finalized (Local Archive)');
+            toast.error(err.message || 'Failed to finalize ledger');
         }
     };
+
+    const avgParticipation = votes.length > 0 
+        ? Math.round(votes.reduce((acc, v) => acc + (v.voters?.length || 0) / (v.totalEligible || 1), 0) / votes.length * 100)
+        : 0;
 
     const filteredVotes = votes.filter(v => {
         const matchesFilter = filter === 'all' || v.status === filter;
@@ -186,7 +143,7 @@ export default function VotesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                     { label: 'Active Polls', value: votes.filter(v => v.status === 'open').length, icon: Activity, color: 'text-[#E8820C]', bg: 'bg-[#E8820C]/10' },
-                    { label: 'Participation', value: '86%', icon: ShieldCheck, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+                    { label: 'Participation', value: `${avgParticipation}%`, icon: ShieldCheck, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
                     { label: 'Finalized', value: votes.filter(v => v.status === 'closed').length, icon: CheckCircle2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
                     { label: config.quorumLabel || 'Quorum Status', value: `Min ${config.quorumThreshold}%`, icon: Zap, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
                 ].map((stat, i) => (

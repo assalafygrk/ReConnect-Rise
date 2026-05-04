@@ -32,10 +32,19 @@ const voteSchema = new mongoose.Schema({
     of: Number,
     default: {},
   },
+  candidates: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   voters: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   }],
+  userChoices: {
+    type: Map,
+    of: String,
+    default: {},
+  },
   status: {
     type: String,
     enum: ['open', 'closed'],

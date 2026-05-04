@@ -4,6 +4,7 @@ const Transaction = require('../models/Transaction');
 const Settings = require('../models/Settings');
 const Disbursement = require('../models/Disbursement');
 const bcrypt = require('bcryptjs');
+const { createNotification } = require('./notificationController');
 
 // ─── Helper ───────────────────────────────────────────────────────────────
 
@@ -108,6 +109,24 @@ const requestLoan = async (req, res) => {
   });
 
   const populated = await populateLoan(Loan.findById(loan._id));
+  
+  // Notify Group Leaders and Treasurers
+  await createNotification({
+    role: 'group_leader',
+    title: 'New Loan Request',
+    message: `Brother ${req.user.name} has requested a loan of ₦${Number(amount).toLocaleString()}.`,
+    type: 'warning',
+    link: '/requests'
+  });
+
+  await createNotification({
+    role: 'treasurer',
+    title: 'New Loan Request (Pending Leader)',
+    message: `A new loan request from ${req.user.name} for ₦${Number(amount).toLocaleString()} is awaiting leader approval.`,
+    type: 'info',
+    link: '/requests'
+  });
+
   res.status(201).json(transformLoan(populated));
 };
 
@@ -149,6 +168,35 @@ const leaderAction = async (req, res) => {
 
   await loan.save();
   const populated = await populateLoan(Loan.findById(loan._id));
+
+  // Notifications
+  if (action === 'approve') {
+    await createNotification({
+      role: 'treasurer',
+      title: 'Loan Ready for Disbursement',
+      message: `A loan for ${populated.user.name} has been approved by the group leader and is ready for disbursement.`,
+      type: 'info',
+      link: '/requests'
+    });
+  } else if (action === 'decline') {
+    await createNotification({
+      recipient: populated.user._id,
+      title: 'Loan Request Declined',
+      message: `Your loan request for ₦${populated.amount.toLocaleString()} was declined. Reason: ${declineReason}`,
+      type: 'urgent',
+      link: '/loans'
+    });
+
+    // Also notify treasurer that the request is no longer pending
+    await createNotification({
+      role: 'treasurer',
+      title: 'Loan Request Cancelled',
+      message: `The loan request for ${populated.user.name} was declined by the group leader.`,
+      type: 'info',
+      link: '/requests'
+    });
+  }
+
   res.json(transformLoan(populated));
 };
 
@@ -198,6 +246,16 @@ const treasurerAction = async (req, res) => {
     loan.declineReason = declineReason || 'Declined by Treasurer';
     await loan.save();
     const populated = await populateLoan(Loan.findById(loan._id));
+
+    // Notify Member
+    await createNotification({
+      recipient: populated.user._id,
+      title: 'Loan Request Declined',
+      message: `Your loan request for ₦${populated.amount.toLocaleString()} was declined by the Treasurer. Reason: ${declineReason}`,
+      type: 'urgent',
+      link: '/loans'
+    });
+
     return res.json(transformLoan(populated));
   }
 
@@ -255,6 +313,16 @@ const treasurerAction = async (req, res) => {
 
   await loan.save();
   const populated = await populateLoan(Loan.findById(loan._id));
+
+  // Notify Member
+  await createNotification({
+    recipient: populated.user._id,
+    title: 'Loan Disbursed',
+    message: `Your loan of ₦${populated.amount.toLocaleString()} has been disbursed via ${populated.disbursementMethod}.`,
+    type: 'success',
+    link: '/loans'
+  });
+
   res.json(transformLoan(populated));
 };
 

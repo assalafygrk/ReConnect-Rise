@@ -3,6 +3,7 @@ const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
 const bcrypt = require('bcryptjs');
+const { createNotification } = require('./notificationController');
 
 // ─── Week Utilities ────────────────────────────────────────────────────────
 
@@ -211,6 +212,15 @@ const markPaid = async (req, res) => {
   const populated = await Contribution.findById(contribution._id)
     .populate('user', 'name email')
     .populate('markedPaidBy', 'name');
+
+  // Notify Member
+  await createNotification({
+    recipient: memberId,
+    title: 'Contribution Confirmed',
+    message: `Your contribution for ${weekId} of ₦${paidAmount.toLocaleString()} has been confirmed.`,
+    type: 'success',
+    link: '/contributions'
+  });
 
   res.status(201).json(populated);
 };

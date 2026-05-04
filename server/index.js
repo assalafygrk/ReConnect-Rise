@@ -51,6 +51,7 @@ app.use('/api/votes', require('./routes/voteRoutes'));
 app.use('/api/disbursements', require('./routes/disbursementRoutes'));
 app.use('/api/page-configs', require('./routes/pageConfigRoutes'));
 app.use('/api/visions', require('./routes/visionRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/archives', require('./routes/archiveRoutes'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────

@@ -1,63 +1,83 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { apiGetNotifications, apiMarkAsRead, apiReadAll, apiSendNotification } from '../api/notifications';
 
 const NotificationContext = createContext();
 
 export function NotificationProvider({ children }) {
-    const { user, activeRole } = useAuth();
+    const { user } = useAuth();
     const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // Mock initial notifications based on role
-    useEffect(() => {
+    const fetchNotifications = useCallback(async () => {
         if (!user) return;
-
-        const role = activeRole || user.role;
-        const baseNotifications = [
-            { id: 1, title: 'Welcome to the Portal', message: 'Assalamu Alaikum! Explore your new brotherhood home.', type: 'info', date: new Date().toISOString(), read: false },
-        ];
-
-        if (role === 'treasurer' || role === 'admin') {
-            baseNotifications.push({
-                id: 2,
-                title: 'New Loan Request',
-                message: 'Brother Ola has requested a loan of ₦10,000.',
-                type: 'warning',
-                date: new Date().toISOString(),
-                read: false,
-                link: '/requests'
-            });
+        try {
+            const data = await apiGetNotifications();
+            setNotifications(data);
+        } catch (error) {
+            console.error('Fetch notifications error:', error);
         }
+    }, [user]);
 
-        if (role === 'group_leader' || role === 'admin') {
-            baseNotifications.push({
-                id: 3,
-                title: 'Meeting Scheduled',
-                message: 'A new emergency meeting is set for Friday.',
-                type: 'urgent',
-                date: new Date().toISOString(),
-                read: false,
-                link: '/meetings'
-            });
+    useEffect(() => {
+        if (user) {
+            fetchNotifications();
+            // Polling every 60 seconds
+            const interval = setInterval(fetchNotifications, 60000);
+            return () => clearInterval(interval);
+        } else {
+            setNotifications([]);
         }
+    }, [user, fetchNotifications]);
 
-        setNotifications(baseNotifications);
-    }, [user, activeRole]);
-
-    const markAsRead = (id) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    const markAsRead = async (id) => {
+        try {
+            await apiMarkAsRead(id);
+            setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+        } catch (error) {
+            console.error('Mark read error:', error);
+        }
     };
 
-    const clearAll = () => {
-        setNotifications([]);
+    const clearAll = async () => {
+        try {
+            await apiReadAll();
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (error) {
+            console.error('Clear all error:', error);
+        }
+    };
+
+    const sendNotification = async (notifData) => {
+        try {
+            const newNotif = await apiSendNotification(notifData);
+            // If the user sent it to their own role or specifically to themselves, or globally,
+            // we might want to refresh. But usually, the sender doesn't need to see their own notif immediately
+            // unless they are also a recipient.
+            fetchNotifications();
+            return newNotif;
+        } catch (error) {
+            console.error('Send notification error:', error);
+            throw error;
+        }
     };
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, clearAll }}>
+        <NotificationContext.Provider value={{ 
+            notifications, 
+            unreadCount, 
+            markAsRead, 
+            clearAll, 
+            sendNotification, 
+            refresh: fetchNotifications,
+            loading 
+        }}>
             {children}
         </NotificationContext.Provider>
     );
 }
 
 export const useNotifications = () => useContext(NotificationContext);
+

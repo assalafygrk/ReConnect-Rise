@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, Info, CheckCircle2, Users, Wallet, CheckSquare, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { fetchMembers } from '../api/members';
+import { useEffect } from 'react';
 
 
 const VOTE_TYPES = [
@@ -32,9 +34,18 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
         deadline: '',
         amount: '',
         options: ['', ''],
+        candidates: [], // Member IDs
         totalEligible: 20
     });
     const [loading, setLoading] = useState(false);
+    const [members, setMembers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchMembers().then(setMembers).catch(console.error);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -59,6 +70,11 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
             const payload = { ...form };
             if (form.type !== 'election' && form.type !== 'multiple_choice') {
                 delete payload.options;
+            }
+            if (form.type === 'election') {
+                // For elections, options are the member names, but we also send candidates IDs
+                payload.candidates = form.candidates;
+                payload.options = form.candidates.map(id => members.find(m => m._id === id)?.name).filter(Boolean);
             }
             if (form.type !== 'budget') {
                 delete payload.amount;
@@ -178,18 +194,67 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
                                     </div>
                                 )}
 
-                                {(form.type === 'election' || form.type === 'multiple_choice') && (
+                                {form.type === 'election' ? (
+                                    <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
+                                        <label className="block text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Select Candidates</label>
+                                        <div className="space-y-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Search members..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] focus:bg-white dark:focus:bg-[#1A1A2E] rounded-xl px-4 py-3 text-sm font-medium dark:text-white transition-all outline-none"
+                                            />
+                                            <div className="max-h-40 overflow-y-auto space-y-1 p-2 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10">
+                                                {members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase())).map(m => (
+                                                    <button
+                                                        key={m._id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const exists = form.candidates.includes(m._id);
+                                                            if (exists) {
+                                                                setForm({ ...form, candidates: form.candidates.filter(id => id !== m._id) });
+                                                            } else {
+                                                                setForm({ ...form, candidates: [...form.candidates, m._id] });
+                                                            }
+                                                        }}
+                                                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${form.candidates.includes(m._id) ? 'bg-[#E8820C] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 text-black/60 dark:text-white/60'}`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center overflow-hidden">
+                                                                {m.facialUpload ? <img src={m.facialUpload} alt="" className="w-full h-full object-cover" /> : m.name[0]}
+                                                            </div>
+                                                            <span className="text-sm font-bold">{m.name}</span>
+                                                        </div>
+                                                        {form.candidates.includes(m._id) && <CheckCircle2 size={16} />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {form.candidates.map(id => {
+                                                const m = members.find(mem => mem._id === id);
+                                                return m ? (
+                                                    <div key={id} className="flex items-center gap-2 px-3 py-1 bg-[#E8820C]/10 text-[#E8820C] rounded-full text-xs font-bold border border-[#E8820C]/20">
+                                                        {m.name}
+                                                        <button type="button" onClick={() => setForm({ ...form, candidates: form.candidates.filter(cid => cid !== id) })}>
+                                                            <X size={12} />
+                                                        </button>
+                                                    </div>
+                                                ) : null;
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : (form.type === 'multiple_choice') && (
                                     <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
                                         <div className="flex items-center justify-between">
-                                            <label className="block text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">
-                                                {form.type === 'election' ? 'Candidates' : 'Options'}
-                                            </label>
+                                            <label className="block text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Options</label>
                                             <button
                                                 type="button"
                                                 onClick={handleAddOption}
                                                 className="text-[10px] font-bold text-[#E8820C] hover:text-[#E8820C]/80 flex items-center gap-1 uppercase tracking-widest"
                                             >
-                                                <Plus size={12} /> Add {form.type === 'election' ? 'Candidate' : 'Option'}
+                                                <Plus size={12} /> Add Option
                                             </button>
                                         </div>
                                         <div className="space-y-2">
@@ -201,7 +266,7 @@ export default function CreateVoteModal({ isOpen, onClose, onCreate }) {
                                                         value={option}
                                                         onChange={(e) => handleOptionChange(index, e.target.value)}
                                                         className="flex-1 bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] focus:bg-white dark:focus:bg-[#1A1A2E] rounded-xl px-4 py-3 text-sm font-medium dark:text-white transition-all outline-none"
-                                                        placeholder={`Enter ${form.type === 'election' ? 'candidate name' : 'option description'}...`}
+                                                        placeholder={`Enter option description...`}
                                                     />
                                                     {form.options.length > 2 && (
                                                         <button

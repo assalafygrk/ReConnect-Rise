@@ -1,33 +1,35 @@
 const Vote = require('../models/Vote');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get all votes
 // @route   GET /api/votes
 // @access  Private
+const transformVote = (v, userId) => {
+  const resultsObj = {};
+  if (v.results instanceof Map || (v.results && typeof v.results.forEach === 'function')) {
+    v.results.forEach((val, key) => { resultsObj[key] = val; });
+  } else if (v.results) {
+    Object.assign(resultsObj, v.results);
+  }
+  
+  const hasVoted = v.voters?.includes(userId);
+  const myVote = v.userChoices ? (v.userChoices instanceof Map ? v.userChoices.get(userId.toString()) : v.userChoices[userId.toString()]) : null;
+  
+  const showResults = hasVoted || v.status === 'closed';
+  
+  return {
+    ...v._doc,
+    id: v._id,
+    results: showResults ? resultsObj : {},
+    myVote: myVote,
+    voted: hasVoted,
+    showResults: showResults
+  };
+};
+
 const getVotes = async (req, res) => {
-  const votes = await Vote.find({}).sort({ createdAt: -1 });
-  
-  const transformed = votes.map(v => {
-    const resultsObj = {};
-    if (v.results instanceof Map || (v.results && typeof v.results.forEach === 'function')) {
-      v.results.forEach((val, key) => { resultsObj[key] = val; });
-    } else {
-      Object.assign(resultsObj, v.results);
-    }
-    
-    // Check if user has voted
-    let myVote = null;
-    // This requires tracking which choice each user made. 
-    // Currently, Vote model only has a list of voters.
-    // I should probably update the model to track user choices if needed, 
-    // but for now let's just mark if they voted.
-    
-    return {
-      ...v._doc,
-      results: resultsObj,
-      voted: v.voters.includes(req.user._id)
-    };
-  });
-  
+  const votes = await Vote.find({}).populate('candidates', 'name facialUpload').sort({ createdAt: -1 });
+  const transformed = votes.map(v => transformVote(v, req.user._id));
   res.json(transformed);
 };
 
@@ -35,7 +37,7 @@ const getVotes = async (req, res) => {
 // @route   POST /api/votes
 // @access  Private/Admin/GroupLeader/Treasurer
 const createVote = async (req, res) => {
-  const { question, description, options, type, deadline, amount, totalEligible } = req.body;
+  const { question, description, options, candidates, type, deadline, amount, totalEligible } = req.body;
   
   let finalOptions = options;
   if (!finalOptions || finalOptions.length === 0) {
@@ -50,6 +52,7 @@ const createVote = async (req, res) => {
     question,
     description,
     options: finalOptions,
+    candidates: candidates || [],
     type,
     deadline,
     amount,
@@ -57,7 +60,17 @@ const createVote = async (req, res) => {
     createdBy: req.user._id,
   });
 
-  res.status(201).json(vote);
+  await vote.populate('candidates', 'name facialUpload');
+  res.status(201).json(transformVote(vote, req.user._id));
+
+  // Notify all members
+  await createNotification({
+    isGlobal: true,
+    title: 'New Vote Required',
+    message: `A new vote has been created: "${question}". Please cast your ballot.`,
+    type: 'warning',
+    link: '/votes'
+  });
 };
 
 // @desc    Cast a vote
@@ -70,9 +83,9 @@ const castVote = async (req, res) => {
     throw new Error('Vote not found');
   }
 
-  if (vote.status === 'closed') {
+  if (vote.status === 'closed' || (vote.deadline && new Date(vote.deadline) < new Date())) {
     res.status(400);
-    throw new Error('Voting is closed');
+    throw new Error('Voting is closed or deadline has passed');
   }
 
   if (vote.voters.includes(req.user._id)) {
@@ -97,6 +110,10 @@ const castVote = async (req, res) => {
   }
 
   vote.voters.push(req.user._id);
+  
+  // Track individual choice
+  if (!vote.userChoices) vote.userChoices = new Map();
+  vote.userChoices.set(req.user._id.toString(), choice);
 
   await vote.save();
   
@@ -107,11 +124,7 @@ const castVote = async (req, res) => {
     Object.assign(resultsObj, vote.results);
   }
   
-  res.json({
-    ...vote._doc,
-    results: resultsObj,
-    voted: true
-  });
+  res.json(transformVote(vote, req.user._id));
 };
 
 const closeVote = async (req, res) => {
@@ -119,7 +132,26 @@ const closeVote = async (req, res) => {
   if (vote) {
     vote.status = 'closed';
     await vote.save();
+
+    // Calculate winner
+    const resultsObj = {};
+    if (vote.results instanceof Map) {
+      vote.results.forEach((val, key) => { resultsObj[key] = val; });
+    } else {
+      Object.assign(resultsObj, vote.results);
+    }
+    const winner = Object.entries(resultsObj).reduce((a, b) => (b[1] > (a[1] || 0) ? b : a), [null, 0])[0];
+
     res.json(vote);
+
+    // Notify all members about the result
+    await createNotification({
+      isGlobal: true,
+      title: 'Vote Results Finalized',
+      message: `The vote for "${vote.question}" has ended. ${winner ? `Winner: ${winner}` : 'No clear winner.'}`,
+      type: 'success',
+      link: '/votes'
+    });
   } else {
     res.status(404);
     throw new Error('Vote not found');

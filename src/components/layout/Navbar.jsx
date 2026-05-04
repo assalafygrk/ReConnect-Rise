@@ -18,7 +18,7 @@ export default function Navbar({ onMenuToggle, pageTitle }) {
 
     return (
         <header
-            className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 h-16 transition-all duration-300
+            className="sticky top-0 z-[100] flex items-center justify-between px-4 sm:px-6 h-16 transition-all duration-300
                        bg-[rgba(255,248,240,0.85)] dark:bg-[#0B1221]/80 
                        backdrop-blur-xl border-b border-[#1A1A2E]/5 dark:border-white/5"
         >

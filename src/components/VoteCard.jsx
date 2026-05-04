@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, Share2, FileBarChart, Users, Wallet, CheckSquare, ChevronRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Clock, Share2, FileBarChart, Users, Wallet, CheckSquare, ChevronRight, Loader2, Zap } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'react-hot-toast';
 
@@ -11,7 +11,7 @@ const COLORS = {
 
 export default function VoteCard({ vote, onVote, onShare, onReport, casting, canManage, onClose }) {
     const totalVotes = Object.values(vote.results || {}).reduce((s, n) => s + n, 0);
-    const isClosed = vote.status === 'closed';
+    const isClosed = vote.status === 'closed' || (vote.deadline && new Date(vote.deadline) < new Date());
 
     const getPieData = () => {
         if (vote.type === 'election' || vote.type === 'multiple_choice') {
@@ -29,6 +29,9 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
     };
 
     const pieData = getPieData();
+
+    const winner = isClosed ? Object.entries(vote.results || {}).reduce((a, b) => (b[1] > (a[1] || 0) ? b : a), [null, 0])[0] : null;
+    const winnerData = winner && vote.type === 'election' ? vote.candidates?.find(c => c.name === winner) : null;
 
     const Icon = () => {
         switch (vote.type) {
@@ -88,7 +91,7 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
                         </button>
                     )}
 
-                    {totalVotes > 0 && (
+                    {totalVotes > 0 && vote.showResults !== false ? (
                         <div className="relative w-32 h-32">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -107,6 +110,11 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
                                 <span className="text-[8px] text-black/40 dark:text-white/40 font-bold uppercase">Turnout</span>
                             </div>
                         </div>
+                    ) : (
+                        <div className="w-32 h-32 flex flex-col items-center justify-center bg-gray-50 dark:bg-white/5 rounded-full border border-dashed border-black/10 dark:border-white/10 p-4 text-center">
+                            <Users size={20} className="text-black/20 dark:text-white/20 mb-1" />
+                            <p className="text-[7px] font-bold text-black/30 dark:text-white/30 uppercase tracking-tighter">Vote to unlock insights</p>
+                        </div>
                     )}
                 </div>
             </div>
@@ -115,7 +123,29 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
             <div className="mt-8 pt-6 border-t border-black/5 dark:border-white/10">
                 {!vote.myVote && !isClosed ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {vote.options?.length > 0 ? (
+                        {vote.type === 'election' ? (
+                            vote.candidates?.map((candidate) => (
+                                <button
+                                    key={candidate._id}
+                                    onClick={() => onVote(vote.id, candidate.name)}
+                                    disabled={casting[vote.id]}
+                                    className="group/btn relative p-4 rounded-3xl bg-gray-50 dark:bg-white/5 hover:bg-[#1A1A2E] dark:hover:bg-white text-[#1A1A2E] dark:text-white hover:text-white dark:hover:text-[#1A1A2E] transition-all duration-300 flex flex-col items-center gap-3 border border-black/5 dark:border-white/10"
+                                >
+                                    <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden border-2 border-transparent group-hover/btn:border-[#E8820C] transition-all">
+                                        {candidate.facialUpload ? (
+                                            <img src={candidate.facialUpload} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center font-black text-xl">{candidate.name?.[0] || '?'}</div>
+                                        )}
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-black tracking-tight">{candidate.name}</p>
+                                        <p className="text-[8px] font-bold uppercase tracking-widest opacity-40">Candidate</p>
+                                    </div>
+                                    <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/btn:opacity-100 group-hover/btn:translate-x-1 transition-all" />
+                                </button>
+                            ))
+                        ) : vote.options?.length > 0 ? (
                             vote.options.map((option) => (
                                 <button
                                     key={option}
@@ -145,26 +175,45 @@ export default function VoteCard({ vote, onVote, onShare, onReport, casting, can
                         )}
                     </div>
                 ) : (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle2 size={20} />
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isClosed ? 'bg-amber-100 dark:bg-amber-900/20 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'}`}>
+                                {isClosed ? <Zap size={24} /> : <CheckCircle2 size={24} />}
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-black/30 dark:text-white/30 uppercase tracking-widest">You Voted</p>
-                                <p className="font-bold text-[#1A1A2E] dark:text-white capitalize">{vote.myVote}</p>
+                                <p className="text-[10px] font-bold text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">
+                                    {isClosed ? 'Final Result' : 'Position Recorded'}
+                                </p>
+                                <p className="text-lg font-black text-[#1A1A2E] dark:text-white flex items-center gap-2">
+                                    {isClosed ? (
+                                        <>
+                                            Winner: <span className="text-[#E8820C]">{winner || 'No Decision'}</span>
+                                        </>
+                                    ) : (
+                                        <>Your Choice: <span className="capitalize">{vote.myVote}</span></>
+                                    )}
+                                </p>
                             </div>
                         </div>
 
+                        {isClosed && winnerData && (
+                            <div className="flex items-center gap-3 px-4 py-2 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-200/50 dark:border-amber-500/20">
+                                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400">
+                                    <img src={winnerData.facialUpload} alt="" className="w-full h-full object-cover" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase text-amber-700 dark:text-amber-400">Victor Recognized</span>
+                            </div>
+                        )}
+
                         {isClosed && (
-                            <div className="flex gap-2 w-full sm:w-auto">
+                            <div className="flex gap-2">
                                 <button onClick={() => onShare(vote)}
-                                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all">
-                                    <Share2 size={14} /> Share
+                                    className="p-3 rounded-xl bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] hover:opacity-90 transition-all">
+                                    <Share2 size={16} />
                                 </button>
                                 <button onClick={() => onReport(vote)}
-                                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-[#1A1A2E]/10 dark:border-white/10 text-[#1A1A2E] dark:text-white text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-                                    <FileBarChart size={14} /> Report
+                                    className="p-3 rounded-xl border border-[#1A1A2E]/10 dark:border-white/10 text-[#1A1A2E] dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
+                                    <FileBarChart size={16} />
                                 </button>
                             </div>
                         )}
