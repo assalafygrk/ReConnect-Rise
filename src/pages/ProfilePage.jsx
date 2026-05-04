@@ -137,10 +137,11 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-10 transition-colors duration-500">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent transition-colors duration-500">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-10 pt-12">
             
             {/* Master Header Card */}
-            <div className="relative bg-[#0F172A] dark:bg-[#111827] rounded-[3rem] p-8 md:p-12 overflow-hidden shadow-2xl border border-white/5 dark:border-white/10 flex flex-col lg:flex-row items-center lg:items-end gap-10">
+            <div className="relative bg-gradient-to-br from-[#0F172A] to-[#070B14] dark:from-[#111827] dark:to-[#070B14] rounded-[3rem] p-8 md:p-12 overflow-hidden shadow-2xl border border-white/5 dark:border-white/10 flex flex-col lg:flex-row items-center lg:items-end gap-10">
                 <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-indigo-600 rounded-full blur-[200px] opacity-10 pointer-events-none"></div>
                 
                 {/* Profile Photo - Serious Frame */}
@@ -174,7 +175,7 @@ export default function ProfilePage() {
                             <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 dark:bg-[#3B82F6]/20 dark:text-[#60A5FA] text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md border border-indigo-500/20">
                                 {roleDetails.label}
                             </span>
-                            <span className="px-4 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/200/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md border border-emerald-500/20 flex items-center gap-2">
+                            <span className="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md border border-emerald-500/20 flex items-center gap-2">
                                 <ShieldCheck size={12} /> Active Status
                             </span>
                         </div>
@@ -203,14 +204,14 @@ export default function ProfilePage() {
                     <button
                         onClick={() => setIsEditing(!isEditing)}
                         className={`px-8 py-5 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl
-                            ${isEditing ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-400 dark:text-rose-300 border border-rose-500/20' : 'bg-indigo-600 dark:bg-[#3B82F6] text-white hover:bg-indigo-500 dark:hover:bg-[#2563EB] shadow-indigo-600/20 dark:shadow-[#3B82F6]/20'}`}
+                            ${isEditing ? 'bg-rose-500 text-white border border-rose-500/20' : 'bg-indigo-600 dark:bg-[#3B82F6] text-white hover:bg-indigo-500 dark:hover:bg-[#2563EB] shadow-indigo-600/20 dark:shadow-[#3B82F6]/20'}`}
                     >
                         {isEditing ? <XCircle size={18} /> : <Edit size={18} />}
                         {isEditing ? 'Discard Changes' : 'Modify Credentials'}
                     </button>
                     <button
                         onClick={logout}
-                        className="px-8 py-5 rounded-2xl bg-white dark:bg-white/5 text-white/40 hover:text-rose-400 hover:bg-rose-400/10 border border-white/5 transition-all text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3"
+                        className="px-8 py-5 rounded-2xl bg-white/10 text-white/60 hover:text-rose-400 hover:bg-rose-400/10 border border-white/5 transition-all text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3"
                     >
                         <LogOut size={18} /> Exit Console
                     </button>
@@ -224,7 +225,7 @@ export default function ProfilePage() {
                 <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-24">
                     
                     {/* Navigation Tabs */}
-                    <div className="bg-white dark:bg-[#0B1221] rounded-[2.5rem] p-4 shadow-xl border border-black/5 dark:border-white/10 space-y-2">
+                    <div className="bg-white dark:bg-[#0B1221] rounded-[2.5rem] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10 space-y-2">
                         {[
                             { id: 'personal', label: 'Personal Intelligence', icon: Fingerprint },
                             { id: 'identity', label: 'Member Identity', icon: Bookmark },
@@ -249,11 +250,17 @@ export default function ProfilePage() {
 
                     {/* Mini Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-indigo-600 dark:bg-[#3B82F6]/10 rounded-[2.5rem] p-8 text-white dark:text-[#3B82F6] shadow-xl shadow-indigo-600/20 dark:shadow-none dark:border dark:border-[#3B82F6]/30 space-y-2">
+                        <div className="bg-gradient-to-br from-indigo-600 to-[#1A1A2E] dark:from-[#3B82F6]/10 dark:to-[#1E293B]/10 rounded-[2.5rem] p-8 text-white dark:text-[#3B82F6] shadow-xl shadow-indigo-600/20 dark:shadow-none dark:border dark:border-[#3B82F6]/30 space-y-2 group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <Database size={40} />
+                            </div>
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Total Paid</p>
                             <h4 className="text-3xl font-serif font-black">{formatNaira(ledger.reduce((acc, c) => acc + (c.status === 'confirmed' ? c.amount : 0), 0))}</h4>
                         </div>
-                        <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-[2.5rem] p-8 text-white dark:text-emerald-400 shadow-xl shadow-emerald-500/20 dark:shadow-none dark:border dark:border-emerald-500/30 space-y-2">
+                        <div className="bg-gradient-to-br from-emerald-500 to-[#0F4C36] dark:from-emerald-500/10 dark:to-emerald-950/10 rounded-[2.5rem] p-8 text-white dark:text-emerald-400 shadow-xl shadow-emerald-500/20 dark:shadow-none dark:border dark:border-emerald-500/30 space-y-2 group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <ShieldCheck size={40} />
+                            </div>
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Dividends</p>
                             <h4 className="text-3xl font-serif font-black">{formatNaira(ledger.reduce((acc, c) => acc + (c.bonus || 0), 0))}</h4>
                         </div>
@@ -263,7 +270,7 @@ export default function ProfilePage() {
 
                 {/* Right Content Area */}
                 <div className="lg:col-span-8">
-                    <div className="bg-white dark:bg-[#0B1221] rounded-[3rem] p-8 md:p-12 shadow-xl border border-black/5 dark:border-white/10 min-h-[600px] relative overflow-hidden transition-all duration-500">
+                    <div className="bg-white dark:bg-[#0B1221] rounded-[3rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10 min-h-[600px] relative overflow-hidden transition-all duration-500">
                         
                         {activeTab === 'personal' && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-12">
@@ -379,7 +386,7 @@ export default function ProfilePage() {
                                     <Bookmark size={32} className="text-black/5 dark:text-white/10" />
                                 </div>
 
-                                <div className="flex flex-col items-center bg-[#F8FAFC] dark:bg-white/5 rounded-[3rem] p-6 md:p-10 border border-black/5 dark:border-white/10 shadow-inner">
+                                <div className="flex flex-col items-center bg-white dark:bg-white/5 rounded-[3rem] p-6 md:p-10 border border-black/[0.03] dark:border-white/10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                                     <p className="text-[10px] font-black text-indigo-600 dark:text-[#3B82F6] uppercase tracking-[0.4em] mb-12 text-center">Digital Brotherhood Pass</p>
                                     <div className="w-full overflow-x-auto pb-8 scrollbar-hide">
                                         <div className="min-w-[400px] flex justify-center py-4">
@@ -518,10 +525,10 @@ export default function ProfilePage() {
                                     <Database size={32} className="text-black/5 dark:text-white/10" />
                                 </div>
 
-                                <div className="overflow-hidden border border-black/5 dark:border-white/10 rounded-[2.5rem]">
+                                <div className="overflow-hidden border border-black/[0.03] dark:border-white/10 rounded-[2.5rem] bg-white dark:bg-transparent shadow-sm">
                                     <table className="w-full text-left">
                                         <thead>
-                                            <tr className="bg-gray-50 dark:bg-white/5 border-b border-black/5 dark:border-white/10">
+                                            <tr className="bg-[#F8FAFC] dark:bg-white/5 border-b border-black/[0.03] dark:border-white/10">
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 dark:text-white/40 tracking-widest">Temporal Point</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 dark:text-white/40 tracking-widest text-center">Status</th>
                                                 <th className="px-8 py-5 text-[10px] font-black uppercase text-black/40 dark:text-white/40 tracking-widest text-right">Contribution</th>
@@ -566,6 +573,7 @@ export default function ProfilePage() {
                 </div>
 
             </div>
+        </div>
         </div>
     );
 }

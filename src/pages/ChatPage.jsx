@@ -104,7 +104,7 @@ export default function ChatPage() {
     const currentBrother = brothers.find(b => b.id === activeTab);
 
     return (
-        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#0B1221] relative mx-2 md:mx-0">
+        <div className="flex h-[calc(100vh-100px)] md:h-[calc(100vh-140px)] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-gradient-to-br dark:from-[#0B1221] dark:to-[#070B14] relative mx-2 md:mx-0">
 
             {/* Sidebar Toggle Overlay (Mobile) */}
             {showSidebar && (
@@ -115,8 +115,8 @@ export default function ChatPage() {
             )}
 
             {/* Chat Sidebar: Node Registry */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-80 border-r border-black/5 dark:border-white/10 flex flex-col bg-gray-50 dark:bg-[#111827] backdrop-blur-xl transition-all duration-500 md:relative md:translate-x-0 ${showSidebar ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="p-8 border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#0B1221]">
+            <div className={`fixed inset-y-0 left-0 z-50 w-80 border-r border-black/5 dark:border-white/10 flex flex-col bg-gray-50 dark:bg-[#0B1221]/90 backdrop-blur-2xl transition-all duration-500 md:relative md:translate-x-0 ${showSidebar ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-8 border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#0B1221]/50">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="text-3xl font-black font-serif text-[#1A1A2E] dark:text-white leading-none">{config.channelName || 'Registry'}</h2>
@@ -199,9 +199,9 @@ export default function ChatPage() {
             </div>
 
             {/* Main Chat Area: Tactical Interface */}
-            <div className="flex-1 flex flex-col bg-white dark:bg-[#0B1221] relative">
+            <div className="flex-1 flex flex-col bg-white dark:bg-transparent relative">
                 {/* Chat Header: Current Focus */}
-                <div className="h-20 md:h-28 px-2 md:px-10 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#0B1221]/90 backdrop-blur-xl z-20 overflow-hidden">
+                <div className="h-20 md:h-28 px-2 md:px-10 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-white dark:bg-[#0B1221]/40 backdrop-blur-3xl z-20 overflow-hidden">
                     <div className="flex items-center gap-2 md:gap-6 min-w-0">
                         <button
                             onClick={() => setShowSidebar(true)}
@@ -266,7 +266,7 @@ export default function ChatPage() {
 
                 {/* Messages Container: The Relay */}
                 <div className="flex-1 flex overflow-hidden relative">
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 md:p-16 space-y-6 md:space-y-12 bg-gray-50 dark:bg-white/5/20 scroll-smooth relative z-10">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 md:p-16 space-y-6 md:space-y-12 bg-gray-50 dark:bg-transparent scroll-smooth relative z-10">
 
                         {loading ? (
                             <div className="flex h-full items-center justify-center flex-col gap-6">
@@ -291,8 +291,8 @@ export default function ChatPage() {
 
 
                                             <div className={`p-3 md:p-8 text-sm md:text-base leading-relaxed shadow-xl transition-all hover:shadow-2xl relative overflow-hidden group/bubble ${msg.isMe
-                                                ? 'bg-[#1A1A2E] dark:bg-[#1A1A2E] text-white rounded-2xl md:rounded-[3rem] rounded-br-none border border-white/5 dark:border-white/10'
-                                                : 'bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 text-[#1A1A2E] dark:text-white rounded-2xl md:rounded-[3rem] rounded-bl-none'
+                                                ? 'bg-[#1A1A2E] dark:bg-gradient-to-br dark:from-[#1E293B] dark:to-[#0F172A] text-white rounded-2xl md:rounded-[3rem] rounded-br-none border border-white/5 dark:border-white/10 dark:shadow-[0_0_30px_rgba(59,130,246,0.05)]'
+                                                : 'bg-white dark:bg-[#111827]/60 dark:backdrop-blur-md border border-black/5 dark:border-white/10 text-[#1A1A2E] dark:text-white rounded-2xl md:rounded-[3rem] rounded-bl-none'
                                                 }`}>
 
 
@@ -408,12 +408,12 @@ export default function ChatPage() {
                                 ))}
                             </div>
 
-                            <div className="p-8 bg-[#1A1A2E] dark:bg-white rounded-[3rem] text-white dark:text-[#1A1A2E] shadow-2xl relative overflow-hidden group">
+                            <div className="p-8 bg-[#1A1A2E] dark:bg-[#1A1A2E]/40 dark:backdrop-blur-md rounded-[3rem] text-white shadow-2xl relative overflow-hidden group border border-white/5">
                                 <div className="absolute top-0 right-0 p-6 opacity-[0.03] dark:opacity-[0.1]">
                                     <ShieldAlert size={80} />
                                 </div>
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C] dark:text-[#E8820C] mb-4">Encryption Protocol v4</h5>
-                                <p className="text-[11px] text-white/50 dark:text-[#1A1A2E]/50 leading-relaxed font-serif italic">
+                                <p className="text-[11px] text-white/50 dark:text-white/40 leading-relaxed font-serif italic">
                                     All transmissions within this registry are secured via end-to-end brotherhood verification keys. No data leaks, no compromise.
                                 </p>
                             </div>
@@ -456,7 +456,7 @@ export default function ChatPage() {
 
                     <form onSubmit={(e) => handleSend(e)} className="relative group max-w-6xl mx-auto">
                         <div className="absolute -inset-1.5 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[3rem] blur opacity-5 group-focus-within:opacity-20 transition duration-700"></div>
-                        <div className="relative bg-gray-50 dark:bg-white/5 border-2 border-transparent focus-within:border-[#E8820C]/20 rounded-[1.5rem] md:rounded-[2.5rem] p-1.5 md:p-3 flex items-center gap-1.5 md:gap-2 transition-all focus-within:bg-white dark:focus-within:bg-[#111827] focus-within:shadow-2xl">
+                        <div className="relative bg-gray-50 dark:bg-[#1E293B]/40 dark:backdrop-blur-xl border-2 border-transparent focus-within:border-[#E8820C]/40 rounded-[1.5rem] md:rounded-[2.5rem] p-1.5 md:p-3 flex items-center gap-1.5 md:gap-2 transition-all focus-within:bg-white dark:focus-within:bg-[#1E293B]/60 focus-within:shadow-2xl">
                             <button
                                 type="button"
                                 onClick={() => setShowAttachments(!showAttachments)}

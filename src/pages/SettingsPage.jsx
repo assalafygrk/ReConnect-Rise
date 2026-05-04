@@ -223,9 +223,10 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-12">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-12 pt-12">
             
-            <div className="bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-14 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="bg-gradient-to-br from-[#1A1A2E] to-[#0F172A] dark:from-[#0F172A] dark:to-[#070B14] rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-14 shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10 border border-white/5">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8820C] dark:bg-[#F5A623] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
                 <div className="space-y-4 text-center lg:text-left">
                     <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight">System Control Panel</h1>
@@ -244,7 +245,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-8 space-y-10">
                     {isAdmin && (
-                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-lg border border-black/5 dark:border-white/10">
+                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10">
                             <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
                                 <div className="space-y-1">
                                     <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Executive Council Registry</h3>
@@ -273,7 +274,7 @@ export default function SettingsPage() {
                     )}
 
                     {isTreasurer && (
-                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-lg border border-black/5 dark:border-white/10">
+                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10">
                             <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
                                 <div className="space-y-1">
                                     <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Monetary Statutes</h3>
@@ -312,7 +313,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="lg:col-span-4 space-y-10">
-                    <div className="bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 dark:border-white/10 space-y-8">
+                    <div className="bg-gradient-to-b from-[#1A1A2E] to-[#0F172A] dark:from-[#0F172A] dark:to-[#070B14] rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 dark:border-white/10 space-y-8">
                         <div className="border-b border-white/10 pb-6">
                             <h3 className="text-2xl font-black font-serif">Security & Access</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mt-1">Credential Protection Protocols</p>
@@ -327,11 +328,11 @@ export default function SettingsPage() {
                                 <button
                                     key={item.id}
                                     onClick={item.action}
-                                    className="w-full flex items-center justify-between p-6 rounded-2xl bg-white dark:bg-[#111827]/5 border border-white/5 dark:border-white/10 hover:bg-white dark:bg-[#111827]/10 transition-all text-left group"
+                                    className="w-full flex items-center justify-between p-6 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all text-left group"
                                 >
                                     <div className="flex items-center gap-4">
                                         <item.icon size={18} className="text-[#E8820C] dark:text-[#F5A623] group-hover:scale-110 transition-transform" />
-                                        <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+                                        <span className="text-xs font-black uppercase tracking-widest text-white">{item.label}</span>
                                     </div>
                                     <ChevronRight size={14} className="text-white/20 group-hover:translate-x-1 transition-transform" />
                                 </button>
@@ -356,7 +357,7 @@ export default function SettingsPage() {
                     </div>
 
                     {isAdmin && (
-                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-10 shadow-lg border border-black/5 dark:border-white/10 space-y-6">
+                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-10 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10 space-y-6">
                             <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-6">
                                 <h3 className="text-xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Audit Ledger</h3>
                                 <Fingerprint size={20} className="text-black/10" />
@@ -522,6 +523,7 @@ export default function SettingsPage() {
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 }
