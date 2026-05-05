@@ -4,6 +4,7 @@ import { Wallet, ArrowUpRight, ArrowDownLeft, Send, History, Heart, X, Search, F
 import dayjs from 'dayjs';
 import { fetchWallet, transferFunds, depositFunds, withdrawFunds, payWeeklyContribution, payGeneralContribution } from '../api/wallet';
 import { fetchMembers } from '../api/members';
+import { generateVirtualAccount } from '../api/payment';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
@@ -29,12 +30,15 @@ export default function WalletPage() {
     
     const [sending, setSending] = useState(false);
     const [autoSavings, setAutoSavings] = useState(true);
+    const [virtualAccount, setVirtualAccount] = useState(null);
+    const [generatingVA, setGeneratingVA] = useState(false);
 
     const loadData = () => {
         setLoading(true);
         Promise.all([fetchWallet(), fetchMembers()])
             .then(([walletData, membersData]) => {
                 setData(walletData);
+                setVirtualAccount(walletData.virtualAccount);
                 setMembers(membersData?.filter(m => m.id !== user?.id) || []);
             })
             .catch(err => {
@@ -69,6 +73,19 @@ export default function WalletPage() {
         setDepositForm({ amount: '', note: '' });
         setWithdrawForm({ amount: '', note: '', bankName: '', accountNumber: '', pin: '' });
         setContributeForm({ type: 'weekly', amount: '', note: '', pin: '' });
+    };
+
+    const handleGenerateVirtualAccount = async () => {
+        setGeneratingVA(true);
+        try {
+            const data = await generateVirtualAccount();
+            setVirtualAccount(data);
+            toast.success('Virtual account generated successfully!');
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setGeneratingVA(false);
+        }
     };
 
     const handleTransfer = async (e) => {
@@ -377,27 +394,44 @@ export default function WalletPage() {
                             <button onClick={closeModal} className="p-3 bg-gray-50 dark:bg-white/5 rounded-2xl text-black/20 dark:text-white/20 hover:text-black/60"><X size={20} /></button>
                         </div>
                         <div className="space-y-6">
-                            <div className="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-[2rem] border border-emerald-100 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase text-emerald-800">Virtual Account Details</p>
-                                    <div className="px-2 py-1 bg-emerald-50 dark:bg-emerald-950/200 text-white text-[8px] font-black rounded-md">LIVE</div>
+                            {virtualAccount ? (
+                                <div className="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-[2rem] border border-emerald-100 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[10px] font-black uppercase text-emerald-800">Virtual Account Details</p>
+                                        <div className="px-2 py-1 bg-emerald-500 text-white text-[8px] font-black rounded-md">LIVE</div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Bank Name</p>
+                                        <p className="text-sm font-black text-emerald-900 dark:text-emerald-100">{virtualAccount.bankName}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Account Name</p>
+                                        <p className="text-sm font-black text-emerald-900 dark:text-emerald-100">{virtualAccount.accountName}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Account Number</p>
+                                        <p className="text-2xl font-black text-emerald-600 font-mono tracking-tighter">{virtualAccount.accountNumber}</p>
+                                    </div>
+                                    <div className="pt-2">
+                                        <p className="text-[10px] font-bold text-emerald-700/50 leading-tight">Transfer funds here to instantly top-up your wallet via PaymentPoint.</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Bank Name</p>
-                                    <p className="text-sm font-black text-emerald-900 dark:text-emerald-100">RECONNECT MICROBANK</p>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-black/5 dark:border-white/10 text-center space-y-4">
+                                    <p className="text-sm font-bold text-black/60 dark:text-white/60">Get your dedicated deposit account</p>
+                                    <button 
+                                        onClick={handleGenerateVirtualAccount} 
+                                        disabled={generatingVA}
+                                        className="px-6 py-3 bg-[#E8820C] text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-[#F5A623] transition-all disabled:opacity-50"
+                                    >
+                                        {generatingVA ? 'Generating...' : 'Generate Account'}
+                                    </button>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Account Number</p>
-                                    <p className="text-2xl font-black text-emerald-600 font-mono tracking-tighter">00{user?.id?.toString()?.slice(-8) || '12345678'}</p>
-                                </div>
-                                <div className="pt-2">
-                                    <p className="text-[10px] font-bold text-emerald-700/50 leading-tight">Funds deposited here will reflect in your wallet within 2-5 minutes.</p>
-                                </div>
-                            </div>
+                            )}
                             
                             <div className="relative flex items-center gap-4">
                                 <div className="flex-1 h-[1px] bg-black/5"></div>
-                                <span className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase tracking-widest">Or simulate deposit</span>
+                                <span className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase tracking-widest">Or simulate test deposit</span>
                                 <div className="flex-1 h-[1px] bg-black/5"></div>
                             </div>
 
@@ -409,8 +443,8 @@ export default function WalletPage() {
                                         <input required type="number" min="1" value={depositForm.amount} onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-12 pr-6 py-4 text-base font-black outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="0" />
                                     </div>
                                 </div>
-                                <button type="submit" disabled={sending} className="w-full py-5 rounded-[2rem] bg-emerald-50 dark:bg-emerald-950/200 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
-                                    {sending ? 'Simulating...' : 'Instant Deposit'}
+                                <button type="submit" disabled={sending} className="w-full py-5 rounded-[2rem] bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 border border-emerald-100">
+                                    {sending ? 'Simulating...' : 'Simulate Deposit'}
                                 </button>
                             </form>
                         </div>
