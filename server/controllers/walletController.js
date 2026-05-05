@@ -29,6 +29,11 @@ const getWalletInfo = async (req, res) => {
     recentTransactions: transactions,   // full history, not limited to 10
     totalGiftsSent,
     totalGiftsReceived,
+    virtualAccount: user.paymentPointVirtualAccount ? {
+      accountNumber: user.paymentPointVirtualAccount,
+      bankName: user.paymentPointBankName,
+      accountName: user.paymentPointAccountName
+    } : null,
   });
 };
 

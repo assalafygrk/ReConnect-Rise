@@ -69,6 +69,10 @@ const userSchema = new mongoose.Schema({
   transactionPin: String, // Hashed 4-digit PIN
   twoFactorSecret: String,
   twoFactorEnabled: { type: Boolean, default: false },
+  paymentPointVirtualAccount: String,
+  paymentPointBankName: String,
+  paymentPointAccountName: String,
+  paymentPointCustomerId: String,
 }, {
   timestamps: true,
 });

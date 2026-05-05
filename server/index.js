@@ -53,6 +53,7 @@ app.use('/api/page-configs', require('./routes/pageConfigRoutes'));
 app.use('/api/visions', require('./routes/visionRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/archives', require('./routes/archiveRoutes'));
+app.use('/api/payment', require('./routes/paymentRoutes'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/api', (req, res) => {
