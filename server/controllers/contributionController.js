@@ -59,7 +59,7 @@ const getContributions = async (req, res) => {
   const query = {};
 
   // Members can only see their own contributions
-  if (req.user.role === 'member' || req.user.role === 'official_member' || req.user.role === 'official-member') {
+  if (req.user.role === 'member' || req.user.role === 'official_member') {
     query.user = req.user._id;
   } else {
     if (week) query.weekId = week;
@@ -80,17 +80,17 @@ const getContributions = async (req, res) => {
  * @access  Private
  */
 const getWeeklyStatus = async (req, res) => {
-  const weekId = getWeekId();
-  const deadline = getWeekDeadline();
-  const monday = getWeekMonday();
+  const { week } = req.query;
+  const weekId = week || getWeekId();
+  const deadline = getWeekDeadline(week ? new Date(week.split('-')[0], 0, (parseInt(week.split('W')[1]) - 1) * 7 + 1) : undefined);
+  const monday = getWeekMonday(week ? new Date(week.split('-')[0], 0, (parseInt(week.split('W')[1]) - 1) * 7 + 1) : undefined);
   const now = new Date();
   const weekOpen = now <= deadline;
 
   // Get all active/official members
   const officialRoles = [
-    'groupleader', 'group_leader', 'treasurer', 'welfare',
-    'special-advisor', 'special_advisor', 'meeting-organizer', 'meeting_organizer',
-    'official-member', 'official_member',
+    'group_leader', 'treasurer', 'welfare',
+    'special_advicer', 'official_member',
   ];
   const members = await User.find({ role: { $in: officialRoles }, status: 'active' }).select('name email role');
 
@@ -421,6 +421,97 @@ const recordBatchContributions = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Record historical contribution(s) manually
+ * @route   POST /api/contributions/record-history
+ * @access  Private/Treasurer/Admin
+ */
+const recordHistory = async (req, res) => {
+  const { memberIds, amount, weekId, date, paymentChannel, note } = req.body;
+
+  // Meticulous Validation
+  if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+    res.status(400);
+    throw new Error('Selection of Institutional Subjects is required');
+  }
+  if (!weekId || !/^20\d{2}-W\d{2}$/.test(weekId)) {
+    res.status(400);
+    throw new Error('Invalid Temporal ID format (Expected: YYYY-WXX)');
+  }
+  if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    res.status(400);
+    throw new Error('Valid magnitude (amount) is required');
+  }
+
+  try {
+    const settings = await Settings.findOne({});
+    const baseAmount = settings?.weeklyContributionAmount || 1000;
+    const paidAmount = parseFloat(amount);
+    const bonus = paidAmount > baseAmount ? paidAmount - baseAmount : 0;
+
+    const results = await Promise.all(memberIds.map(async (memberId) => {
+      // 1. Create/Update Contribution with meticulous state
+      const contribution = await Contribution.findOneAndUpdate(
+        { user: memberId, weekId, type: 'weekly' },
+        {
+          $set: {
+            amount: paidAmount,
+            bonus,
+            status: 'confirmed',
+            paymentChannel: paymentChannel || 'cash',
+            markedPaidBy: req.user._id,
+            paidAt: date ? new Date(date) : new Date(),
+            note: note || 'Historical Ledger Backfill',
+            baseAmount,
+          }
+        },
+        { upsert: true, new: true }
+      );
+
+      // 2. Create Verifiable Audit Transaction
+      await Transaction.create({
+        user: memberId,
+        type: 'contribution',
+        amount: paidAmount,
+        status: 'completed',
+        description: `Institutional Record: Week ${weekId} Reconstruction`,
+        reference: `HIST-${weekId}-${memberId.substring(19)}-${Date.now().toString().slice(-4)}`,
+        metadata: { 
+          weekId, 
+          recordedBy: req.user._id, 
+          channel: paymentChannel,
+          originalNote: note 
+        }
+      });
+
+      // 3. Dispatch System Notification
+      try {
+        await createNotification({
+          user: memberId,
+          title: 'Historical Ledger Update',
+          message: `Administrative reconciliation for week ${weekId} has been finalized. Your status is now: CLEARED.`,
+          type: 'payment',
+          severity: 'success'
+        });
+      } catch (notiError) {
+        console.error(`Notification failed for ${memberId}:`, notiError.message);
+      }
+
+      return { memberId, status: 'integrated' };
+    }));
+
+    res.json({ 
+      success: true, 
+      count: results.length, 
+      message: `${results.length} historical records meticulously integrated into the strategic ledger.` 
+    });
+  } catch (error) {
+    console.error('Meticulous History Record Error:', error);
+    res.status(500);
+    throw new Error('Historical ledger reconstruction failed. Internal system error.');
+  }
+};
+
 module.exports = {
   getContributions,
   getWeeklyStatus,
@@ -429,4 +520,5 @@ module.exports = {
   recordGeneralContribution,
   getWeeks,
   recordBatchContributions,
+  recordHistory,
 };

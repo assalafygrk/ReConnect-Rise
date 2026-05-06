@@ -166,11 +166,11 @@ export default function DashboardPage() {
     const effectiveRole = activeRole || user?.role || 'member';
     const isSuperAdmin = effectiveRole === 'super_admin';
     const isAdmin = effectiveRole === 'admin' || isSuperAdmin;
-    const isGroupLeader = effectiveRole === 'groupleader';
+    const isGroupLeader = effectiveRole === 'group_leader';
     const isTreasurer = effectiveRole === 'treasurer';
     const isWelfare = effectiveRole === 'welfare';
-    const isOfficialMember = effectiveRole === 'official-member';
-    const isAdvisor = effectiveRole === 'special-advisor';
+    const isOfficialMember = effectiveRole === 'official_member';
+    const isAdvisor = effectiveRole === 'special_advicer';
     const isOrganizer = effectiveRole === 'organizer' || effectiveRole === 'meeting-organizer';
 
     useEffect(() => {

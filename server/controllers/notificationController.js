@@ -11,16 +11,10 @@ exports.getNotifications = async (req, res) => {
 
     // Role aliases to handle variations like 'groupleader' vs 'group_leader'
     const roleAliases = {
-      'groupleader': ['groupleader', 'group_leader'],
-      'group_leader': ['groupleader', 'group_leader'],
-      'special-advisor': ['special-advisor', 'special_advisor'],
-      'special_advisor': ['special-advisor', 'special_advisor'],
-      'meeting-organizer': ['meeting-organizer', 'meeting_organizer'],
-      'meeting_organizer': ['meeting-organizer', 'meeting_organizer'],
-      'official-member': ['official-member', 'official_member'],
-      'official_member': ['official-member', 'official_member'],
-      'welfare': ['welfare', 'welfare_officer'],
-      'welfare_officer': ['welfare', 'welfare_officer'],
+      'group_leader': ['group_leader'],
+      'special_advicer': ['special_advicer'],
+      'official_member': ['official_member'],
+      'welfare': ['welfare'],
     };
 
     const rolesToSearch = roleAliases[role] || [role];
@@ -29,11 +23,10 @@ exports.getNotifications = async (req, res) => {
     if (role === 'admin' || role === 'super_admin') {
       rolesToSearch.push(
         'admin', 'super_admin', 
-        'group_leader', 'groupleader', 
+        'group_leader', 
         'treasurer', 
-        'welfare', 'welfare_officer',
-        'special-advisor', 'special_advisor',
-        'meeting-organizer', 'meeting_organizer'
+        'welfare',
+        'special_advicer'
       );
     }
 

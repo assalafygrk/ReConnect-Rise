@@ -11,12 +11,36 @@ export async function fetchArchives() {
     return await res.json();
 }
 
-export async function uploadArchive(title, type) {
+export async function uploadArchive(data) {
     const res = await fetch(`${BASE_URL}/archives`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ title, type }),
+        body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to upload archive');
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to upload archive');
+    }
+    return await res.json();
+}
+
+export async function upvoteArchive(id) {
+    const res = await fetch(`${BASE_URL}/archives/${id}/upvote`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to upvote');
+    return await res.json();
+}
+
+export async function deleteArchive(id) {
+    const res = await fetch(`${BASE_URL}/archives/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to delete archive');
+    }
     return await res.json();
 }

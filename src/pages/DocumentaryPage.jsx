@@ -1,68 +1,124 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import dayjs from 'dayjs';
 import {
     Upload, FileText, Image as ImageIcon, Plus, X, Search,
     Download, ExternalLink, Filter, MoreVertical, Grid, List,
     Calendar, User, Tag, Info, ChevronLeft, ChevronRight, Maximize2,
-    Database, ShieldCheck, HardDrive, Archive, Loader2, Fingerprint
+    Database, ShieldCheck, HardDrive, Archive, Loader2, Fingerprint,
+    Video, Play, File, Trash2
 } from 'lucide-react';
 import { usePageConfig } from '../context/PageConfigContext';
-import { fetchArchives, uploadArchive } from '../api/archives';
-
+import { useAuth } from '../context/AuthContext';
+import { fetchArchives, uploadArchive, deleteArchive } from '../api/archives';
 
 export default function DocumentaryPage() {
+    const { user } = useAuth();
     const { config } = usePageConfig('documentary');
     const [searchTerm, setSearchTerm] = useState('');
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedMedia, setSelectedMedia] = useState(null);
     const [viewMode, setViewMode] = useState('grid');
-    const [activeTab, setActiveTab] = useState('gallery');
+    const [activeTab, setActiveTab] = useState('files');
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
+    const [activeCategory, setActiveCategory] = useState('all');
 
     const [galleryData, setGalleryData] = useState([]);
     const [filesData, setFilesData] = useState([]);
 
+    const fileInputRef = useRef(null);
+
+    // Upload Form State
+    const [uploadForm, setUploadForm] = useState({
+        title: '',
+        fileType: 'image',
+        url: '',
+        thumbnail: ''
+    });
+
+    const canUpload = ['super_admin', 'group_leader'].includes(user?.role);
+
+    const categories = [
+        { id: 'all', label: 'All Artifacts', icon: <Database size={14} /> },
+        { id: 'image', label: 'Visuals', icon: <ImageIcon size={14} /> },
+        { id: 'video', label: 'Kinetic', icon: <Video size={14} /> },
+        { id: 'pdf', label: 'Documents', icon: <FileText size={14} /> },
+        { id: 'other', label: 'Archives', icon: <Archive size={14} /> },
+    ];
+
     useEffect(() => {
-        const loadArchives = async () => {
-            setIsInitialLoading(true);
-            try {
-                const data = await fetchArchives();
-                setGalleryData(data.gallery || []);
-                setFilesData(data.files || []);
-            } catch (err) {
-                // Keep empty on error
-            } finally {
-                setIsInitialLoading(false);
-            }
-        };
         loadArchives();
     }, []);
 
-    const filteredGallery = galleryData.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-
-    const filteredFiles = filesData.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const handleUpload = async (e) => {
-        e.preventDefault();
-        setUploading(true);
+    const loadArchives = async () => {
+        setIsInitialLoading(true);
         try {
-            // Note: form data extraction omitted here since the upload modal doesn't have controlled inputs hooked up in this snippet yet
-            const title = "New Upload"; 
-            const type = activeTab === 'gallery' ? 'gallery' : 'file';
-            await uploadArchive(title, type);
-            toast.success('Archive Material Synchronized');
-            setShowUploadModal(false);
-            // Optionally reload archives here
             const data = await fetchArchives();
             setGalleryData(data.gallery || []);
             setFilesData(data.files || []);
+        } catch (err) {
+            // Keep empty on error
+        } finally {
+            setIsInitialLoading(false);
+        }
+    };
+
+    const filteredFiles = filesData.filter(item => 
+        (activeCategory === 'all' || item.fileType === activeCategory) &&
+        item.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const filteredGallery = galleryData.filter(item => 
+        (activeCategory === 'all' || item.fileType === activeCategory) &&
+        item.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setUploadForm({
+                ...uploadForm,
+                url: reader.result,
+                title: uploadForm.title || file.name,
+                fileType: getFileTypeFromMime(file.type)
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const getFileTypeFromMime = (mime) => {
+        if (mime.startsWith('image/')) return 'image';
+        if (mime.startsWith('video/')) return 'video';
+        if (mime.includes('pdf')) return 'pdf';
+        if (mime.includes('presentation') || mime.includes('powerpoint')) return 'pptx';
+        if (mime.includes('sheet') || mime.includes('excel')) return 'xlsx';
+        if (mime.includes('word')) return 'docx';
+        return 'file';
+    };
+
+    const handleUpload = async (e) => {
+        e.preventDefault();
+        if (!canUpload) return toast.error('Access Denied: Administrative Clearance Required');
+        if (!uploadForm.url) return toast.error('Selection Protocol Incomplete: No File Detected');
+        
+        setUploading(true);
+        try {
+            await uploadArchive({
+                title: uploadForm.title,
+                type: activeTab === 'gallery' ? 'gallery' : 'file',
+                fileType: uploadForm.fileType,
+                url: uploadForm.url,
+                thumbnail: uploadForm.thumbnail
+            });
+            toast.success('Archive Material Synchronized');
+            setShowUploadModal(false);
+            setUploadForm({ title: '', fileType: 'image', url: '', thumbnail: '' });
+            loadArchives();
         } catch (err) {
             toast.error('System Synchronization Failure');
         } finally {
@@ -70,505 +126,428 @@ export default function DocumentaryPage() {
         }
     };
 
+    const handleDelete = async (id, e) => {
+        if (e) e.stopPropagation();
+        if (!window.confirm('Are you certain you wish to purge this archive from the registry? This action is irreversible.')) return;
+        
+        setDeletingId(id);
+        try {
+            await deleteArchive(id);
+            toast.success('Archive Material Purged');
+            if (selectedMedia?._id === id) setSelectedMedia(null);
+            loadArchives();
+        } catch (err) {
+            toast.error(err.message || 'Purge Protocol Failure');
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
+    const renderMediaPreview = (item) => {
+        if (item.fileType === 'image') {
+            return <img src={item.url} alt="" className="w-full h-full object-contain animate-in zoom-in duration-1000" />;
+        }
+        if (item.fileType === 'video') {
+            return (
+                <video controls className="w-full h-full max-h-[70vh] rounded-[2rem] outline-none shadow-2xl bg-black" poster={item.thumbnail}>
+                    <source src={item.url} />
+                    Your browser does not support the video tag.
+                </video>
+            );
+        }
+        if (item.fileType === 'pdf') {
+            return (
+                <iframe src={item.url} className="w-full h-full min-h-[70vh] rounded-[2rem] bg-white shadow-2xl border-none" title="PDF Preview" />
+            );
+        }
+        return (
+            <div className="flex flex-col items-center gap-6 md:gap-10 text-white/20 p-6 md:p-12 text-center">
+                <div className="relative group/icon">
+                    <div className="absolute -inset-8 bg-[#E8820C]/20 blur-3xl rounded-full opacity-0 group-hover/icon:opacity-100 transition-opacity duration-1000" />
+                    {item.fileType === 'pptx' ? <Database size={100} className="relative z-10 text-[#E8820C] md:size-[160px]" /> : <FileText size={100} className="relative z-10 md:size-[160px]" />}
+                </div>
+                <div className="space-y-4 md:space-y-6">
+                    <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.5em] md:tracking-[0.8em] text-[#E8820C]">Strategic Resource Node</p>
+                    <p className="text-lg md:text-xl font-serif italic text-white/40 max-w-md">"This asset requires local decryption for full verification."</p>
+                    <a href={item.url} download={item.title} className="px-8 py-4 md:px-12 md:py-6 bg-[#E8820C] text-white rounded-[1.5rem] md:rounded-[2rem] hover:bg-[#F5A623] transition-all flex items-center justify-center gap-4 mt-8 md:mt-12 font-black uppercase tracking-widest text-[9px] md:text-[10px] shadow-2xl">
+                        <Download size={18} /> Secure Download
+                    </a>
+                </div>
+            </div>
+        );
+    };
 
     if (isInitialLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-pulse p-4">
                 <div className="relative">
-                    <div className="w-24 h-24 border-4 border-[#E8820C]/10 border-t-[#E8820C] rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center text-[#E8820C] dark:text-[#F5A623]">
-                        <HardDrive size={32} className="animate-pulse" />
+                    <div className="w-24 h-24 md:w-40 md:h-40 border-4 border-[#E8820C]/5 border-t-[#E8820C] rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center text-[#E8820C]">
+                        <Fingerprint size={40} className="md:size-[64px]" />
                     </div>
                 </div>
-                <div className="text-center space-y-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#1A1A2E] dark:text-white/90/40">Accessing Vaults...</p>
-                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623]">Encryption Level: Institutional</p>
+                <div className="text-center space-y-3">
+                    <p className="text-[12px] md:text-[14px] font-black uppercase tracking-[0.4em] md:tracking-[0.6em] text-[#1A1A2E] dark:text-white/40 italic px-4">Decrypting Institutional Vaults...</p>
+                    <div className="h-1.5 w-48 md:w-64 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden mx-auto">
+                        <div className="h-full bg-[#E8820C] w-1/2 animate-[progress_3s_ease-in-out_infinite]" />
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 p-4 md:p-8">
-            {/* Serious System Header */}
-            <div className="relative bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-16 overflow-hidden shadow-2xl group border border-white/5">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#E8820C] to-[#F5A623] rounded-full blur-[150px] opacity-5 group-hover:opacity-15 transition-opacity duration-1000"></div>
-                <div className="absolute -bottom-20 -left-20 text-white/[0.02] -rotate-12 select-none group-hover:text-white/[0.05] transition-colors duration-1000">
-                    <Fingerprint size={400} />
-                </div>
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-12">
-                    <div className="space-y-6">
-                        <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white dark:bg-[#111827]/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C] dark:text-[#F5A623]">
-                            <Archive size={14} /> Institutional Memory Node
+        <div className="max-w-7xl mx-auto space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000 p-2 md:p-8 pb-32">
+            {/* Serious System Header - Optimized Size */}
+            <div className="relative bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[1.5rem] md:rounded-[3rem] p-6 md:p-12 overflow-hidden shadow-2xl group border border-white/5">
+                <div className="absolute top-0 right-0 w-[200px] h-[200px] md:w-[400px] md:h-[400px] bg-gradient-to-br from-[#E8820C] to-[#F5A623] rounded-full blur-[80px] md:blur-[120px] opacity-[0.08] group-hover:opacity-15 transition-opacity duration-1000" />
+                <div className="absolute inset-0 opacity-5 pointer-events-none" 
+                     style={{ backgroundImage: 'radial-gradient(circle, #E8820C 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-12">
+                    <div className="space-y-3 md:space-y-6">
+                        <div className="inline-flex items-center gap-3 md:gap-4 px-4 py-1.5 md:px-5 md:py-2.5 rounded-full bg-white/5 border border-white/10 text-[7px] md:text-[8px] font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-[#E8820C]">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#E8820C] animate-ping" />
+                            Registry v4.2
                         </div>
-                        <h2 className="text-3xl md:text-6xl font-black font-serif text-white leading-tight tracking-tight mt-4 whitespace-pre-line">
-                            {config.pageHeadline || 'Archives &\nDocumentation'}
+                        <h2 className="text-3xl md:text-6xl font-black font-serif text-white leading-[0.9] tracking-tighter uppercase italic">
+                            {config.pageHeadline || 'Secure Archives'}
                         </h2>
-                        <p className="text-white/40 text-xl font-serif italic max-w-2xl leading-relaxed mt-4 whitespace-pre-line">
-                            {config.pageSubtitle || '"Preserving our collective journey is the prerequisite for strategic sovereignty. This vault documents the evolution of our brotherhood."'}
+                        <p className="text-white/40 text-xs md:text-base font-serif italic max-w-xl leading-relaxed border-l-2 md:border-l-4 border-[#E8820C]/20 pl-4 md:pl-6">
+                            {config.pageSubtitle || '"Digital memory is the anchor of institutional sovereignty."'}
                         </p>
                     </div>
-                    <div className="flex flex-col gap-4">
+                    {canUpload && (
                         <button
                             onClick={() => setShowUploadModal(true)}
-                            className="w-full md:w-auto px-10 py-5 rounded-[2rem] bg-[#E8820C] dark:bg-[#F5A623] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#E8820C]/20 hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-4"
+                            className="group relative px-6 py-4 md:px-10 md:py-6 rounded-2xl md:rounded-[2rem] bg-[#E8820C] text-white text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] shadow-xl hover:bg-[#F5A623] hover:-translate-y-1 transition-all duration-500 flex items-center justify-center gap-3 md:gap-4 overflow-hidden"
                         >
-                            <Plus size={24} strokeWidth={3} /> Catalog New Entry
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-700" />
+                            <Plus size={18} strokeWidth={4} className="relative z-10" /> 
+                            <span className="relative z-10">Institutional Deposit</span>
                         </button>
-                        <div className="flex items-center gap-4 justify-center md:justify-start px-2">
-                            <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-white/30">
-                                <ShieldCheck size={12} className="text-emerald-500" /> Secure Vault
-                            </div>
-                            <div className="w-1 h-1 rounded-full bg-white dark:bg-[#111827]/10"></div>
-                            <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-white/30">
-                                <Database size={12} className="text-[#E8820C] dark:text-[#F5A623]" /> 1.2 PB Distributed
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
-            {/* Tactical Control Bar */}
-            <div className="bg-white dark:bg-[#111827]/80 backdrop-blur-2xl rounded-[3rem] p-6 shadow-2xl border border-black/5 dark:border-white/10 flex flex-col lg:flex-row items-center gap-4 lg:gap-8 relative z-40 relative top-4">
-                <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/10 p-2 rounded-[2rem] w-full lg:w-auto shadow-inner overflow-x-auto">
-                    <button
-                        onClick={() => setActiveTab('gallery')}
-                        className={`flex items-center justify-center gap-3 px-4 sm:px-8 py-3 sm:py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex-1 sm:flex-none ${activeTab === 'gallery' ? 'bg-white dark:bg-[#111827] text-[#1A1A2E] dark:text-white/90 shadow-xl' : 'text-black/30 dark:text-white/30 hover:text-black/60'}`}
-                    >
-                        <ImageIcon size={16} /> Visual Assets
-                    </button>
+            {/* Tactical Control Bar - Optimized for Mobile */}
+            <div className="bg-white dark:bg-[#111827]/95 backdrop-blur-3xl rounded-[2rem] md:rounded-[3.5rem] p-4 md:p-8 shadow-2xl border border-black/5 dark:border-white/10 flex flex-col lg:flex-row items-center gap-4 md:gap-8 relative z-40 -mt-8 md:-mt-16 mx-2 md:mx-12 ring-1 ring-white/5">
+                <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/5 p-1.5 rounded-[1.5rem] md:rounded-[2.5rem] w-full lg:w-auto shadow-inner overflow-x-auto scrollbar-hide">
                     <button
                         onClick={() => setActiveTab('files')}
-                        className={`flex items-center justify-center gap-3 px-4 sm:px-8 py-3 sm:py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex-1 sm:flex-none ${activeTab === 'files' ? 'bg-white dark:bg-[#111827] text-[#1A1A2E] dark:text-white/90 shadow-xl' : 'text-black/30 dark:text-white/30 hover:text-black/60'}`}
+                        className={`flex-1 lg:flex-none flex items-center justify-center gap-2 md:gap-4 px-6 md:px-10 py-3 md:py-5 rounded-[1.2rem] md:rounded-[2rem] text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all whitespace-nowrap ${activeTab === 'files' ? 'bg-white dark:bg-[#1A1A2E] text-[#1A1A2E] dark:text-white shadow-xl ring-1 ring-black/5' : 'text-black/30 dark:text-white/30 hover:text-[#E8820C]'}`}
                     >
-                        <FileText size={16} /> Tactical Repository
+                        <FileText size={14} /> Repository
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('gallery')}
+                        className={`flex-1 lg:flex-none flex items-center justify-center gap-2 md:gap-4 px-6 md:px-10 py-3 md:py-5 rounded-[1.2rem] md:rounded-[2rem] text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] transition-all whitespace-nowrap ${activeTab === 'gallery' ? 'bg-white dark:bg-[#1A1A2E] text-[#1A1A2E] dark:text-white shadow-xl ring-1 ring-black/5' : 'text-black/30 dark:text-white/30 hover:text-[#E8820C]'}`}
+                    >
+                        <ImageIcon size={14} /> Visuals
                     </button>
                 </div>
 
-                <div className="flex-1 w-full lg:max-w-2xl relative group">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] dark:text-[#F5A623] transition-colors" size={20} />
+                <div className="flex-1 w-full relative group">
+                    <Search className="absolute left-6 md:left-8 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-all duration-500" size={18} />
                     <input
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search vaults by title, author, or strategic tags..."
-                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/20 rounded-[2rem] pl-16 pr-8 py-5 text-[11px] font-black uppercase tracking-widest outline-none focus:bg-white dark:bg-[#111827] focus:shadow-2xl focus:shadow-black/5 transition-all placeholder:text-black/10 shadow-inner"
+                        placeholder="SCAN NODES..."
+                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/30 rounded-[1.5rem] md:rounded-[2.5rem] pl-14 md:pl-20 pr-6 md:pr-10 py-4 md:py-6 text-[10px] md:text-[12px] font-black uppercase tracking-widest outline-none focus:bg-white dark:focus:bg-[#111827] focus:shadow-2xl transition-all shadow-inner dark:text-white"
                     />
-                </div>
-
-                <div className="flex items-center gap-3 ml-auto">
-                    <div className="hidden sm:flex items-center gap-2 bg-gray-100 dark:bg-white/10 p-2 rounded-[1.5rem] shadow-inner">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-[#111827] text-[#E8820C] dark:text-[#F5A623] shadow-lg' : 'text-black/20 dark:text-white/20 hover:text-black/40 dark:text-white/40'}`}
-                        >
-                            <Grid size={20} />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`p-3 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#111827] text-[#E8820C] dark:text-[#F5A623] shadow-lg' : 'text-black/20 dark:text-white/20 hover:text-black/40 dark:text-white/40'}`}
-                        >
-                            <List size={20} />
-                        </button>
-                    </div>
-                    <button className="p-5 bg-gray-100 dark:bg-white/10 rounded-[1.5rem] text-black/40 dark:text-white/40 hover:bg-[#1A1A2E] dark:bg-[#0F172A] hover:text-[#F5A623] transition-all shadow-inner group">
-                        <Filter size={20} className="group-hover:rotate-180 transition-transform duration-500" />
-                    </button>
                 </div>
             </div>
 
-            {/* Vault Display Area */}
-            {activeTab === 'gallery' ? (
-                viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
-                        {filteredGallery.map((item, idx) => (
-                            <div
-                                key={item.id}
-                                onClick={() => setSelectedMedia(item)}
-                                className="group bg-white dark:bg-[#111827] rounded-[3rem] overflow-hidden border border-black/5 dark:border-white/10 shadow-lg hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] hover:-translate-y-4 transition-all duration-700 cursor-pointer p-3"
-                                style={{ animationDelay: `${idx * 150}ms` }}
-                            >
-                                <div className="aspect-[4/5] relative overflow-hidden rounded-[2.5rem] mb-6">
-                                    <img src={item.url} alt={item.title} className="w-full h-full object-cover grayscale brightness-75 contrast-125 group-hover:grayscale-0 group-hover:brightness-100 group-hover:contrast-100 group-hover:scale-110 transition-all duration-1000" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A2E] via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-700"></div>
-                                    <div className="absolute inset-x-0 bottom-0 p-8 flex flex-col justify-end translate-y-4 group-hover:translate-y-0 transition-transform duration-700">
-                                        <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setSelectedMedia(item); }}
-                                                className="w-12 h-12 bg-white dark:bg-[#111827]/10 backdrop-blur-xl rounded-2xl text-white hover:bg-[#E8820C] dark:bg-[#F5A623] transition-all flex items-center justify-center shadow-2xl"
-                                            >
-                                                <Maximize2 size={20} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="w-12 h-12 bg-white dark:bg-[#111827]/10 backdrop-blur-xl rounded-2xl text-white hover:bg-[#E8820C] dark:bg-[#F5A623] transition-all flex items-center justify-center shadow-2xl"
-                                            >
-                                                <Download size={20} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="absolute top-6 right-6">
-                                        <span className="px-4 py-1.5 bg-black/40 backdrop-blur-xl text-[9px] font-black uppercase tracking-[0.3em] text-white border border-white/10 rounded-full shadow-2xl">
-                                            Vault Item {item.id}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="px-6 pb-6 space-y-6">
-                                    <div className="space-y-2">
-                                        <h4 className="font-black text-[#1A1A2E] dark:text-white/90 leading-tight font-serif text-2xl group-hover:text-[#E8820C] dark:text-[#F5A623] transition-colors duration-500">{item.title}</h4>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] text-black/20 dark:text-white/20 font-black uppercase tracking-widest flex items-center gap-2">
-                                                <Calendar size={12} className="text-[#E8820C] dark:text-[#F5A623]" /> {dayjs(item.date).format('MMMM D, YYYY')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {item.tags?.map(tag => (
-                                            <span key={tag} className="px-3 py-1.5 bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 text-[9px] font-black uppercase tracking-widest text-black/40 dark:text-white/40 rounded-xl hover:bg-[#1A1A2E] dark:bg-[#0F172A] hover:text-[#F5A623] hover:border-[#F5A623]/20 transition-all cursor-default">
-                                                #{tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="bg-white dark:bg-[#111827] rounded-[2rem] md:rounded-[3.5rem] border border-black/5 dark:border-white/10 shadow-2xl p-4 overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="whitespace-nowrap">
-                                <tr className="border-b-2 border-black/5 dark:border-white/10">
-                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 dark:text-white/20">Archive Meta</th>
-                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 dark:text-white/20">Strategic Narrative</th>
-                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 dark:text-white/20">Catalog Agent</th>
-                                    <th className="px-6 md:px-10 py-5 md:py-8 text-[11px] font-black uppercase tracking-[0.3em] text-black/20 dark:text-white/20 text-right">Protocol</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-black/5 dark:divide-white/10 whitespace-nowrap md:whitespace-normal">
-                                {filteredGallery.map(item => (
-                                    <tr
-                                        key={item.id}
-                                        onClick={() => setSelectedMedia(item)}
-                                        className="hover:bg-gray-50 dark:bg-white/5/50 transition-all duration-500 group/row cursor-pointer"
-                                    >
-                                        <td className="px-6 md:px-10 py-6 md:py-10">
-                                            <div className="w-24 h-24 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl relative rotate-3 group-hover/row:rotate-0 transition-transform duration-700">
-                                                <img src={item.url} alt="" className="w-full h-full object-cover grayscale group-hover/row:grayscale-0 transition-all duration-1000" />
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover/row:opacity-100 transition-opacity">
-                                                    <Maximize2 size={24} />
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 md:px-10 py-6 md:py-10 max-w-xl">
-                                            <h4 className="font-black text-[#1A1A2E] dark:text-white/90 text-xl font-serif leading-tight group-hover/row:text-[#E8820C] dark:text-[#F5A623] transition-colors">{item.title}</h4>
-                                            <p className="text-[13px] text-black/40 dark:text-white/40 mt-3 italic line-clamp-2 leading-relaxed font-serif">"{item.description}"</p>
-                                        </td>
-                                        <td className="px-6 md:px-10 py-6 md:py-10">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-[#1A1A2E] dark:bg-[#0F172A] text-[#F5A623] flex items-center justify-center text-[12px] font-black shadow-lg">
-                                                    {item.author[0]}
-                                                </div>
-                                                <div>
-                                                    <span className="text-sm font-black text-[#1A1A2E] dark:text-white/90 tracking-tight">{item.author}</span>
-                                                    <p className="text-[10px] text-black/30 dark:text-white/30 font-black uppercase tracking-widest mt-0.5">Authorized User</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 md:px-10 py-6 md:py-10 text-right">
-                                            <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover/row:translate-x-0 group-hover/row:opacity-100 transition-all duration-700">
-                                                <button
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="w-12 h-12 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 text-[#E8820C] dark:text-[#F5A623] hover:bg-[#E8820C] dark:bg-[#F5A623] hover:text-white rounded-2xl transition-all flex items-center justify-center shadow-xl hover:shadow-[#E8820C]/30"
-                                                >
-                                                    <Download size={20} />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); toast('Accessing External Relay...'); }}
-                                                    className="w-12 h-12 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 text-black/20 dark:text-white/20 hover:text-[#1A1A2E] dark:text-white/90 hover:border-[#1A1A2E] rounded-2xl transition-all flex items-center justify-center shadow-xl"
-                                                >
-                                                    <ExternalLink size={20} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
-                    {filteredFiles.map((file, idx) => (
+            {/* Category Filter - New */}
+            <div className="flex items-center gap-3 md:gap-6 overflow-x-auto scrollbar-hide px-2 md:px-4">
+                {categories.map((cat) => (
+                    <button
+                        key={cat.id}
+                        onClick={() => setActiveCategory(cat.id)}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat.id ? 'bg-[#E8820C] text-white border-[#E8820C] shadow-lg shadow-[#E8820C]/20' : 'bg-white dark:bg-white/5 text-black/40 dark:text-white/40 border-black/5 dark:border-white/10 hover:border-[#E8820C]/30'}`}
+                    >
+                        {cat.icon}
+                        {cat.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Vault Display Area - Optimized Grid */}
+            {(activeTab === 'files' ? filteredFiles : filteredGallery).length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-8 px-2 md:px-4">
+                    {(activeTab === 'files' ? filteredFiles : filteredGallery).map((item, idx) => (
                         <div
-                            key={file.id}
-                            onClick={() => setSelectedMedia({ ...file, url: null, description: 'Internal document recorded in the brotherhood institutional treasury.' })}
-                            className="group bg-white dark:bg-[#111827] p-6 md:p-10 rounded-[2rem] md:rounded-[3.5rem] border border-black/5 dark:border-white/10 shadow-lg hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 transition-all duration-700 cursor-pointer relative overflow-hidden"
-                            style={{ animationDelay: `${idx * 100}ms` }}
+                            key={item._id || item.id}
+                            onClick={() => setSelectedMedia(item)}
+                            className="group bg-white dark:bg-[#111827] rounded-[2rem] md:rounded-[3rem] overflow-hidden border border-black/5 dark:border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-500 cursor-pointer p-4 md:p-6 relative"
+                            style={{ animationDelay: `${idx * 50}ms` }}
                         >
-                            <div className="absolute top-0 right-0 p-10 text-black/[0.02] group-hover:text-[#E8820C] dark:text-[#F5A623]/5 group-hover:scale-150 transition-all duration-1000">
-                                <Archive size={120} />
-                            </div>
-                            <div className="flex items-start justify-between mb-10 relative z-10">
-                                <div className={`w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl relative overflow-hidden ${file.type === 'pdf' ? 'bg-red-50 text-red-500' :
-                                    file.type === 'presentation' ? 'bg-[#E8820C] dark:bg-[#F5A623]/10 text-[#E8820C] dark:text-[#F5A623]' :
-                                        file.type === 'sheet' ? 'bg-emerald-50 text-emerald-500' : 'bg-[#1A1A2E] dark:bg-[#0F172A]/5 text-[#1A1A2E] dark:text-white/90'
-                                    }`}>
-                                    <div className="absolute inset-0 bg-white dark:bg-[#111827]/50 backdrop-blur-sm opacity-0 group-hover:opacity-30 transition-opacity"></div>
-                                    <FileText size={40} className="relative z-10 group-hover:scale-110 transition-transform" />
-                                </div>
-                                <span className="px-5 py-2 bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full text-[9px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.3em] group-hover:text-black/60 transition-colors shadow-inner">{file.type}</span>
-                            </div>
-                            <div className="space-y-8 relative z-10">
-                                <div className="space-y-3">
-                                    <h4 className="font-black text-[#1A1A2E] dark:text-white/90 text-2xl font-serif leading-tight group-hover:text-[#E8820C] dark:text-[#F5A623] transition-colors duration-500">{file.title}</h4>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-[10px] text-black/20 dark:text-white/20 font-black uppercase tracking-[0.2em]">{file.size} Strategic Data</span>
-                                        <div className="w-1 h-1 rounded-full bg-black/10"></div>
-                                        <span className="text-[10px] text-black/20 dark:text-white/20 font-black uppercase tracking-[0.2em]">{dayjs(file.date).format('MM/YYYY')}</span>
+                            <div className="aspect-[4/5] relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] mb-4 md:mb-6 bg-gray-50 dark:bg-black/60 flex items-center justify-center border border-black/5 dark:border-white/5 shadow-inner">
+                                {item.fileType === 'image' ? (
+                                    <img src={item.url} alt={item.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" />
+                                ) : item.thumbnail ? (
+                                    <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" />
+                                ) : (
+                                    <div className="text-black/[0.03] dark:text-white/[0.03] group-hover:text-[#E8820C]/10 transition-all duration-1000 scale-[1.5] flex flex-col items-center">
+                                        {item.fileType === 'video' ? <Video size={60} /> : item.fileType === 'pdf' ? <FileText size={60} /> : item.fileType === 'pptx' ? <Database size={60} /> : <Archive size={60} />}
+                                        <p className="text-[8px] font-black uppercase tracking-widest mt-2 opacity-40">{item.fileType || 'Asset'}</p>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A2E]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                                
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-1000 translate-y-6 group-hover:translate-y-0">
+                                    <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl">
+                                        <Play size={24} className="text-white fill-white" />
                                     </div>
                                 </div>
-                                <div className="pt-8 border-t border-black/5 dark:border-white/10 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-[#1A1A2E] dark:bg-[#0F172A] text-[#F5A623] flex items-center justify-center text-[11px] font-black shadow-lg">
-                                            {file.author[0]}
+
+                                <div className="absolute top-4 right-4 flex gap-2">
+                                    {(canUpload || user?._id === item.uploader?._id || user?._id === item.uploader) && (
+                                        <button 
+                                            onClick={(e) => handleDelete(item._id || item.id, e)}
+                                            disabled={deletingId === (item._id || item.id)}
+                                            className="p-2 bg-red-500/80 backdrop-blur-md text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 active:scale-90"
+                                        >
+                                            {deletingId === (item._id || item.id) ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                        </button>
+                                    )}
+                                    <div className="px-3 py-1 bg-black/80 backdrop-blur-xl rounded-full text-[8px] font-black uppercase text-white tracking-widest border border-white/10 shadow-2xl">
+                                        {item.fileType || 'Asset'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="px-2 space-y-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-black text-[#1A1A2E] dark:text-white font-serif text-sm md:text-base group-hover:text-[#E8820C] transition-colors leading-tight italic italic truncate">{item.title}</h4>
+                                    <div className="h-0.5 w-8 bg-[#E8820C]/20 group-hover:w-full transition-all duration-700 rounded-full" />
+                                </div>
+                                <div className="flex items-center justify-between pt-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl overflow-hidden border border-white dark:border-white/10 shadow-lg ring-2 ring-black/5">
+                                            {item.uploaderAvatar ? <img src={item.uploaderAvatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-[#1A1A2E] text-[#E8820C] flex items-center justify-center text-[10px] font-black">{item.uploaderName?.[0]}</div>}
                                         </div>
-                                        <div>
-                                            <span className="text-[11px] font-black text-[#1A1A2E] dark:text-white/90 tracking-tight">{file.author}</span>
-                                            <p className="text-[8px] text-black/30 dark:text-white/30 font-black uppercase tracking-widest">Authorized Source</p>
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black text-[#1A1A2E] dark:text-white uppercase tracking-widest italic">{item.uploaderName}</span>
+                                            <span className="text-[7px] text-black/30 dark:text-white/40 font-bold uppercase tracking-tighter">{dayjs(item.createdAt).format('DD MMM YYYY')}</span>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="w-14 h-14 bg-gray-100 dark:bg-white/10 text-black/20 dark:text-white/20 hover:text-white hover:bg-[#E8820C] dark:bg-[#F5A623] rounded-2xl transition-all flex items-center justify-center shadow-inner hover:shadow-2xl hover:shadow-[#E8820C]/30"
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            upvoteArchive(item._id || item.id);
+                                            loadArchives();
+                                        }}
+                                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all group/upvote"
                                     >
-                                        <Download size={24} />
+                                        <div className="text-[10px] font-black">{item.upvotes || 0}</div>
+                                        <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
-            )}
-
-            {/* Empty States: Tactical Zero */}
-            {((activeTab === 'gallery' && filteredGallery.length === 0) || (activeTab === 'files' && filteredFiles.length === 0)) && (
-                <div className="py-48 text-center space-y-12 animate-in fade-in zoom-in-95 duration-700">
-                    <div className="relative w-48 h-48 bg-gray-50 dark:bg-white/5 rounded-[4rem] flex items-center justify-center mx-auto text-black/[0.02] shadow-inner group">
-                        <ImageIcon size={100} className="relative z-10 group-hover:scale-110 transition-transform duration-1000" />
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#E8820C]/10 to-transparent animate-pulse rounded-[4rem]"></div>
-                        <Search size={40} className="absolute -bottom-4 -right-4 text-black/10 group-hover:text-[#E8820C] dark:text-[#F5A623] transition-colors" />
+            ) : (
+                <div className="flex flex-col items-center justify-center py-32 space-y-8 bg-white dark:bg-[#111827] rounded-[3rem] border border-dashed border-black/10 dark:border-white/10 mx-4">
+                    <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center text-black/10 dark:text-white/10">
+                        <Archive size={48} />
                     </div>
-                    <div className="space-y-6">
-                        <h3 className="text-4xl font-serif font-black text-[#1A1A2E] dark:text-white/90">Archives Silent</h3>
-                        <p className="text-black/40 dark:text-white/40 max-w-md mx-auto text-xl leading-relaxed italic font-serif leading-relaxed">
-                            "The tactical search query returned zero nodes. The requested intelligence has not yet been documented in this specific vault."
-                        </p>
+                    <div className="text-center space-y-2">
+                        <h3 className="text-xl font-black uppercase tracking-widest text-black/40 dark:text-white/40">Registry Vacuum Detected</h3>
+                        <p className="text-sm font-serif italic text-black/20 dark:text-white/20">"No artifacts have been synchronized with this node yet."</p>
                     </div>
-                    <button
-                        onClick={() => setSearchTerm('')}
-                        className="text-[11px] font-black uppercase tracking-[0.5em] text-[#E8820C] dark:text-[#F5A623] border-b-4 border-[#E8820C]/20 pb-2 hover:text-[#1A1A2E] dark:text-white/90 hover:border-[#1A1A2E] transition-all"
-                    >
-                        Reset Protocol Parameters
-                    </button>
                 </div>
             )}
 
-            {/* Media Viewer Modal: Professional Insight */}
+            {/* Media Viewer Modal */}
             {selectedMedia && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 overflow-hidden">
-                    <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/98 backdrop-blur-3xl animate-in fade-in duration-500" onClick={() => setSelectedMedia(null)}></div>
-                    <div className="relative bg-white dark:bg-[#111827] rounded-[4rem] w-full max-w-7xl h-full max-h-[85vh] overflow-hidden flex flex-col lg:flex-row shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-700">
-                        <div className="relative flex-1 bg-black flex items-center justify-center group/viewer overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none"></div>
-                            {selectedMedia.url ? (
-                                <img src={selectedMedia.url} alt="" className="w-full h-full object-contain group-hover/viewer:scale-[1.02] transition-transform duration-2000" />
-                            ) : (
-                                <div className="flex flex-col items-center gap-8 text-white/10">
-                                    <FileText size={160} className="animate-pulse" />
-                                    <p className="text-[12px] font-black uppercase tracking-[1em]">Tactical Data Node</p>
-                                </div>
-                            )}
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-20 lg:p-32">
+                    <div className="absolute inset-0 bg-[#0B1221]/98 backdrop-blur-3xl animate-in fade-in duration-1000" onClick={() => setSelectedMedia(null)} />
+                    <div className="relative bg-[#111827] rounded-[5rem] w-full max-w-7xl h-full max-h-[90vh] overflow-hidden flex flex-col lg:flex-row shadow-[0_0_150px_rgba(232,130,12,0.2)] border border-white/10 animate-in zoom-in-95 duration-1000">
+                        <div className="relative flex-1 bg-black/60 flex items-center justify-center overflow-hidden min-h-[450px] p-8">
+                            {renderMediaPreview(selectedMedia)}
                             <button
                                 onClick={() => setSelectedMedia(null)}
-                                className="absolute top-10 left-10 p-5 bg-white dark:bg-[#111827]/5 backdrop-blur-2xl text-white rounded-[1.5rem] hover:bg-[#E8820C] dark:bg-[#F5A623] hover:rotate-12 transition-all z-20 border border-white/10 shadow-2xl group/close"
+                                className="absolute top-12 left-12 w-20 h-20 bg-white/5 backdrop-blur-3xl text-white rounded-3xl hover:bg-red-500 transition-all z-20 border border-white/10 flex items-center justify-center group shadow-2xl"
                             >
-                                <ChevronLeft size={28} className="group-hover/close:-translate-x-1 transition-transform" />
+                                <ChevronLeft size={40} className="group-hover:-translate-x-2 transition-transform" />
                             </button>
-                            <div className="absolute bottom-10 inset-x-10 p-8 bg-black/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 text-white/50 text-[10px] uppercase font-black tracking-[0.5em] flex justify-between items-center translate-y-24 group-hover/viewer:translate-y-0 transition-transform duration-700">
-                                <span>Vault Node: {selectedMedia.id}</span>
-                                <div className="flex items-center gap-4">
-                                    <Maximize2 size={16} />
-                                    <Info size={16} />
-                                </div>
-                            </div>
                         </div>
-                        <div className="w-full lg:w-[450px] p-6 md:p-16 bg-white dark:bg-[#111827] space-y-12 overflow-y-auto">
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-[#111827] z-10 py-2">
-                                    <span className="px-5 py-2 bg-[#E8820C] dark:bg-[#F5A623]/10 text-[#E8820C] dark:text-[#F5A623] text-[10px] font-black uppercase tracking-[0.3em] rounded-full border border-[#E8820C]/20 shadow-inner">Entry #{selectedMedia.id}</span>
-                                    <button onClick={() => setSelectedMedia(null)} className="p-4 bg-gray-50 dark:bg-white/5 text-black/20 dark:text-white/20 hover:text-red-500 rounded-2xl transition-all hover:rotate-90 group/x">
-                                        <X size={24} strokeWidth={3} />
-                                    </button>
+                        <div className="w-full lg:w-[500px] p-16 md:p-20 space-y-16 overflow-y-auto bg-gradient-to-b from-[#0F172A] to-[#070B14] border-l border-white/5 scrollbar-hide">
+                            <div className="space-y-10">
+                                <div className="inline-flex items-center gap-4 text-[#E8820C] text-[11px] font-black uppercase tracking-[0.5em]">
+                                    <ShieldCheck size={20} /> Verified Archive
                                 </div>
-                                <h3 className="text-4xl font-black font-serif text-[#1A1A2E] dark:text-white/90 leading-tight tracking-tight">{selectedMedia.title}</h3>
-                                <div className="grid grid-cols-2 gap-6 py-8 border-y-2 border-black/5 dark:border-white/10">
-                                    <div className="space-y-2">
-                                        <p className="text-[9px] text-black/20 dark:text-white/20 font-black uppercase tracking-widest">Cataloged Agent</p>
-                                        <p className="text-base font-black text-[#1A1A2E] dark:text-white/90 flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div> {selectedMedia.author}
-                                        </p>
+                                <h3 className="text-5xl md:text-6xl font-black font-serif text-white tracking-tighter italic leading-tight">{selectedMedia.title}</h3>
+                                <div className="flex items-center gap-8 p-8 bg-white/5 rounded-[3rem] border border-white/10 shadow-inner group hover:bg-white/10 transition-all">
+                                    <div className="w-20 h-20 rounded-[1.5rem] overflow-hidden shadow-2xl ring-4 ring-[#E8820C]/20 transition-transform group-hover:scale-110 duration-700">
+                                        {selectedMedia.uploaderAvatar ? <img src={selectedMedia.uploaderAvatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-white text-[#1A1A2E] flex items-center justify-center text-3xl font-black italic">{selectedMedia.uploaderName?.[0]}</div>}
                                     </div>
-                                    <div className="space-y-2">
-                                        <p className="text-[9px] text-black/20 dark:text-white/20 font-black uppercase tracking-widest">Catalog Date</p>
-                                        <p className="text-base font-black text-[#1A1A2E] dark:text-white/90 tracking-tight">{dayjs(selectedMedia.date).format('DD MMM YYYY')}</p>
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase text-[#E8820C] tracking-[0.3em] mb-2 italic">Institutional Archivist</p>
+                                        <p className="text-2xl font-black text-white">{selectedMedia.uploaderName}</p>
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <div className="space-y-8">
-                                <div className="space-y-4">
-                                    <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C] dark:text-[#F5A623]">Strategic Narrative</h5>
-                                    <p className="text-xl font-serif italic text-black/50 leading-relaxed bg-gray-50 dark:bg-white/5 p-6 rounded-[2rem] border-l-4 border-[#E8820C]">
-                                        "{selectedMedia.description}"
-                                    </p>
-                                </div>
-                                <div className="space-y-4">
-                                    <h5 className="text-[10px] font-black uppercase tracking-[0.4em] text-black/20 dark:text-white/20">Metadata Tags</h5>
-                                    <div className="flex flex-wrap gap-2">
-                                        {selectedMedia.tags?.map(tag => (
-                                            <span key={tag} className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white/90 rounded-2xl shadow-sm hover:border-[#E8820C]/30 transition-all cursor-default">
-                                                <Tag size={12} className="text-[#E8820C] dark:text-[#F5A623]" /> {tag}
-                                            </span>
-                                        ))}
+                                <p className="text-[11px] font-black uppercase text-white/30 tracking-[0.5em] ml-4 italic">Material Metadata</p>
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex justify-between items-center group hover:bg-white/10 transition-all shadow-lg">
+                                        <div className="flex items-center gap-5">
+                                            <Calendar className="text-[#E8820C]" size={24} />
+                                            <span className="text-[11px] font-black text-white/40 uppercase tracking-widest">Entry Epoch</span>
+                                        </div>
+                                        <span className="text-lg font-black text-white">{dayjs(selectedMedia.createdAt).format('DD MMMM YYYY')}</span>
+                                    </div>
+                                    <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/10 flex justify-between items-center group hover:bg-white/10 transition-all shadow-lg">
+                                        <div className="flex items-center gap-5">
+                                            <Database className="text-[#E8820C]" size={24} />
+                                            <span className="text-[11px] font-black text-white/40 uppercase tracking-widest">Data Morphology</span>
+                                        </div>
+                                        <span className="text-lg font-black text-[#E8820C] uppercase italic">{selectedMedia.fileType || 'Unclassified'}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-12 space-y-4">
-                                <button className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl hover:bg-[#252545] hover:-translate-y-2 active:scale-95 transition-all flex items-center justify-center gap-4 group">
-                                    <Download size={24} className="group-hover:bounce" /> Synchronize Local Mirror
-                                </button>
-                                <button className="w-full py-6 rounded-[2rem] border-2 border-black/5 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-black/30 dark:text-white/30 hover:bg-gray-50 dark:bg-white/5 hover:text-[#1A1A2E] dark:text-white/90 transition-all flex items-center justify-center gap-3">
-                                    <ExternalLink size={20} /> Request High-Level Access
-                                </button>
+                            <div className="pt-10 space-y-6">
+                                <a href={selectedMedia.url} target="_blank" rel="noopener noreferrer" className="w-full py-8 bg-white text-[#1A1A2E] rounded-[3rem] font-black uppercase tracking-[0.4em] text-[14px] shadow-[0_30px_60px_-15px_rgba(255,255,255,0.1)] hover:scale-[1.05] active:scale-95 transition-all duration-500 flex items-center justify-center gap-6">
+                                    <ExternalLink size={24} /> Decrypt Resource
+                                </a>
+                                {(canUpload || user?._id === selectedMedia.uploader?._id || user?._id === selectedMedia.uploader) && (
+                                    <button 
+                                        onClick={() => handleDelete(selectedMedia._id || selectedMedia.id)}
+                                        disabled={deletingId === (selectedMedia._id || selectedMedia.id)}
+                                        className="w-full py-6 bg-red-500/10 text-red-500 rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-[11px] border border-red-500/20 hover:bg-red-500 hover:text-white transition-all duration-500 flex items-center justify-center gap-4"
+                                    >
+                                        {deletingId === (selectedMedia._id || selectedMedia.id) ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                                        Purge From Registry
+                                    </button>
+                                )}
+                                <p className="text-center text-[10px] font-bold text-white/20 uppercase tracking-[0.8em]">Security Layer: Quantum-Resistant AES</p>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Deposit Modal: Institutional Asset Entry */}
+            {/* Upload Modal - Redesigned for Simplicity */}
             {showUploadModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-2xl bg-[#1A1A2E] dark:bg-[#0F172A]/90 overflow-hidden">
-                    <div className="absolute inset-0" onClick={() => !uploading && setShowUploadModal(false)}></div>
-                    <div className="relative bg-white dark:bg-[#111827] rounded-[2rem] md:rounded-[4.5rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-16 shadow-[0_0_150px_rgba(0,0,0,0.5)] border border-white/10 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500">
-                        <div className="flex items-center justify-between mb-8 md:mb-12 sticky top-0 bg-white dark:bg-[#111827] z-20 py-2">
-                            <div className="space-y-2">
-                                <div className="inline-flex items-center gap-2 px-4 py-1 bg-[#E8820C] dark:bg-[#F5A623]/10 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623]">
-                                    <Upload size={10} /> Inbound Relay
-                                </div>
-                                <h3 className="text-3xl md:text-4xl font-black font-serif text-[#1A1A2E] dark:text-white/90 leading-none">Material Deposit</h3>
-                                <p className="text-[10px] text-black/20 dark:text-white/20 uppercase tracking-[0.4em] font-black italic mt-2">Documenting the trajectory</p>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#070B14]/90 backdrop-blur-md animate-in fade-in duration-500">
+                    <div className="absolute inset-0" onClick={() => !uploading && setShowUploadModal(false)} />
+                    <div className="relative bg-white dark:bg-[#111827] rounded-[2rem] w-full max-w-lg p-8 md:p-10 shadow-2xl border border-black/5 dark:border-white/10 animate-in zoom-in-95 duration-500 ring-1 ring-white/5 overflow-hidden">
+                        
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#E8820C]/5 rounded-full blur-3xl -mr-16 -mt-16" />
+
+                        <div className="flex items-center justify-between mb-8 relative z-10">
+                            <div className="space-y-1">
+                                <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white uppercase italic tracking-tight">New Deposit</h3>
+                                <p className="text-[10px] font-bold text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Institutional Archiving System</p>
                             </div>
-                            <button onClick={() => !uploading && setShowUploadModal(false)} className="p-4 md:p-5 bg-gray-50 dark:bg-white/5 text-black/20 dark:text-white/20 hover:text-red-500 rounded-3xl transition-all hover:rotate-90 group">
-                                <X size={24} strokeWidth={4} />
-                            </button>
+                            <button onClick={() => setShowUploadModal(false)} className="w-10 h-10 bg-black/5 dark:bg-white/5 rounded-xl flex items-center justify-center text-black/40 dark:text-white/40 hover:text-red-500 transition-all hover:scale-110"><X size={20} /></button>
                         </div>
-
-                        <form onSubmit={handleUpload} className="space-y-10">
-                            <div className="relative group cursor-pointer">
-                                <div className="absolute -inset-2 bg-gradient-to-r from-[#E8820C] to-[#F5A623] rounded-[3.5rem] blur opacity-10 group-hover:opacity-30 transition-opacity"></div>
-                                <div className="relative border-2 border-dashed border-black/10 bg-gray-50 dark:bg-white/5/50 rounded-[3rem] p-16 text-center space-y-8 hover:bg-white dark:bg-[#111827] hover:border-[#E8820C]/30 transition-all duration-700">
-                                    <div className="w-28 h-28 bg-white dark:bg-[#111827] rounded-3xl flex items-center justify-center mx-auto text-[#E8820C] dark:text-[#F5A623] shadow-2xl group-hover:rotate-6 group-hover:scale-110 transition-all duration-1000 relative">
-                                        <div className="absolute inset-0 bg-[#E8820C] dark:bg-[#F5A623]/5 rounded-3xl animate-ping"></div>
-                                        {uploading ? <Loader2 size={48} className="animate-spin" /> : <Upload size={48} />}
-                                    </div>
-                                    <div className="space-y-4">
-                                        <p className="text-2xl font-black text-[#1A1A2E] dark:text-white/90 font-serif uppercase tracking-tight">Stage Intellectual Assets</p>
-                                        <div className="flex items-center justify-center gap-4 text-[10px] text-black/30 dark:text-white/30 font-black uppercase tracking-widest italic">
-                                            <span>Max Pulse: 1.2 GB</span>
-                                            <div className="w-1 h-1 rounded-full bg-black/10"></div>
-                                            <span>Encrypted Uplink</span>
-                                        </div>
-                                    </div>
-                                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer disabled:hidden" disabled={uploading} />
-                                </div>
+                        
+                        <form onSubmit={handleUpload} className="space-y-6 relative z-10">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-[#E8820C] tracking-widest ml-4">Artifact Designation</label>
+                                <input 
+                                    value={uploadForm.title}
+                                    onChange={(e) => setUploadForm({...uploadForm, title: e.target.value})}
+                                    className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[#E8820C]/30 rounded-2xl px-6 py-4 text-lg font-serif italic text-black dark:text-white outline-none transition-all placeholder:text-black/20 dark:placeholder:text-white/20 focus:bg-white dark:focus:bg-[#1A1A2E]/50"
+                                    placeholder="Enter nomenclature..."
+                                    required
+                                />
                             </div>
 
-                            <div className="space-y-8">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.4em] text-[#E8820C] dark:text-[#F5A623] ml-6 flex items-center gap-2">
-                                        <Tag size={12} /> Narrative Descriptor
-                                    </label>
-                                    <input
-                                        type="text"
-                                        disabled={uploading}
-                                        placeholder="Identify the material archive entry..."
-                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/20 rounded-[2rem] px-8 py-5 text-base font-serif italic outline-none focus:bg-white dark:bg-[#111827] focus:shadow-2xl transition-all disabled:opacity-50"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-black/20 dark:text-white/20 ml-6">Archive Vault</label>
-                                        <div className="relative">
-                                            <select disabled={uploading} className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/20 rounded-[1.5rem] px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] outline-none cursor-pointer appearance-none disabled:opacity-50">
-                                                <option>Visual Archive</option>
-                                                <option>Operational Manuals</option>
-                                                <option>Fiscal Reports</option>
-                                                <option>Field Recordings</option>
-                                            </select>
-                                            <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 rotate-90 text-black/20 dark:text-white/20 pointer-events-none" size={16} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-[0.4em] text-black/20 dark:text-white/20 ml-6">Event Synchronization</label>
-                                        <input
-                                            type="date"
-                                            disabled={uploading}
-                                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/20 rounded-[1.5rem] px-8 py-5 text-[11px] font-black outline-none disabled:opacity-50"
-                                            defaultValue={new Date().toISOString().split('T')[0]}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-6 pt-6">
-                                <button
-                                    type="button"
-                                    disabled={uploading}
-                                    onClick={() => setShowUploadModal(false)}
-                                    className="flex-1 py-6 rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] text-black/30 dark:text-white/30 border-2 border-black/5 dark:border-white/10 hover:bg-gray-50 dark:bg-white/5 transition-all disabled:opacity-50"
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-[#E8820C] tracking-widest ml-4">Resource Node</label>
+                                <div 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`w-full h-32 border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center gap-3 cursor-pointer group/upload ${uploadForm.url ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-black/10 dark:border-white/10 hover:border-[#E8820C]/50 bg-black/5 dark:bg-white/5'}`}
                                 >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={uploading}
-                                    className="flex-[2] py-6 rounded-3xl text-[11px] font-black uppercase tracking-[0.4em] text-white shadow-2xl shadow-[#1A1A2E]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
-                                    style={{ background: 'linear-gradient(135deg, #1A1A2E, #252545)' }}
-                                >
-                                    {uploading ? (
+                                    {uploadForm.url ? (
                                         <>
-                                            <Loader2 size={24} className="animate-spin" />
-                                            Synchronizing...
+                                            <ShieldCheck size={32} className="text-emerald-500 animate-pulse" />
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Asset Ready for Ingestion</p>
                                         </>
                                     ) : (
                                         <>
-                                            <Database size={24} />
-                                            Deposit Material
+                                            <Upload size={32} className="text-[#E8820C]/50 group-hover/upload:scale-110 transition-transform" />
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-black/30 dark:text-white/30 group-hover/upload:text-[#E8820C] transition-colors">Select Artifact File</p>
                                         </>
                                     )}
-                                </button>
+                                </div>
+                                <input type="file" ref={fileInputRef} hidden onChange={handleFileChange} />
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-black/30 dark:text-white/30 tracking-widest ml-4">Morphology</label>
+                                    <div className="relative">
+                                        <select 
+                                            value={uploadForm.fileType}
+                                            onChange={(e) => setUploadForm({...uploadForm, fileType: e.target.value})}
+                                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[#E8820C]/30 rounded-xl px-4 py-3 text-black dark:text-white outline-none appearance-none font-bold text-[10px] uppercase tracking-wider"
+                                        >
+                                            <option value="image" className="dark:bg-[#111827]">Visual (IMG)</option>
+                                            <option value="video" className="dark:bg-[#111827]">Kinetic (MP4)</option>
+                                            <option value="pdf" className="dark:bg-[#111827]">Document (PDF)</option>
+                                            <option value="pptx" className="dark:bg-[#111827]">Brief (PPTX)</option>
+                                            <option value="xlsx" className="dark:bg-[#111827]">Fiscal (XLSX)</option>
+                                        </select>
+                                        <Grid size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#E8820C]" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-black/30 dark:text-white/30 tracking-widest ml-4">Destination</label>
+                                    <div className="relative">
+                                        <select 
+                                            value={activeTab}
+                                            onChange={(e) => setActiveTab(e.target.value)}
+                                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-[#E8820C]/30 rounded-xl px-4 py-3 text-black dark:text-white outline-none appearance-none font-bold text-[10px] uppercase tracking-wider"
+                                        >
+                                            <option value="files" className="dark:bg-[#111827]">Repository</option>
+                                            <option value="gallery" className="dark:bg-[#111827]">Visuals</option>
+                                        </select>
+                                        <HardDrive size={14} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#E8820C]" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                disabled={uploading || !uploadForm.url}
+                                className="w-full py-5 bg-[#E8820C] text-white rounded-2xl font-black uppercase tracking-[0.3em] text-[12px] shadow-xl hover:bg-[#F5A623] hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-20"
+                            >
+                                {uploading ? <Loader2 size={20} className="animate-spin" /> : <Database size={20} />}
+                                Synchronize Artifact
+                            </button>
+                            
+                            <p className="text-center text-[8px] font-bold text-black/20 dark:text-white/20 uppercase tracking-[0.4em]">Administrative Access Restricted</p>
                         </form>
                     </div>
                 </div>
             )}
+            
+            <style>{`
+                @keyframes progress {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(200%); }
+                }
+                .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                }
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </div>
     );
 }
+
 
 // Add dayjs dependency if missing, or use a native alternative if needed. 
 // For now styling with dayjs as it was in the source.

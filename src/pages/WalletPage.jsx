@@ -61,8 +61,9 @@ export default function WalletPage() {
     const recipientResults = useMemo(() => {
         if (!searchRecipient) return [];
         return members.filter(m =>
-            m.name.toLowerCase().includes(searchRecipient.toLowerCase()) ||
-            m.phone?.includes(searchRecipient)
+            (m.name.toLowerCase().includes(searchRecipient.toLowerCase()) ||
+            m.phone?.includes(searchRecipient)) &&
+            m.role !== 'super_admin'
         ).map(m => ({ id: m._id || m.id, name: m.name, role: m.role })).slice(0, 5);
     }, [members, searchRecipient]);
 

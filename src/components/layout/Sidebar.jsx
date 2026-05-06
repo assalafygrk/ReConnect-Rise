@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useBrand } from '../../context/BrandContext';
 import { toast } from 'react-hot-toast';
 import AdminAuthGate from '../admin/AdminAuthGate';
+import { SYSTEM_NAME } from '../../constants/roles';
 
 const navGroups = [
     {
@@ -246,11 +247,13 @@ export default function Sidebar({ collapsed, onToggle }) {
                                 )}
                             </div>
                             <div className="overflow-hidden relative z-10">
-                                <p className="text-white text-sm font-medium truncate">{user?.name || user?.email}</p>
+                                <p className="text-white text-sm font-medium truncate">
+                                    {user?.role === 'super_admin' ? SYSTEM_NAME : (user?.name || user?.email)}
+                                </p>
                                 {user?.role === 'super_admin' ? (
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-pulse" />
-                                        <p className="text-[#F5A623] text-[10px] font-black uppercase tracking-widest">Supreme Admin</p>
+                                        <p className="text-[#F5A623] text-[10px] font-black uppercase tracking-widest">System Architecture</p>
                                     </div>
                                 ) : (
                                     <p className="text-[#F5A623] text-[10px] font-bold uppercase tracking-tight">{activeRole?.replace(/[-_]/g, ' ')}</p>

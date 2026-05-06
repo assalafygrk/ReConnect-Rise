@@ -72,7 +72,7 @@ export async function updateTransactionPin(pin) {
 
 // ─── User Role Management ─────────────────────────────────────────────────────
 export async function updateUserRole(userId, role) {
-    const res = await fetch(`${BASE_URL}/settings/users/${userId}/role`, {
+    const res = await fetch(`${BASE_URL}/members/${userId}/role`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ role }),
@@ -84,7 +84,7 @@ export async function updateUserRole(userId, role) {
 
 // ─── User Status Management ───────────────────────────────────────────────────
 export async function updateUserStatus(userId, status) {
-    const res = await fetch(`${BASE_URL}/settings/users/${userId}/status`, {
+    const res = await fetch(`${BASE_URL}/members/${userId}/status`, {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({ status }),

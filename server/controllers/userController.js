@@ -4,14 +4,12 @@ const User = require('../models/User');
 // Frontend uses different role slugs — map DB roles to frontend slugs
 const ROLE_MAP = {
   super_admin: 'super_admin',
-  group_leader: 'groupleader',
-  groupleader: 'groupleader',
-  special_advisor: 'special-advisor',
-  'special-advisor': 'special-advisor',
-  meeting_organizer: 'meeting-organizer',
-  'meeting-organizer': 'meeting-organizer',
-  official_member: 'official-member',
-  'official-member': 'official-member',
+  group_leader: 'group_leader',
+  treasurer: 'treasurer',
+  welfare: 'welfare',
+  special_advicer: 'special_advicer',
+  official_member: 'official_member',
+  member: 'member',
 };
 const mapRole = (r) => ROLE_MAP[r] || r;
 
@@ -126,7 +124,7 @@ const registerUser = async (req, res) => {
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id).select('+transactionPin');
 
   if (user) {
     res.json({
@@ -146,6 +144,7 @@ const getUserProfile = async (req, res) => {
       nextOfKinPhone: user.nextOfKinPhone,
       nextOfKinRelation: user.nextOfKinRelation,
       facialUpload: user.facialUpload,
+      hasTransactionPin: !!user.transactionPin,
     });
   } else {
     res.status(404);
@@ -249,6 +248,41 @@ const setTransactionPin = async (req, res) => {
   }
 };
 
+// @desc    Change Transaction PIN (Requires Old PIN)
+// @route   PATCH /api/users/profile/pin/change
+// @access  Private
+const changeTransactionPin = async (req, res) => {
+  const { oldPin, newPin } = req.body;
+
+  if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+    res.status(400);
+    throw new Error('New Transaction PIN must be exactly 4 digits');
+  }
+
+  const user = await User.findById(req.user._id).select('+transactionPin');
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // If user has a PIN, they MUST provide the old one correctly
+  if (user.transactionPin) {
+    if (!oldPin) {
+      res.status(400);
+      throw new Error('Current PIN is required to authorize change');
+    }
+    const isMatch = await user.matchTransactionPin(oldPin);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error('Invalid current Transaction PIN');
+    }
+  }
+
+  user.transactionPin = newPin;
+  await user.save();
+  res.json({ message: 'Transaction PIN successfully updated' });
+};
+
 module.exports = {
   authUser,
   registerUser,
@@ -256,4 +290,5 @@ module.exports = {
   updateUserProfile,
   updatePassword,
   setTransactionPin,
+  changeTransactionPin,
 };

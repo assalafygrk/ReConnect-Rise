@@ -23,23 +23,22 @@ const userSchema = new mongoose.Schema({
     enum: [
       'super_admin',
       'admin',
-      'groupleader',
       'group_leader',
       'treasurer',
       'welfare',
-      'special-advisor',
-      'special_advisor',
-      'meeting-organizer',
-      'meeting_organizer',
-      'official-member',
+      'special_advicer',
       'official_member',
       'member'
     ],
     default: 'member',
   },
+  becameMemberAt: {
+    type: Date,
+    default: Date.now,
+  },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'pending'],
+    enum: ['active', 'inactive', 'pending', 'suspended'],
     default: 'pending',
   },
   walletBalance: {
@@ -66,13 +65,16 @@ const userSchema = new mongoose.Schema({
     email: { type: Boolean, default: false },
     app: { type: Boolean, default: true },
   },
-  transactionPin: String, // Hashed 4-digit PIN
   twoFactorSecret: String,
   twoFactorEnabled: { type: Boolean, default: false },
   paymentPointVirtualAccount: String,
   paymentPointBankName: String,
   paymentPointAccountName: String,
   paymentPointCustomerId: String,
+  lastSeen: {
+    type: Date,
+    default: Date.now
+  }
 }, {
   timestamps: true,
 });
@@ -82,14 +84,23 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Encrypt password using bcrypt
+// Match user entered transaction PIN to hashed PIN in database
+userSchema.methods.matchTransactionPin = async function (enteredPin) {
+  if (!this.transactionPin) return false;
+  return await bcrypt.compare(enteredPin, this.transactionPin);
+};
+
+// Encrypt password & transaction PIN using bcrypt
 userSchema.pre('save', async function () {
-  if (!this.isModified('password')) {
-    return;
+  if (this.isModified('password')) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
   }
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  if (this.isModified('transactionPin')) {
+    const salt = await bcrypt.genSalt(10);
+    this.transactionPin = await bcrypt.hash(this.transactionPin, salt);
+  }
 });
 
 const User = mongoose.model('User', userSchema);

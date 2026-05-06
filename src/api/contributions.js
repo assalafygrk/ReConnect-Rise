@@ -18,8 +18,9 @@ export async function fetchContributions(weekId) {
 }
 
 // GET weekly status for all members + deadline info
-export async function fetchWeeklyStatus() {
-    return handleResponse(await fetch(`${BASE_URL}/contributions/weekly-status`, { headers: authHeaders() }));
+export async function fetchWeeklyStatus(weekId) {
+    const url = weekId ? `${BASE_URL}/contributions/weekly-status?week=${weekId}` : `${BASE_URL}/contributions/weekly-status`;
+    return handleResponse(await fetch(url, { headers: authHeaders() }));
 }
 
 // GET distinct week IDs
@@ -68,10 +69,10 @@ export async function fetchUserContributions(userId) {
     return handleResponse(await fetch(`${BASE_URL}/contributions?user=${userId}`, { headers: authHeaders() }));
 }
 
-export async function recordContribution(memberId, weekId, type, amount) {
-    return handleResponse(await fetch(`${BASE_URL}/contributions`, {
+export async function recordHistoricalData({ memberIds, weekId, amount, paymentChannel, date, note }) {
+    return handleResponse(await fetch(`${BASE_URL}/contributions/record-history`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ memberId, weekId, type, amount }),
+        body: JSON.stringify({ memberIds, weekId, amount, paymentChannel, date, note }),
     }));
 }

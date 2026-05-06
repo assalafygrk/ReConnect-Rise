@@ -8,6 +8,7 @@ const {
   recordGeneralContribution,
   getWeeks,
   recordBatchContributions,
+  recordHistory,
 } = require('../controllers/contributionController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -23,6 +24,9 @@ router.post('/pay-via-wallet', protect, payViaWallet);
 
 // Treasurer manually marks a member paid
 router.post('/mark-paid', protect, authorize('treasurer', 'admin', 'super_admin'), markPaid);
+
+// Record historical data (Bulk)
+router.post('/record-history', protect, authorize('treasurer', 'admin', 'super_admin'), recordHistory);
 
 // General (pool) contribution — any member; treasurer can record on behalf
 router.post('/general', protect, recordGeneralContribution);

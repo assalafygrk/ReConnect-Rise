@@ -8,14 +8,9 @@ const User = require('../models/User');
 function normalizeRole(role) {
   if (!role) return role;
   const map = {
-    'groupleader': 'groupleader',
-    'group_leader': 'groupleader',
-    'official-member': 'official_member',
+    'group_leader': 'group_leader',
+    'special_advicer': 'special_advicer',
     'official_member': 'official_member',
-    'special-advisor': 'special_advisor',
-    'special_advisor': 'special_advisor',
-    'meeting-organizer': 'meeting_organizer',
-    'meeting_organizer': 'meeting_organizer',
   };
   return map[role] || role;
 }
@@ -37,8 +32,8 @@ const protect = async (req, res, next) => {
         throw new Error('Not authorized, user not found');
       }
 
-      // Normalize role on the request object for consistent authorization
-      req.user.role = normalizeRole(req.user.role);
+      // Update lastSeen asynchronously to not block request
+      User.findByIdAndUpdate(req.user._id, { lastSeen: new Date() }).catch(err => console.error('LastSeen update failed', err));
 
       next();
     } catch (error) {
@@ -56,20 +51,16 @@ const protect = async (req, res, next) => {
 
 /**
  * Authorize based on roles. Accepts multiple role arguments.
- * super_admin and admin bypass all restrictions.
- * Normalizes role variants before comparison.
+ * super_admin bypasses all restrictions.
  */
 const authorize = (...roles) => {
-  // Normalize all provided roles for comparison
-  const normalizedAllowed = roles.map(normalizeRole);
-
   return (req, res, next) => {
-    const userRole = normalizeRole(req.user?.role);
+    const userRole = req.user?.role;
 
-    // super_admin and admin bypass all role checks
-    if (userRole === 'super_admin' || userRole === 'admin') return next();
+    // super_admin bypasses all role checks
+    if (userRole === 'super_admin') return next();
 
-    if (!normalizedAllowed.includes(userRole)) {
+    if (!roles.includes(userRole)) {
       res.status(403);
       throw new Error(
         `Access denied. Role "${req.user.role}" is not authorized for this action.`

@@ -16,12 +16,12 @@ const getSettings = async (req, res) => {
   res.json(s);
 };
 
-// PATCH /api/settings  — admin/treasurer only
+// PATCH /api/settings  — super_admin/group_leader/treasurer only
 const updateSettings = async (req, res) => {
   const s = await getOrCreate();
   const allowed = [
     'systemName', 'orgSlogan', 'logoUrl', 'maintenanceMode', 'allowRegistration', 'groupAnnouncement',
-    'monthlySavingsTarget', 'loanInterestRate', 'welfareTarget',
+    'monthlySavingsTarget', 'loanInterestRate', 'welfareTarget', 'weeklyContributionAmount', 'officialMemberLimit',
     'loanFundTarget', 'maxLoanAmount', 'allowProfilePhotoChange',
     'enabledPages'
   ];
@@ -59,45 +59,6 @@ const changePassword = async (req, res) => {
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
   res.json({ message: 'Password updated successfully' });
-};
-
-// PUT /api/settings/users/:id/role — super_admin/admin only
-const updateUserRole = async (req, res) => {
-  const { role } = req.body;
-  const validRoles = [
-    'super_admin', 'admin', 'groupleader', 'financial-secretary', 'treasurer',
-    'auditor', 'welfare', 'special-advisor', 'meeting-organizer', 'official-member', 'member'
-  ];
-  if (!validRoles.includes(role))
-    return res.status(400).json({ message: `Invalid role: ${role}` });
-
-  // Protect: only super_admin can assign super_admin
-  if (role === 'super_admin' && req.user.role !== 'super_admin')
-    return res.status(403).json({ message: 'Only Super Admin can grant this role' });
-
-  const target = await User.findByIdAndUpdate(
-    req.params.id,
-    { role },
-    { new: true }
-  ).select('-password');
-  if (!target) return res.status(404).json({ message: 'User not found' });
-  res.json(target);
-};
-
-// PUT /api/settings/users/:id/status — admin only
-const updateUserStatus = async (req, res) => {
-  const { status } = req.body;
-  const validStatuses = ['active', 'pending', 'suspended'];
-  if (!validStatuses.includes(status))
-    return res.status(400).json({ message: `Invalid status: ${status}` });
-
-  const target = await User.findByIdAndUpdate(
-    req.params.id,
-    { status },
-    { new: true }
-  ).select('-password');
-  if (!target) return res.status(404).json({ message: 'User not found' });
-  res.json(target);
 };
 
 // PATCH /api/settings/security — admin: update admin panel security mode
@@ -176,8 +137,6 @@ module.exports = {
   updateSettings,
   changePassword,
   updateNotifications,
-  updateUserRole,
-  updateUserStatus,
   updateAdminSecurity,
   updateTransactionPin,
   setup2FA,

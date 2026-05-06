@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { fetchMembers, createMember, updateMemberStatus, deleteMember } from '../api/members';
 import { useAuth } from '../context/AuthContext';
+import { usePageConfig } from '../context/PageConfigContext';
 
 const BLANK_FORM = {
     firstName: '', lastName: '', middleName: '',
@@ -17,6 +18,7 @@ const BLANK_FORM = {
 
 export default function MembersPage() {
     const { hasRole, user: currentUser, ROLES, ROLE_CLASSES } = useAuth();
+    const { config } = usePageConfig('members');
     const canManage = hasRole('admin', 'super_admin', 'group_leader');
 
     const [members, setMembers] = useState([]);
@@ -45,6 +47,9 @@ export default function MembersPage() {
     };
 
     const filteredMembers = members.filter(m => {
+        // Hide super_admin from the registry widget
+        if (m.role === ROLES.SUPER_ADMIN) return false;
+
         const q = searchTerm.toLowerCase();
         const matchSearch = (m.name || '').toLowerCase().includes(q) ||
             (m.email || '').toLowerCase().includes(q) ||
@@ -75,8 +80,8 @@ export default function MembersPage() {
             const updated = await updateMemberStatus(member.id, nextStatus);
             setMembers(prev => prev.map(m => m.id === member.id ? { ...m, status: updated.status } : m));
             toast.success(`${member.name} has been ${nextStatus === 'active' ? 'activated' : 'deactivated'}`);
-        } catch {
-            toast.error('Failed to update member status');
+        } catch (err) {
+            toast.error(err.message || 'Failed to update member status');
         }
     };
 
@@ -91,141 +96,176 @@ export default function MembersPage() {
         }
     };
 
+    const isOnline = (lastSeen) => {
+        if (!lastSeen) return false;
+        const diff = Date.now() - new Date(lastSeen).getTime();
+        return diff < 5 * 60 * 1000; // 5 minutes threshold
+    };
+
     if (loading) return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-            <Zap className="animate-pulse text-[#E8820C]" size={40} />
-            <p className="text-sm font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Synchronizing Brotherhood Registry...</p>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-8 animate-in fade-in duration-1000">
+            <div className="relative">
+                <div className="w-24 h-24 border-4 border-[#E8820C]/5 border-t-[#E8820C] rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-[#E8820C]">
+                    <Zap size={32} className="animate-pulse" />
+                </div>
+            </div>
+            <div className="text-center space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#1A1A2E] dark:text-white/40 italic">Synchronizing Registry...</p>
+                <div className="h-1 w-48 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden mx-auto">
+                    <div className="h-full bg-[#E8820C] w-1/2 animate-[progress_3s_ease-in-out_infinite]" />
+                </div>
+            </div>
         </div>
     );
 
+    const activeCount = members.filter(m => isOnline(m.lastSeen)).length;
+
     return (
-        <div className="max-w-7xl mx-auto pb-20 space-y-8 px-4">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-[10px] font-black text-[#E8820C] uppercase tracking-[0.3em] mb-2">
-                        <Users size={14} /> Brotherhood Directory ({filteredMembers.length} {filteredMembers.length !== members.length ? `/ ${members.length}` : 'members'})
+        <div className="max-w-7xl mx-auto pb-32 space-y-8 md:space-y-16 px-3 md:px-4 animate-in fade-in duration-1000">
+            {/* Serious Tactical Header - Reduced Height */}
+            <div className="relative bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-20 overflow-hidden shadow-2xl group border border-white/5">
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] md:w-[800px] md:h-[800px] bg-gradient-to-br from-[#E8820C] to-[#F5A623] rounded-full blur-[150px] md:blur-[200px] opacity-[0.08] group-hover:opacity-15 transition-opacity duration-1000" />
+                <div className="absolute inset-0 opacity-5 pointer-events-none" 
+                     style={{ backgroundImage: 'radial-gradient(circle, #E8820C 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10 md:gap-20">
+                    <div className="space-y-6 md:space-y-10">
+                        <div className="inline-flex items-center gap-3 md:gap-5 px-5 py-2 md:px-8 md:py-3 rounded-full bg-white/5 border border-white/10 text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] md:tracking-[0.6em] text-[#E8820C]">
+                            <Activity size={14} className="animate-pulse md:size-[16px]" /> Node Registry Status: Operational
+                        </div>
+                        <h2 className="text-4xl md:text-8xl font-black font-serif text-white leading-[0.9] tracking-tighter uppercase italic">
+                            Brotherhood<br />Registry
+                        </h2>
+                        <p className="text-white/40 text-base md:text-xl font-serif italic max-w-2xl leading-relaxed border-l-2 md:border-l-4 border-[#E8820C]/20 pl-6 md:pl-10">
+                            {config?.pageSubtitle || '"The strength of the chain is in every link. Maintaining the integrity of our registry is the first step toward sovereignty."'}
+                        </p>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-serif font-black text-[#1A1A2E] dark:text-white tracking-tight">Brotherhood Registry</h1>
-                    <p className="text-sm text-black/40 dark:text-white/40 font-medium">Complete brotherhood directory with real-time status management</p>
+
+                    <div className="grid grid-cols-2 lg:flex lg:flex-col gap-4 md:gap-6 w-full lg:w-auto">
+                        <div className="bg-white/5 backdrop-blur-3xl p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl flex flex-col items-center text-center group/stat">
+                            <p className="text-4xl md:text-6xl font-black text-white italic group-hover:text-[#E8820C] transition-colors">{members.length}</p>
+                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.5em] text-white/30 mt-2 md:mt-4">Total Active Nodes</p>
+                        </div>
+                        <div className="bg-[#E8820C] p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-[#E8820C]/20 flex flex-col items-center text-center group/stat hover:-translate-y-2 transition-all">
+                            <p className="text-4xl md:text-6xl font-black text-white italic">{activeCount}</p>
+                            <p className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] md:tracking-[0.5em] text-white/50 mt-2 md:mt-4">Live Uplinks</p>
+                        </div>
+                    </div>
                 </div>
-                {canManage && (
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="group relative px-8 py-4 bg-[#1A1A2E] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:-translate-y-1 active:scale-95 transition-all overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#E8820C] to-[#F5A623] opacity-0 group-hover:opacity-10 transition-opacity" />
-                        <span className="relative flex items-center gap-3"><UserPlus size={18} /> Induct New Brother</span>
-                    </button>
-                )}
             </div>
 
-            {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-3 relative group">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-colors" size={20} />
+            {/* Control Bar - Reduced Padding and Sizes */}
+            <div className="bg-white dark:bg-[#111827]/95 backdrop-blur-3xl rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 shadow-2xl border border-black/5 dark:border-white/10 flex flex-col lg:flex-row items-center gap-4 md:gap-8 relative z-40 -mt-10 mx-2 md:mx-10 ring-1 ring-white/5">
+                <div className="flex-1 w-full relative group">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-all duration-500" size={18} />
                     <input
                         type="text"
-                        placeholder="Search by name, email or phone..."
+                        placeholder="SCAN NODES..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white dark:bg-[#0B1221] border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-16 pr-6 py-5 text-sm font-bold text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 focus:ring-[#E8820C]/10 focus:border-[#E8820C]/30 transition-all placeholder:text-black/20 dark:placeholder:text-white/20"
+                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl pl-14 pr-6 py-4 text-[10px] font-black uppercase tracking-widest outline-none focus:bg-white dark:bg-[#111827] focus:shadow-2xl transition-all shadow-inner dark:text-white"
                     />
                 </div>
-                <div className="relative">
-                    <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20" size={18} />
-                    <select
-                        value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value)}
-                        className="w-full bg-white dark:bg-[#0B1221] border border-black/5 dark:border-white/10 rounded-[1.5rem] pl-14 pr-6 py-5 text-[10px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white shadow-sm outline-none focus:ring-4 transition-all appearance-none cursor-pointer"
-                    >
-                        <option value="all">All Roles</option>
-                        {Object.entries(ROLE_CLASSES).map(([role, { label }]) => (
-                            <option key={role} value={role}>{label}</option>
-                        ))}
-                    </select>
+                
+                <div className="flex items-center gap-3 w-full lg:w-auto">
+                    <div className="relative group/select flex-1">
+                        <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-[#E8820C]" size={16} />
+                        <select
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl pl-12 pr-8 py-4 text-[9px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="all">ALL NODES</option>
+                            {Object.entries(ROLE_CLASSES).map(([role, { label }]) => (
+                                <option key={role} value={role}>{label.toUpperCase()}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {canManage && (
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="px-6 py-4 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-2xl hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3 group/btn"
+                        >
+                            <UserPlus size={16} className="group-hover/btn:rotate-12 transition-transform" /> Induct
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Member Grid */}
+            {/* Member Grid - Optimized for Mobile */}
             {filteredMembers.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredMembers.map((member) => {
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 px-2 md:px-4">
+                    {filteredMembers.map((member, idx) => {
                         const badge = ROLE_CLASSES[member.role] || ROLE_CLASSES.member;
                         const Icon = badge.icon;
                         const initials = (member.name || 'RR').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                         const isActive = member.status === 'active';
+                        const online = isOnline(member.lastSeen);
                         const isSelf = member._id === currentUser?.id || member.id === currentUser?.id;
 
                         return (
                             <div
                                 key={member.id}
                                 onClick={() => setViewMember(member)}
-                                className="group bg-white dark:bg-[#0B1221] rounded-[2.5rem] p-6 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden cursor-pointer"
+                                className="group bg-white dark:bg-[#111827] rounded-[2rem] md:rounded-[3rem] p-5 md:p-8 border border-black/5 dark:border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden cursor-pointer"
+                                style={{ animationDelay: `${idx * 30}ms` }}
                             >
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-full -mr-10 -mt-10 group-hover:scale-[3] transition-transform duration-700" />
 
-                                <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+                                <div className="relative z-10 flex flex-col items-center text-center space-y-4 md:space-y-6">
                                     {/* Avatar */}
-                                    <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center text-white text-xl font-serif font-black shadow-xl relative overflow-hidden"
+                                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-[2rem] flex items-center justify-center text-white text-lg font-serif font-black shadow-xl relative group-hover:scale-105 transition-transform duration-500 ring-4 ring-black/5 dark:ring-white/5"
                                         style={{ background: `linear-gradient(135deg, #1A1A2E, #2D2D4E)` }}>
                                         {member.facialUpload ? (
                                             <img src={member.facialUpload} alt={member.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <>
-                                                <div className="absolute inset-0 bg-gradient-to-br from-[#E8820C] to-transparent opacity-30" />
-                                                <span className="relative z-10">{initials}</span>
+                                                <div className="absolute inset-0 bg-gradient-to-br from-[#E8820C] to-transparent opacity-40" />
+                                                <span className="relative z-10 italic text-sm md:text-base">{initials}</span>
                                             </>
                                         )}
-                                        {/* Status dot */}
-                                        <div className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white shadow-lg transition-colors ${isActive ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-gray-400'}`} />
+                                        {/* Real-time Online Indicator */}
+                                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-full border-2 md:border-4 border-white dark:border-[#111827] shadow-lg transition-all duration-500 ${online ? 'bg-emerald-500 shadow-emerald-500/50 scale-110 animate-pulse' : 'bg-gray-400'}`} />
                                     </div>
 
-                                    <div className="space-y-1 w-full">
-                                        <h3 className="text-base font-serif font-black text-[#1A1A2E] dark:text-white leading-tight truncate">{member.name}</h3>
-                                        <span
-                                            className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
-                                            style={{ backgroundColor: `${badge.color}15`, color: badge.color, borderColor: `${badge.color}25` }}
-                                        >
-                                            <Icon size={10} /> {badge.label}
-                                        </span>
+                                    <div className="space-y-1.5 w-full">
+                                        <h3 className="text-sm md:text-base font-serif font-black text-[#1A1A2E] dark:text-white leading-tight italic truncate group-hover:text-[#E8820C] transition-colors">{member.name}</h3>
+                                        <div className="flex justify-center">
+                                            <span
+                                                className="inline-flex items-center gap-1 text-[7px] md:text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full border shadow-sm"
+                                                style={{ backgroundColor: `${badge.color}10`, color: badge.color, borderColor: `${badge.color}20` }}
+                                            >
+                                                <Icon size={10} /> {badge.label}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div className="w-full pt-4 border-t border-black/5 dark:border-white/10 space-y-2.5">
-                                        <div className="flex items-center gap-3 text-[11px] font-bold text-black/40 dark:text-white/40">
-                                            <div className="w-7 h-7 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center shrink-0">
-                                                <Phone size={13} className="text-black/20 dark:text-white/20" />
-                                            </div>
+                                    <div className="w-full pt-4 border-t border-black/5 dark:border-white/10 space-y-2">
+                                        <div className="flex items-center gap-3 text-[8px] md:text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">
+                                            <Phone size={12} className="text-black/20 dark:text-white/20 shrink-0" />
                                             <span className="truncate">{member.phone || 'N/A'}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-[11px] font-bold text-black/40 dark:text-white/40">
-                                            <div className="w-7 h-7 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center shrink-0">
-                                                <Mail size={13} className="text-black/20 dark:text-white/20" />
-                                            </div>
+                                        <div className="flex items-center gap-3 text-[8px] md:text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">
+                                            <Mail size={12} className="text-black/20 dark:text-white/20 shrink-0" />
                                             <span className="truncate">{member.email}</span>
                                         </div>
                                     </div>
 
-                                    {/* Status badge */}
-                                    <div className={`w-full text-center py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 text-gray-400'}`}>
-                                        {member.status || 'active'}
-                                    </div>
-
-                                    {/* Action buttons */}
+                                    {/* Action Sector */}
                                     {canManage && !isSelf && (
                                         <div className="flex items-center gap-2 w-full pt-1" onClick={e => e.stopPropagation()}>
                                             <button
                                                 onClick={() => handleToggleStatus(member)}
-                                                title={isActive ? 'Deactivate' : 'Activate'}
-                                                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 ${isActive ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100'}`}
+                                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all active:scale-90 shadow-lg ${isActive ? 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
                                             >
                                                 {isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-                                                {isActive ? 'Deactivate' : 'Activate'}
+                                                {isActive ? 'Susp' : 'Actv'}
                                             </button>
                                             <button
                                                 onClick={() => setConfirmDelete(member)}
-                                                title="Remove Member"
-                                                className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-100 transition-all active:scale-95"
+                                                className="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-90 flex items-center justify-center shadow-lg shadow-red-500/5"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
@@ -237,38 +277,38 @@ export default function MembersPage() {
                     })}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-[#111827] rounded-[3rem] border-2 border-dashed border-black/5 dark:border-white/10 space-y-6 text-center">
-                    <div className="w-24 h-24 bg-gray-50 dark:bg-white/5 rounded-[2rem] flex items-center justify-center text-black/10 dark:text-white/10">
-                        <Users size={48} />
+                <div className="flex flex-col items-center justify-center py-48 bg-white dark:bg-[#111827] rounded-[4rem] border-4 border-dashed border-black/5 dark:border-white/10 space-y-8 text-center animate-in zoom-in duration-700">
+                    <div className="w-32 h-32 bg-gray-50 dark:bg-white/5 rounded-[3.5rem] flex items-center justify-center text-black/10 dark:text-white/10 shadow-inner">
+                        <Users size={64} />
                     </div>
-                    <div className="space-y-1">
-                        <h3 className="text-xl font-serif font-black text-[#1A1A2E] dark:text-white">No Members Found</h3>
-                        <p className="text-sm text-black/30 dark:text-white/30 font-medium">No brothers match the current filters.</p>
+                    <div className="space-y-3">
+                        <h3 className="text-4xl font-serif font-black text-[#1A1A2E] dark:text-white italic uppercase tracking-tighter">Node Isolation</h3>
+                        <p className="text-lg text-black/30 dark:text-white/30 font-serif italic">"No entities detected within the current spectral parameters."</p>
                     </div>
                     <button
                         onClick={() => { setSearchTerm(''); setRoleFilter('all'); }}
-                        className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-[#E8820C] hover:bg-[#E8820C]/10 rounded-xl transition-all"
+                        className="px-12 py-5 bg-[#E8820C] text-white rounded-[2rem] font-black uppercase tracking-[0.4em] text-[10px] shadow-2xl hover:scale-105 active:scale-95 transition-all"
                     >
-                        Clear Filters
+                        Reset Scanning Parameters
                     </button>
                 </div>
             )}
 
             {/* Confirm Delete Modal */}
             {confirmDelete && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} />
-                    <div className="relative bg-white dark:bg-[#0B1221] w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-black/5 dark:border-white/10 animate-in zoom-in-95 duration-200 space-y-6">
-                        <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto">
-                            <Trash2 size={28} className="text-red-500" />
+                <div className="fixed inset-0 z-[150] flex items-center justify-center px-6">
+                    <div className="absolute inset-0 bg-[#070B14]/98 backdrop-blur-3xl animate-in fade-in duration-500" onClick={() => setConfirmDelete(null)} />
+                    <div className="relative bg-white dark:bg-[#111827] w-full max-w-md rounded-[4rem] p-12 shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300 space-y-10 text-center">
+                        <div className="w-24 h-24 rounded-[2.5rem] bg-red-500/10 flex items-center justify-center mx-auto shadow-inner">
+                            <Trash2 size={48} className="text-red-500 animate-bounce" />
                         </div>
-                        <div className="text-center space-y-2">
-                            <h3 className="text-xl font-serif font-black text-[#1A1A2E] dark:text-white">Confirm Removal</h3>
-                            <p className="text-sm text-black/50 dark:text-white/50">Are you sure you want to permanently remove <strong>{confirmDelete.name}</strong> from the registry? This cannot be undone.</p>
+                        <div className="space-y-4">
+                            <h3 className="text-3xl font-serif font-black text-[#1A1A2E] dark:text-white italic">Permanent Deletion</h3>
+                            <p className="text-sm text-black/50 dark:text-white/40 font-serif italic leading-relaxed px-6">"Are you certain of this administrative action? Removing <strong>{confirmDelete.name}</strong> is an irreversible protocol."</p>
                         </div>
-                        <div className="flex gap-3">
-                            <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3 rounded-xl text-sm font-bold text-black/50 dark:text-white/50 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-all">Cancel</button>
-                            <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-3 rounded-xl text-sm font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/30">Remove</button>
+                        <div className="flex gap-4">
+                            <button onClick={() => setConfirmDelete(null)} className="flex-1 py-6 rounded-[2rem] text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-all">Cancel</button>
+                            <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-6 rounded-[2rem] text-[10px] font-black uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95 shadow-2xl shadow-red-600/30">Confirm Removal</button>
                         </div>
                     </div>
                 </div>

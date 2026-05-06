@@ -8,6 +8,7 @@ const settingsSchema = new mongoose.Schema({
   maintenanceMode: { type: Boolean, default: false },
   allowRegistration: { type: Boolean, default: true },
   groupAnnouncement: { type: String, default: '' },
+  officialMemberLimit: { type: Number, default: 20 },
 
   // Financial guardrails (Treasurer)
   weeklyContributionAmount: { type: Number, default: 100 },

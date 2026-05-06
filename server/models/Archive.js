@@ -11,13 +11,29 @@ const archiveSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['gallery', 'file'],
+    enum: ['gallery', 'file', 'advice'],
     required: true,
+  },
+  fileType: {
+    type: String,
+    enum: ['image', 'video', 'pdf', 'pptx', 'voice', 'other'],
+    default: 'other',
+  },
+  thumbnail: {
+    type: String,
   },
   uploader: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  upvotes: {
+    type: Number,
+    default: 0,
+  },
+  category: {
+    type: String,
+    default: 'others',
   }
 }, {
   timestamps: true,

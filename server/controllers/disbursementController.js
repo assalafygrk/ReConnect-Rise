@@ -34,27 +34,38 @@ const getDisbursements = async (req, res) => {
  * @access  Private/GroupLeader/Admin
  */
 const addDisbursement = async (req, res) => {
-  const { memberId, member, amount, reason, type, method, bankAccountNumber, bankName, bankAccountName } = req.body;
+  const { memberId, amount, reason, type, method, bankAccountNumber, bankName, bankAccountName, password } = req.body;
 
-  // Resolve memberId from name if not provided
-  let targetMemberId = memberId;
-  if (!targetMemberId && member) {
-    const user = await User.findOne({ name: new RegExp(`^${member}$`, 'i') });
-    if (user) targetMemberId = user._id;
+  // 1. Authority Verification
+  if (!password) {
+    res.status(400);
+    throw new Error('Institutional password is required to authorize disbursement requests');
   }
-  if (!targetMemberId) { res.status(400); throw new Error('Member identity required'); }
-  if (!amount || Number(amount) <= 0) { res.status(400); throw new Error('Valid amount required'); }
-  if (!reason) { res.status(400); throw new Error('Reason is required'); }
+
+  const requester = await User.findById(req.user._id);
+  const isMatch = await requester.matchPassword(password);
+  if (!isMatch) {
+    res.status(401);
+    throw new Error('Authority verification failed. Incorrect institutional password.');
+  }
+
+  // 2. Data Validation
+  if (!memberId) { res.status(400); throw new Error('Beneficiary identity required'); }
+  if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) { 
+    res.status(400); 
+    throw new Error('Valid magnitude (amount) required'); 
+  }
+  if (!reason) { res.status(400); throw new Error('Distribution reasoning is required'); }
 
   const disbursement = await Disbursement.create({
-    memberId: targetMemberId,
-    amount: Number(amount),
+    memberId,
+    amount: parseFloat(amount),
     reason,
     type: type || 'general',
     method: method || 'wallet',
-    bankAccountNumber: bankAccountNumber || undefined,
-    bankName: bankName || undefined,
-    bankAccountName: bankAccountName || undefined,
+    bankAccountNumber: (method === 'bank_transfer') ? bankAccountNumber : undefined,
+    bankName: (method === 'bank_transfer') ? bankName : undefined,
+    bankAccountName: (method === 'bank_transfer') ? bankAccountName : undefined,
     requestedBy: req.user._id,
     status: 'pending',
   });

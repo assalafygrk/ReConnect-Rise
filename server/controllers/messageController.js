@@ -3,14 +3,18 @@ const Message = require('../models/Message');
 const getMessages = async (req, res) => {
   const { roomId } = req.query;
   const messages = await Message.find({ roomId: roomId || 'public' })
-    .populate('sender', 'name')
+    .populate('sender', 'name role facialUpload')
     .sort({ createdAt: 1 });
   
-  const transformed = messages.map(m => ({
-    ...m._doc,
-    senderName: m.sender?.name || 'Unknown',
-    isMe: m.sender?._id.toString() === req.user?._id.toString()
-  }));
+  const transformed = messages.map(m => {
+    const isSuperAdmin = m.sender?.role === 'super_admin';
+    return {
+      ...m._doc,
+      senderName: isSuperAdmin ? 'ReConnect & Rise System' : (m.sender?.name || 'Unknown'),
+      senderAvatar: isSuperAdmin ? '/system-avatar.png' : m.sender?.facialUpload,
+      isMe: m.sender?._id.toString() === req.user?._id.toString()
+    };
+  });
   
   res.json(transformed);
 };
@@ -25,10 +29,13 @@ const sendMessage = async (req, res) => {
     content,
   });
   
-  const populated = await Message.findById(message._id).populate('sender', 'name');
+  const populated = await Message.findById(message._id).populate('sender', 'name role facialUpload');
+  const isSuperAdmin = populated.sender?.role === 'super_admin';
+  
   res.status(201).json({
     ...populated._doc,
-    senderName: populated.sender?.name || 'Unknown',
+    senderName: isSuperAdmin ? 'ReConnect & Rise System' : (populated.sender?.name || 'Unknown'),
+    senderAvatar: isSuperAdmin ? '/system-avatar.png' : populated.sender?.facialUpload,
     isMe: true
   });
 };

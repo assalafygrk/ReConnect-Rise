@@ -10,15 +10,18 @@ import {
     Search, Download, Trash2, Shield, ScanFace, Camera,
     ChevronDown, UserCheck, ShieldAlert as AlertIcon, Copy
 } from 'lucide-react';
+import { SYSTEM_NAME } from '../constants/roles';
 import { QRCodeCanvas } from 'qrcode.react';
 import { fetchMembers } from '../api/members';
 import {
     fetchSettings, updateSettings,
     changePassword, updateNotifications,
     updateAdminSecurity, updateUserRole, updateUserStatus,
-    updateTransactionPin,
     setup2FA, verify2FA, disable2FA
 } from '../api/settings';
+import { 
+    apiSetTransactionPin, apiGetProfile, apiChangeTransactionPin 
+} from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { getLogs, addLog, clearLogs, exportLogsCSV } from '../api/auditLog';
 import AdminAuthGate from '../components/admin/AdminAuthGate';
@@ -28,6 +31,8 @@ export default function SettingsPage() {
     const navigate = useNavigate();
     const {
         user: currentUser,
+        userProfile,
+        setUserProfile,
         hasRole,
         adminPanelUnlocked,
         unlockAdminPanel,
@@ -66,7 +71,7 @@ export default function SettingsPage() {
     // Form states
     const [pwForm, setPwForm] = useState({ current: '', next: '' });
     const [pwSaving, setPwSaving] = useState(false);
-    const [pinDigits, setPinDigits] = useState(['', '', '', '']);
+    const [pinForm, setPinForm] = useState({ old: '', new: '', confirm: '' });
     const [pinSaving, setPinSaving] = useState(false);
 
     // 2FA State
@@ -101,7 +106,7 @@ export default function SettingsPage() {
         setSaving(true);
         try {
             await updateSettings(settings);
-            addLog(currentUser?.name || 'Admin', 'Settings Updated', 'System-wide protocols updated', 'admin');
+            addLog(currentUser?.role === 'super_admin' ? SYSTEM_NAME : (currentUser?.name || 'Admin'), 'Settings Updated', 'System-wide protocols updated', 'admin');
             refreshLogs();
             toast.success('Omni-system Protocols Synchronized');
         } catch (err) {
@@ -115,7 +120,7 @@ export default function SettingsPage() {
         try {
             await updateUserRole(id, newRole);
             setMembers(prev => prev.map(m => (m._id === id || m.id === id) ? { ...m, role: newRole } : m));
-            addLog(currentUser?.name || 'Admin', 'Role Updated', `User ${id} role changed to ${newRole}`, 'admin');
+            addLog(currentUser?.role === 'super_admin' ? SYSTEM_NAME : (currentUser?.name || 'Admin'), 'Role Updated', `User ${id} role changed to ${newRole}`, 'admin');
             refreshLogs();
             toast.success('Member Access Level Updated');
         } catch (err) {
@@ -186,14 +191,24 @@ export default function SettingsPage() {
 
     const handlePinSubmit = async (e) => {
         e.preventDefault();
-        const pin = pinDigits.join('');
-        if (pin.length !== 4) return toast.error('PIN must be 4 digits');
+        if (pinForm.new !== pinForm.confirm) return toast.error('New PINs do not match');
+        if (pinForm.new.length !== 4) return toast.error('PIN must be 4 digits');
+        
         setPinSaving(true);
         try {
-            await updateTransactionPin(pin);
-            toast.success('Transaction PIN Locked');
+            if (userProfile?.hasTransactionPin) {
+                await apiChangeTransactionPin(pinForm.old, pinForm.new);
+            } else {
+                await apiSetTransactionPin(pinForm.new);
+            }
+            toast.success('Transaction PIN Security Protocol Updated');
+            
+            // Refresh profile to update hasTransactionPin status
+            const updatedProfile = await apiGetProfile();
+            setUserProfile(updatedProfile);
+            
             setActiveModal(null);
-            setPinDigits(['', '', '', '']);
+            setPinForm({ old: '', new: '', confirm: '' });
         } catch (err) {
             toast.error(err.message || 'PIN configuration failed');
         } finally {
@@ -254,7 +269,7 @@ export default function SettingsPage() {
                                 <Users size={24} className="text-black/10" />
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                                {members.map(member => (
+                                {members.filter(m => m.role !== ROLES.SUPER_ADMIN).map(member => (
                                     <button
                                         key={member._id || member.id}
                                         onClick={() => setSelectedMember(member)}
@@ -402,7 +417,7 @@ export default function SettingsPage() {
                                     onChange={(e) => handleRoleUpdate(selectedMember._id || selectedMember.id, e.target.value)}
                                     className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
                                 >
-                                    {Object.entries(ROLES).map(([key, value]) => (
+                                    {Object.entries(ROLES).filter(([key, value]) => value !== ROLES.SUPER_ADMIN).map(([key, value]) => (
                                         <option key={value} value={value}>
                                             {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                         </option>
@@ -502,20 +517,38 @@ export default function SettingsPage() {
                             )}
 
                             {activeModal === 'pin' && (
-                                <form onSubmit={handlePinSubmit} className="space-y-8">
-                                    <div className="flex gap-4 justify-center">
-                                        {pinDigits.map((d, i) => (
-                                            <input key={i} id={`pin-modal-${i}`} type="password" maxLength="1" required value={d} onChange={e => {
-                                                const val = e.target.value.slice(-1);
-                                                const newPin = [...pinDigits];
-                                                newPin[i] = val;
-                                                setPinDigits(newPin);
-                                                if (val && i < 3) document.getElementById(`pin-modal-${i + 1}`)?.focus();
-                                            }} className="w-16 h-20 text-center bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-2xl text-3xl font-black outline-none focus:border-[#E8820C]/30" placeholder="-" />
-                                        ))}
+                                <form onSubmit={handlePinSubmit} className="space-y-6">
+                                    <div className="text-center space-y-2 mb-6">
+                                        <div className="w-12 h-12 bg-[#E8820C]/10 rounded-xl flex items-center justify-center mx-auto text-[#E8820C]">
+                                            <Shield size={24} />
+                                        </div>
+                                        <p className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">
+                                            {userProfile?.hasTransactionPin ? 'Rotate Security PIN' : 'Initialize Transaction PIN'}
+                                        </p>
                                     </div>
-                                    <button type="submit" disabled={pinSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
-                                        {pinSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Lock Transaction Vault'}
+
+                                    {userProfile?.hasTransactionPin && (
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">Current PIN</label>
+                                            <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.old} onChange={e => setPinForm({ ...pinForm, old: e.target.value })}
+                                                className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">New Security PIN</label>
+                                        <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.new} onChange={e => setPinForm({ ...pinForm, new: e.target.value })}
+                                            className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">Confirm New PIN</label>
+                                        <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.confirm} onChange={e => setPinForm({ ...pinForm, confirm: e.target.value })}
+                                            className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
+                                    </div>
+
+                                    <button type="submit" disabled={pinSaving} className="w-full py-6 mt-4 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50">
+                                        {pinSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Synchronize Security PIN'}
                                     </button>
                                 </form>
                             )}
