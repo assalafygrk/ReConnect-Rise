@@ -125,3 +125,13 @@ export async function disable2FA() {
     if (!res.ok) throw new Error(data.message || 'Failed to disable 2FA');
     return data;
 }
+export async function verifyAdminCredential(mode, credential, password) {
+    const res = await fetch(`${BASE_URL}/settings/verify-admin`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ mode, credential, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Access Denied');
+    return data;
+}

@@ -1,15 +1,15 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { addLog } from '../api/auditLog';
-import { fetchSettings, updateSettings } from '../api/settings';
+import { fetchSettings, updateSettings, verifyAdminCredential, updateAdminSecurity } from '../api/settings';
 import { ROLES, ROLE_CLASSES, ROLE_HIERARCHY } from '../constants/roles';
 import { apiGetProfile } from '../api/auth';
 
 const AuthContext = createContext(null);
 
-const ADMIN_PASS_KEY = 'rr_admin_panel_pass'; // stores a simple hash
-const ADMIN_2FA_KEY = 'rr_admin_2fa_code';    // stores the mock 6-digit TOTP
-const ADMIN_SEC_MODE = 'rr_admin_sec_mode';   // 'password' | '2fa'
+const ADMIN_SEC_MODE = 'rr_admin_sec_mode';   // 'password' | '2fa' | 'facial'
+const UNLOCK_KEY = 'rr_admin_unlock_ts';
+const UNLOCK_DURATION = 10 * 60 * 1000; // 10 minutes
 
 function parseJwt(token) {
     try {
@@ -57,39 +57,57 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     // --- Admin Panel Gate State ---
-    // Session-only — resets on page reload for security
-    const [adminPanelUnlocked, setAdminPanelUnlocked] = useState(false);
+    const [adminPanelUnlocked, setAdminPanelUnlocked] = useState(() => {
+        const ts = localStorage.getItem(UNLOCK_KEY);
+        if (ts && (Date.now() - parseInt(ts)) < UNLOCK_DURATION) {
+            return true;
+        }
+        return false;
+    });
+
+    // Session Heartbeat: Auto-lock after 10 mins
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (adminPanelUnlocked) {
+                const ts = localStorage.getItem(UNLOCK_KEY);
+                if (!ts || (Date.now() - parseInt(ts)) >= UNLOCK_DURATION) {
+                    setAdminPanelUnlocked(false);
+                    localStorage.removeItem(UNLOCK_KEY);
+                    toast.error('Admin session expired for security');
+                }
+            }
+        }, 30000); // Check every 30s
+        return () => clearInterval(interval);
+    }, [adminPanelUnlocked]);
 
     const [adminSecurityMode, setAdminSecurityModeState] = useState(() => {
         return localStorage.getItem(ADMIN_SEC_MODE) || 'password';
-    });
-
-    // Mock 2FA code (6 digits stored locally; shown to admin when they enable 2FA)
-    const [admin2FACode] = useState(() => {
-        let code = localStorage.getItem(ADMIN_2FA_KEY);
-        if (!code) {
-            code = String(Math.floor(100000 + Math.random() * 900000));
-            localStorage.setItem(ADMIN_2FA_KEY, code);
-        }
-        return code;
     });
 
     useEffect(() => {
         const loadInitialSettings = async () => {
             try {
                 const settings = await fetchSettings();
-                if (settings && settings.enabledPages) {
-                    setEnabledPages(prev => {
-                        const merged = { ...prev, ...settings.enabledPages };
-                        // Ensure critical public pages don't get locked out if missing from DB
-                        if (merged.login === undefined) merged.login = true;
-                        if (merged.register === undefined) merged.register = true;
-                        localStorage.setItem('rr_enabled_pages', JSON.stringify(merged));
-                        return merged;
-                    });
+                if (settings) {
+                    if (settings.enabledPages) {
+                        setEnabledPages(prev => {
+                            const merged = { ...prev, ...settings.enabledPages };
+                            if (merged.login === undefined) merged.login = true;
+                            if (merged.register === undefined) merged.register = true;
+                            localStorage.setItem('rr_enabled_pages', JSON.stringify(merged));
+                            return merged;
+                        });
+                    }
+                    
+                    // Priority: Always default to password if nothing set or if facial is unconfigured
+                    let mode = settings.adminSecurityMode || 'password';
+                    
+                    setAdminSecurityModeState(mode);
+                    localStorage.setItem(ADMIN_SEC_MODE, mode);
                 }
             } catch (err) {
                 console.error('Failed to load system settings:', err);
+                setAdminSecurityModeState('password');
             }
         };
 
@@ -110,13 +128,6 @@ export function AuthProvider({ children }) {
         setLoading(false);
     }, []);
 
-    // Initialise default admin password hash if not set
-    useEffect(() => {
-        if (!localStorage.getItem(ADMIN_PASS_KEY)) {
-            localStorage.setItem(ADMIN_PASS_KEY, simpleHash('rr2026'));
-        }
-    }, []);
-
     const login = (token) => {
         localStorage.setItem('rr_token', token);
         const payload = parseJwt(token);
@@ -129,6 +140,7 @@ export function AuthProvider({ children }) {
     const logout = () => {
         localStorage.removeItem('rr_token');
         localStorage.removeItem('rr_mock_role');
+        localStorage.removeItem(UNLOCK_KEY);
         setUser(null);
         setUserProfile(null);
         setActiveRole(null);
@@ -171,13 +183,10 @@ export function AuthProvider({ children }) {
     };
 
     const isPageEnabled = (pageId) => {
-        // Strict enforcement for public portals — admins do not bypass this
-        // This allows admins to actually see the locked state when they disable it
         if (pageId === 'login' || pageId === 'register') {
             return enabledPages[pageId];
         }
 
-        // super_admin and admin always have access to all internal pages
         if (activeRole === ROLES.SUPER_ADMIN || activeRole === ROLES.ADMIN) return true;
         
         return enabledPages[pageId];
@@ -186,68 +195,54 @@ export function AuthProvider({ children }) {
     const hasRole = (...roles) => {
         if (!user) return false;
         const effective = activeRole || user.role;
-        // super_admin inherits ALL roles automatically
         if (effective === ROLES.SUPER_ADMIN || effective === ROLES.ADMIN) return true;
         return roles.includes(effective);
     };
 
     // ---- Admin Panel Gate ----
-    /** Attempt to unlock admin panel. Returns true on success. */
-    const unlockAdminPanel = useCallback((secret) => {
-        const mode = adminSecurityMode;
-        let valid = false;
+    /** Attempt to unlock admin panel. Returns success object. */
+    const unlockAdminPanel = useCallback(async (secret, overrideMode, password) => {
+        try {
+            const mode = overrideMode || adminSecurityMode;
+            const data = await verifyAdminCredential(mode, secret, password);
+            
+            if (data.step === 1) {
+                // Multi-step authentication in progress
+                return data;
+            }
 
-        if (mode === 'password') {
-            const stored = localStorage.getItem(ADMIN_PASS_KEY);
-            valid = simpleHash(secret) === stored;
-        } else if (mode === '2fa') {
-            const stored = localStorage.getItem(ADMIN_2FA_KEY);
-            valid = secret.replace(/\s/g, '') === stored;
-        } else if (mode === 'facial') {
-            valid = secret === 'mock-face-scan-success';
-        }
-
-        // super_admin never needs a password — always unlocked
-        if (user?.role === 'super_admin') {
             setAdminPanelUnlocked(true);
-            return true;
-        }
-
-        if (valid) {
-            setAdminPanelUnlocked(true);
+            localStorage.setItem(UNLOCK_KEY, Date.now().toString());
             addLog(user?.name || 'Admin', 'Admin Panel Unlocked', `Mode: ${mode}`, 'security');
-            return true;
+            return data;
+        } catch (err) {
+            toast.error(err.message || 'Access Denied');
+            throw err; // Re-throw to allow component-level error handling
         }
-        return false;
     }, [adminSecurityMode, user]);
 
     const lockAdminPanel = useCallback(() => {
         setAdminPanelUnlocked(false);
+        localStorage.removeItem(UNLOCK_KEY);
         addLog(user?.name || 'Admin', 'Admin Panel Locked', '', 'security');
+        toast.success('Admin panel locked');
     }, [user]);
 
     /** Set the security mode and persist it */
-    const setAdminSecurityMode = useCallback((mode) => {
-        localStorage.setItem(ADMIN_SEC_MODE, mode);
-        setAdminSecurityModeState(mode);
-        addLog(user?.name || 'Admin', 'Security Mode Changed', `Mode: ${mode}`, 'security');
-        let modeName = 'Password';
-        if (mode === '2fa') modeName = 'Two-Factor Auth';
-        if (mode === 'facial') modeName = 'Facial Recognition';
-        toast.success(`Admin panel now secured via ${modeName}`);
+    const setAdminSecurityMode = useCallback(async (mode) => {
+        try {
+            await updateAdminSecurity(mode);
+            localStorage.setItem(ADMIN_SEC_MODE, mode);
+            setAdminSecurityModeState(mode);
+            addLog(user?.name || 'Admin', 'Security Mode Changed', `Mode: ${mode}`, 'security');
+            let modeName = 'Password';
+            if (mode === '2fa') modeName = 'Two-Factor Auth';
+            if (mode === 'facial') modeName = 'Facial Recognition';
+            toast.success(`Admin panel now secured via ${modeName}`);
+        } catch (err) {
+            toast.error(err.message || 'Failed to update security mode');
+        }
     }, [user]);
-
-    /** Change the stored admin panel password */
-    const setAdminPanelPassword = useCallback((newPass) => {
-        localStorage.setItem(ADMIN_PASS_KEY, simpleHash(newPass));
-        addLog(user?.name || 'Admin', 'Admin Password Updated', '', 'security');
-        toast.success('Admin panel password updated');
-    }, [user]);
-
-    /** Returns the mock 2FA code (for display in Settings when enabling 2FA) */
-    const getAdmin2FACode = useCallback(() => {
-        return localStorage.getItem(ADMIN_2FA_KEY) || admin2FACode;
-    }, [admin2FACode]);
 
     return (
         <AuthContext.Provider value={{
@@ -270,8 +265,6 @@ export function AuthProvider({ children }) {
             unlockAdminPanel,
             lockAdminPanel,
             setAdminSecurityMode,
-            setAdminPanelPassword,
-            getAdmin2FACode,
             ROLES,
             ROLE_CLASSES,
             ROLE_HIERARCHY

@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { generateSecret, generateURI, verify } = require('otplib');
+
+// Helper to catch async errors
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
 
 // Frontend uses different role slugs — map DB roles to frontend slugs
 const ROLE_MAP = {
@@ -21,6 +27,7 @@ const generateToken = (user) => {
       name: user.name,
       email: user.email,
       role: mapRole(user.role),
+      twoFactorEnabled: !!user.twoFactorEnabled,
     },
     process.env.JWT_SECRET,
     { expiresIn: '30d' }
@@ -38,14 +45,25 @@ const authUser = async (req, res) => {
     throw new Error('Invalid email format');
   }
 
-  if (!password || password.length < 8 || password.length > 64) {
-    res.status(400);
-    throw new Error('Password must be between 8 and 64 characters');
-  }
-
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select('+password');
 
   if (user && (await user.matchPassword(password))) {
+    // If 2FA is enabled, don't issue the full token yet
+    if (user.twoFactorEnabled) {
+      // Issue a short-lived "pre-auth" token that only allows 2FA verification
+      const preAuthToken = jwt.sign(
+        { id: user._id, type: 'pre-auth' },
+        process.env.JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+      
+      return res.json({
+        twoFactorRequired: true,
+        preAuthToken,
+        email: user.email
+      });
+    }
+
     res.json({
       token: generateToken(user),
       user: {
@@ -53,11 +71,54 @@ const authUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: mapRole(user.role),
+        twoFactorEnabled: !!user.twoFactorEnabled,
       }
     });
   } else {
     res.status(401);
     throw new Error('Invalid email or password');
+  }
+};
+
+// @desc    Verify 2FA code for Login
+// @route   POST /api/users/login/2fa
+// @access  Public
+const verifyLogin2FA = async (req, res) => {
+  const { token, preAuthToken } = req.body;
+
+  if (!token || !preAuthToken) {
+    return res.status(400).json({ message: 'Token and pre-auth session required' });
+  }
+
+  try {
+    const decoded = jwt.verify(preAuthToken, process.env.JWT_SECRET);
+    if (decoded.type !== 'pre-auth') {
+      return res.status(401).json({ message: 'Invalid authentication session' });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user || !user.twoFactorSecret) {
+      return res.status(404).json({ message: 'Security profile not found' });
+    }
+
+    const result = await verify({ token, secret: user.twoFactorSecret });
+
+    if (!result || !result.valid) {
+      return res.status(401).json({ message: 'Invalid 2FA code' });
+    }
+
+    res.json({
+      token: generateToken(user),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: mapRole(user.role),
+        twoFactorEnabled: !!user.twoFactorEnabled,
+      }
+    });
+  } catch (err) {
+    res.status(401).json({ message: 'Session expired or invalid' });
   }
 };
 
@@ -284,11 +345,12 @@ const changeTransactionPin = async (req, res) => {
 };
 
 module.exports = {
-  authUser,
-  registerUser,
-  getUserProfile,
-  updateUserProfile,
-  updatePassword,
-  setTransactionPin,
-  changeTransactionPin,
+  authUser: asyncHandler(authUser),
+  verifyLogin2FA: asyncHandler(verifyLogin2FA),
+  registerUser: asyncHandler(registerUser),
+  getUserProfile: asyncHandler(getUserProfile),
+  updateUserProfile: asyncHandler(updateUserProfile),
+  updatePassword: asyncHandler(updatePassword),
+  setTransactionPin: asyncHandler(setTransactionPin),
+  changeTransactionPin: asyncHandler(changeTransactionPin),
 };

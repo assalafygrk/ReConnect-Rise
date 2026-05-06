@@ -523,7 +523,7 @@ export default function WalletPage() {
                             ) : (
                                 <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 text-center space-y-2">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-blue-800 dark:text-blue-200">Fixed Weekly Amount</p>
-                                    <p className="text-3xl font-black text-blue-600 font-serif">100</p>
+                                    <p className="text-3xl font-black text-blue-600 font-serif">{data?.weeklyContributionAmount || 100}</p>
                                     <p className="text-[10px] font-bold text-blue-600/60 pt-2">Will be deducted automatically from wallet</p>
                                 </div>
                             )}

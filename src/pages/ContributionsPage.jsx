@@ -81,7 +81,7 @@ export default function ContributionsPage() {
     const handleMarkPaid = async (memberId, memberName, paymentChannel = 'cash') => {
         setActionLoading(memberId);
         try {
-            await markMemberPaid({ memberId, weekId: selectedWeek, paymentChannel, amount: weekData?.baseAmount || 100 });
+            await markMemberPaid({ memberId, weekId: selectedWeek, paymentChannel, amount: weekData?.baseAmount });
             toast.success(`${memberName} marked as paid (${paymentChannel})`);
             loadData(selectedWeek);
         } catch (err) {

@@ -19,7 +19,6 @@ const contributionSchema = new mongoose.Schema({
   },
   baseAmount: {
     type: Number,
-    default: 100, // The fixed weekly contribution amount
   },
   bonus: {
     type: Number,

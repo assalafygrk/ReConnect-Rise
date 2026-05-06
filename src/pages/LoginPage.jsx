@@ -5,7 +5,7 @@ import { Eye, EyeOff, ShieldCheck, ArrowRight, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useBrand } from '../context/BrandContext';
 import { usePageConfig } from '../context/PageConfigContext';
-import { apiLogin } from '../api/auth';
+import { apiLogin, apiVerifyLogin2FA } from '../api/auth';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -16,6 +16,11 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    // 2FA Flow
+    const [twoFactorStep, setTwoFactorStep] = useState(false);
+    const [preAuthToken, setPreAuthToken] = useState(null);
+    const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
 
     if (!isPageEnabled('login')) {
         return (
@@ -36,18 +41,55 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const data = await apiLogin(email, password);
+            
+            if (data.twoFactorRequired) {
+                setPreAuthToken(data.preAuthToken);
+                setTwoFactorStep(true);
+                toast.success('Identity Verified. 2FA Required.');
+                return;
+            }
+
             login(data.token);
             toast.success('Welcome back, brother!');
-            
-            if (data.user && (data.user.role === 'admin' || data.user.role === 'super_admin')) {
-                navigate('/dashboard');
-            } else {
-                navigate('/dashboard');
-            }
+            navigate('/dashboard');
         } catch (err) {
             toast.error(err.message || 'Login failed');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handle2FASubmit = async (e) => {
+        e?.preventDefault();
+        const token = otpDigits.join('');
+        if (token.length !== 6) {
+            toast.error('Please enter the 6-digit code');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const data = await apiVerifyLogin2FA(token, preAuthToken);
+            login(data.token);
+            toast.success('Multifactor Authentication Successful');
+            navigate('/dashboard');
+        } catch (err) {
+            toast.error(err.message || '2FA Verification failed');
+            setOtpDigits(['', '', '', '', '', '']);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOtpChange = (index, value) => {
+        if (!/^\d*$/.test(value)) return;
+        const newDigits = [...otpDigits];
+        newDigits[index] = value.slice(-1);
+        setOtpDigits(newDigits);
+
+        if (value && index < 5) {
+            const nextInput = document.getElementById(`otp-${index + 1}`);
+            nextInput?.focus();
         }
     };
 
@@ -120,6 +162,7 @@ export default function LoginPage() {
                             </p>
                         </div>
 
+                        {!twoFactorStep ? (
                         <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Email Address</label>
@@ -180,6 +223,44 @@ export default function LoginPage() {
                                 </span>
                             </button>
                         </form>
+                        ) : (
+                        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 text-center">
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-black text-white font-serif">Two-Factor Auth</h3>
+                                <p className="text-white/40 text-[10px] uppercase tracking-widest leading-relaxed">Identity confirmed. Enter the code from your authenticator app.</p>
+                            </div>
+
+                            <div className="flex gap-2 justify-center">
+                                {otpDigits.map((d, i) => (
+                                    <input
+                                        key={i}
+                                        id={`otp-${i}`}
+                                        type="text"
+                                        maxLength="1"
+                                        value={d}
+                                        onChange={e => handleOtpChange(i, e.target.value)}
+                                        className="w-10 h-14 text-center bg-white/5 border-2 border-white/10 rounded-xl text-xl font-black text-white outline-none focus:border-[#F5A623] transition-all"
+                                        placeholder="-"
+                                    />
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={handle2FASubmit}
+                                disabled={loading}
+                                className="w-full py-4 rounded-2xl bg-[#F5A623] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50"
+                            >
+                                {loading ? 'Verifying...' : 'Finalize Login'}
+                            </button>
+
+                            <button 
+                                onClick={() => { setTwoFactorStep(false); setOtpDigits(['','','','','','']); }}
+                                className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors"
+                            >
+                                Back to Password
+                            </button>
+                        </div>
+                        )}
 
                         {config.registrationEnabled !== false && (
                             <div className="mt-8 text-center">

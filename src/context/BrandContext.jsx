@@ -4,7 +4,7 @@ import { fetchSettings, updateSettings as apiUpdateSettings } from '../api/setti
 const DEFAULTS = {
     orgName: 'ReConnect & Rise',
     orgSlogan: 'Empowering Communities',
-    logoUrl: '/logo.jpg',   // shipped SVG in /public
+    logoUrl: '/logo.png',   // High-res real logo
 };
 
 const BrandContext = createContext(null);

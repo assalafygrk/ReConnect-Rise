@@ -180,8 +180,8 @@ const getDashboardSummary = async (req, res) => {
       },
       stats: {
         members: memberCount,
-        welfareBalance: totalWelfare,
-        loanFundBalance: totalLoanFund,
+        welfareBalance: settings.welfareTarget || 0,
+        loanFundBalance: settings.loanFundTarget || 0,
         activeLoans: activeLoans.length,
         totalLoansOut: totalLoansOut,
         pendingRequests,
@@ -192,7 +192,7 @@ const getDashboardSummary = async (req, res) => {
         avgAttendance,
         totalTxCount,
         auditLogsCount,
-        collectionRate,
+        payoutRate: memberCount > 0 ? (totalPaid / memberCount) * 100 : 0,
       },
       liquidityRatio: savingsGoal > 0 ? (poolBalance / savingsGoal) : 0
     });

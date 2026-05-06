@@ -5,12 +5,16 @@ const {
   updateNotifications,
   updateAdminSecurity, updateTransactionPin,
   setup2FA, verify2FA, disable2FA,
+  verifyAdminCredential,
 } = require('../controllers/settingsController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // System settings
 router.get('/', protect, getSettings);
 router.patch('/', protect, authorize('super_admin', 'group_leader', 'treasurer'), updateSettings);
+
+// Admin Control Security Verification
+router.post('/verify-admin', protect, verifyAdminCredential);
 
 // Personal password change (any logged-in user)
 router.post('/change-password', protect, changePassword);

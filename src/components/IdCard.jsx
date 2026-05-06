@@ -63,48 +63,48 @@ export default function IdCard({ member, className = "" }) {
                     <div className="absolute bottom-0 left-0 w-48 h-16 bg-[#1A1A2E] rounded-tr-[40px] z-0"></div>
 
                     {/* Header: Logo and Company */}
-                    <div className="flex items-center gap-2 pt-4 px-5 z-10 w-full relative">
-                        <div className="w-10 h-10 overflow-hidden rounded-sm flex items-center justify-center bg-[#1A1A2E] shrink-0" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
-                            <img src={brand.logoUrl} alt={brand.orgName} className="w-full h-full object-contain" />
+                    <div className="flex items-center gap-2 pt-3 px-5 z-10 w-full relative">
+                        <div className="w-9 h-9 overflow-hidden rounded-full flex items-center justify-center bg-white shadow-sm shrink-0 border border-black/5">
+                            <img src={brand.logoUrl} alt={brand.orgName} className="w-[85%] h-[85%] object-contain" />
                         </div>
                         <div className="mt-1">
-                            <h2 className="font-bold text-sm text-gray-900 leading-tight tracking-tight uppercase">{brand.orgName}</h2>
-                            <p className="text-[8px] text-gray-500 uppercase tracking-wider">{brand.orgSlogan}</p>
+                            <h2 className="font-bold text-[12px] text-gray-900 leading-tight tracking-tight uppercase">{brand.orgName}</h2>
+                            <p className="text-[7px] text-gray-500 uppercase tracking-wider font-medium">{brand.orgSlogan}</p>
                         </div>
                     </div>
 
-                    <div className="flex px-5 pt-3 h-full z-10 w-full relative">
+                    <div className="flex px-5 pt-2 h-full z-10 w-full relative">
                         {/* Left: Photo */}
-                        <div className="w-[35%] flex flex-col justify-start relative">
-                            <div className="w-24 h-24 rounded-full border-[5px] border-white shadow-md overflow-hidden bg-gray-100 flex items-center justify-center mt-2 z-20">
+                        <div className="w-[30%] flex flex-col justify-start relative">
+                            <div className="w-20 h-20 rounded-full border-[4px] border-white shadow-md overflow-hidden bg-gray-100 flex items-center justify-center mt-1 z-20">
                                 {member?.photo ? (
                                     <img src={member.photo} alt="Member Face" className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-[10px] text-gray-400 font-medium">No Image</span>
+                                    <span className="text-[8px] text-gray-400 font-medium">No Image</span>
                                 )}
                             </div>
                         </div>
 
                         {/* Right: Info */}
-                        <div className="flex flex-col justify-start flex-1 pt-1 ml-2">
-                            <h3 className="font-bold text-gray-900 text-lg leading-[1.1] uppercase tracking-wide truncate max-w-full overflow-hidden">{memberName}</h3>
-                            <p className="text-[10px] text-gray-600 uppercase mb-3 font-medium">{memberRole}</p>
+                        <div className="flex flex-col justify-start flex-1 pt-1 ml-4 overflow-hidden">
+                            <h3 className="font-bold text-gray-900 text-[15px] leading-[1.1] uppercase tracking-wide truncate">{memberName}</h3>
+                            <p className="text-[9px] text-indigo-600 uppercase mb-2 font-bold tracking-wider">{memberRole}</p>
 
-                            <table className="text-[8.5px] text-gray-600 font-medium w-full relative z-20">
+                            <table className="text-[8px] text-gray-600 font-medium w-full relative z-20">
                                 <tbody>
-                                    <tr className="align-top"><td className="w-10 py-[1px]">Dept</td><td className="text-gray-900"><span className="mr-1">:</span>{cardConfig.departmentLabel || 'Member'}</td></tr>
-                                    <tr className="align-top"><td className="py-[1px]">Email</td><td className="text-gray-900"><span className="mr-1">:</span>{memberEmail}</td></tr>
-                                    <tr className="align-top"><td className="py-[1px]">Phone</td><td className="text-gray-900"><span className="mr-1">:</span>{memberPhone}</td></tr>
-                                    <tr className="align-top"><td className="py-[1px]">ID no</td><td className="text-gray-900"><span className="mr-1">:</span>{memberId}</td></tr>
+                                    <tr className="align-top"><td className="w-10 py-[0.5px]">Dept</td><td className="text-gray-900 font-bold truncate max-w-[180px]"><span className="mr-1 text-gray-400">:</span>{cardConfig.departmentLabel || 'Official Member'}</td></tr>
+                                    <tr className="align-top"><td className="py-[0.5px]">Email</td><td className="text-gray-900 font-bold truncate max-w-[180px]"><span className="mr-1 text-gray-400">:</span>{memberEmail}</td></tr>
+                                    <tr className="align-top"><td className="py-[0.5px]">Phone</td><td className="text-gray-900 font-bold"><span className="mr-1 text-gray-400">:</span>{memberPhone}</td></tr>
+                                    <tr className="align-top"><td className="py-[0.5px]">ID no</td><td className="text-gray-900 font-bold"><span className="mr-1 text-gray-400">:</span>{memberId}</td></tr>
                                 </tbody>
                             </table>
 
                             {cardConfig.showQrCode !== false && (
-                                <div className="absolute right-4 bottom-5 bg-white border-2 border-gray-100 p-1 rounded-sm shadow-sm z-10">
+                                <div className="absolute right-4 bottom-5 bg-white border border-gray-100 p-1 rounded-sm shadow-sm z-10">
                                     {qrCodeUrl ? (
-                                        <img src={qrCodeUrl} alt="QR Code" width="40" height="40" className="object-contain" crossOrigin="anonymous" />
+                                        <img src={qrCodeUrl} alt="QR Code" width="36" height="36" className="object-contain" crossOrigin="anonymous" />
                                     ) : (
-                                        <div className="w-10 h-10 bg-gray-200 animate-pulse"></div>
+                                        <div className="w-9 h-9 bg-gray-200 animate-pulse"></div>
                                     )}
                                 </div>
                             )}
@@ -121,29 +121,29 @@ export default function IdCard({ member, className = "" }) {
                     <div className="absolute bottom-0 left-0 w-32 h-16 bg-[#E8820C] rounded-tr-[40px] z-0"></div>
 
                     {/* Content */}
-                    <div className="flex justify-between pt-8 px-6 z-10 w-full h-full relative">
+                    <div className="flex justify-between pt-6 px-6 z-10 w-full h-full relative">
                         {/* Back card: Company name from brand */}
-                        <div className="w-[45%] flex flex-col items-center pt-2">
-                            <h2 className="font-bold text-[13px] text-gray-900 leading-tight whitespace-nowrap mb-1">{brand.orgName.toUpperCase()}</h2>
-                            <p className="text-[7px] text-gray-500 uppercase tracking-widest mb-6 font-medium">{brand.orgSlogan}</p>
+                        <div className="w-[45%] flex flex-col items-center pt-2 overflow-hidden">
+                            <h2 className="font-bold text-[11px] text-gray-900 leading-tight mb-1 text-center truncate w-full">{brand.orgName.toUpperCase()}</h2>
+                            <p className="text-[6px] text-gray-500 uppercase tracking-[0.2em] mb-6 font-medium text-center line-clamp-2">{brand.orgSlogan}</p>
 
-                            <div className="w-10 h-10 overflow-hidden rounded-sm flex items-center justify-center bg-[#1A1A2E] shrink-0" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
-                                <img src={brand.logoUrl} alt={brand.orgName} className="w-full h-full object-contain" />
+                            <div className="w-12 h-12 overflow-hidden rounded-full flex items-center justify-center bg-white shadow-md border border-gray-100 shrink-0">
+                                <img src={brand.logoUrl} alt={brand.orgName} className="w-[80%] h-[80%] object-contain" />
                             </div>
                         </div>
 
                         {/* Terms Section */}
                         <div className="w-[55%] pl-4 flex flex-col">
-                            <h3 className="font-bold text-[11px] text-gray-900 uppercase mb-3 text-center">Term &amp; Condition</h3>
-                            <ul className="text-[8px] text-gray-500 space-y-[6px] list-disc pl-3">
-                                <li>{cardConfig.termsLine1}</li>
-                                <li>{cardConfig.termsLine2}</li>
-                                <li>{cardConfig.termsLine3}</li>
-                                <li>{cardConfig.termsLine4}</li>
+                            <h3 className="font-bold text-[10px] text-gray-900 uppercase mb-3 text-center border-b border-gray-100 pb-1">Rules & Guidelines</h3>
+                            <ul className="text-[7.5px] text-gray-500 space-y-[4px] list-disc pl-3">
+                                <li className="line-clamp-1">{cardConfig.termsLine1}</li>
+                                <li className="line-clamp-1">{cardConfig.termsLine2}</li>
+                                <li className="line-clamp-1">{cardConfig.termsLine3}</li>
+                                <li className="line-clamp-1">{cardConfig.termsLine4}</li>
                             </ul>
 
                             <div className="mt-auto absolute bottom-5 right-6 text-right">
-                                <p className="text-[10px] font-bold text-gray-800 tracking-wide uppercase">VALID THRU : {expireMonthYearStr}</p>
+                                <p className="text-[9px] font-bold text-gray-800 tracking-wide uppercase">VALID THRU : {expireMonthYearStr}</p>
                             </div>
                         </div>
                     </div>

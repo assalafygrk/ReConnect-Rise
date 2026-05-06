@@ -8,7 +8,7 @@ import {
     Loader2, Zap, ShieldAlert, Cpu, Fingerprint, UserPlus,
     X, CheckCircle2, Smartphone, Key, QrCode, Mail,
     Search, Download, Trash2, Shield, ScanFace, Camera,
-    ChevronDown, UserCheck, ShieldAlert as AlertIcon, Copy
+    ChevronDown, UserCheck, ShieldAlert as AlertIcon, Copy, AlertCircle
 } from 'lucide-react';
 import { SYSTEM_NAME } from '../constants/roles';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -19,8 +19,8 @@ import {
     updateAdminSecurity, updateUserRole, updateUserStatus,
     setup2FA, verify2FA, disable2FA
 } from '../api/settings';
-import { 
-    apiSetTransactionPin, apiGetProfile, apiChangeTransactionPin 
+import {
+    apiSetTransactionPin, apiGetProfile, apiChangeTransactionPin
 } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { getLogs, addLog, clearLogs, exportLogsCSV } from '../api/auditLog';
@@ -34,8 +34,11 @@ export default function SettingsPage() {
         userProfile,
         setUserProfile,
         hasRole,
+        login: updateAuthToken,
         adminPanelUnlocked,
         unlockAdminPanel,
+        adminSecurityMode,
+        setAdminSecurityMode,
         ROLES,
         ROLE_CLASSES
     } = useAuth();
@@ -54,6 +57,7 @@ export default function SettingsPage() {
         maintenanceMode: false,
         allowRegistration: true,
         monthlySavingsTarget: 250000,
+        weeklyContributionAmount: 100,
         loanInterestRate: 0,
         groupAnnouncement: '',
         allowProfilePhotoChange: false,
@@ -89,7 +93,7 @@ export default function SettingsPage() {
                     fetchSettings().catch(() => ({})),
                     fetchMembers().catch(() => [])
                 ]);
-                
+
                 setSettings(prev => ({ ...prev, ...(s || {}) }));
                 setMembers(m || []);
                 refreshLogs();
@@ -105,10 +109,16 @@ export default function SettingsPage() {
     const handleSaveProtocols = async () => {
         setSaving(true);
         try {
-            await updateSettings(settings);
+            const updated = await updateSettings({
+                ...settings,
+                monthlySavingsTarget: Number(settings.monthlySavingsTarget),
+                weeklyContributionAmount: Number(settings.weeklyContributionAmount),
+                loanInterestRate: Number(settings.loanInterestRate)
+            });
+            setSettings(updated);
             addLog(currentUser?.role === 'super_admin' ? SYSTEM_NAME : (currentUser?.name || 'Admin'), 'Settings Updated', 'System-wide protocols updated', 'admin');
             refreshLogs();
-            toast.success('Omni-system Protocols Synchronized');
+            toast.success('Monetary Statutes Synchronized');
         } catch (err) {
             toast.error(err.message || 'Update failed');
         } finally {
@@ -163,12 +173,27 @@ export default function SettingsPage() {
         if (token.length !== 6) return toast.error('Enter 6-digit code');
         setOtpSaving(true);
         try {
-            await verify2FA(token);
+            const data = await verify2FA(token);
+            if (data.token) updateAuthToken(data.token);
             toast.success('2FA Protocol Activated');
             setActiveModal(null);
             setOtpDigits(['', '', '', '', '', '']);
         } catch (err) {
             toast.error(err.message || 'Verification failed');
+        } finally {
+            setOtpSaving(false);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        setOtpSaving(true);
+        try {
+            const data = await disable2FA();
+            if (data.token) updateAuthToken(data.token);
+            toast.success('2FA Protocol Revoked');
+            setActiveModal(null);
+        } catch (err) {
+            toast.error(err.message || 'Revocation failed');
         } finally {
             setOtpSaving(false);
         }
@@ -193,7 +218,7 @@ export default function SettingsPage() {
         e.preventDefault();
         if (pinForm.new !== pinForm.confirm) return toast.error('New PINs do not match');
         if (pinForm.new.length !== 4) return toast.error('PIN must be 4 digits');
-        
+
         setPinSaving(true);
         try {
             if (userProfile?.hasTransactionPin) {
@@ -202,11 +227,11 @@ export default function SettingsPage() {
                 await apiSetTransactionPin(pinForm.new);
             }
             toast.success('Transaction PIN Security Protocol Updated');
-            
+
             // Refresh profile to update hasTransactionPin status
             const updatedProfile = await apiGetProfile();
             setUserProfile(updatedProfile);
-            
+
             setActiveModal(null);
             setPinForm({ old: '', new: '', confirm: '' });
         } catch (err) {
@@ -239,324 +264,391 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-12 pt-12">
-            
-            <div className="bg-gradient-to-br from-[#1A1A2E] to-[#0F172A] dark:from-[#0F172A] dark:to-[#070B14] rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-14 shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10 border border-white/5">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8820C] dark:bg-[#F5A623] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
-                <div className="space-y-4 text-center lg:text-left">
-                    <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight">System Control Panel</h1>
-                    <p className="text-white/40 text-lg font-serif italic max-w-xl leading-relaxed">Universal configuration of brotherhood operational protocols and security parameters.</p>
-                </div>
-                <button
-                    onClick={handleSaveProtocols}
-                    disabled={saving}
-                    className="w-full lg:w-auto flex items-center justify-center gap-4 px-12 py-6 rounded-[2rem] bg-[#E8820C] dark:bg-[#F5A623] text-white text-[12px] font-black uppercase tracking-[0.3em] shadow-xl hover:bg-[#F5A623] transition-all active:scale-95 disabled:opacity-50"
-                >
-                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                    {saving ? 'Synchronizing...' : 'Save All Protocols'}
-                </button>
-            </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32 space-y-12 pt-12">
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div className="lg:col-span-8 space-y-10">
-                    {isAdmin && (
-                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10">
-                            <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
-                                <div className="space-y-1">
-                                    <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Executive Council Registry</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Institutional Access Management</p>
-                                </div>
-                                <Users size={24} className="text-black/10" />
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                                {members.filter(m => m.role !== ROLES.SUPER_ADMIN).map(member => (
-                                    <button
-                                        key={member._id || member.id}
-                                        onClick={() => setSelectedMember(member)}
-                                        className="aspect-square bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-black/5 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center gap-4 hover:bg-white dark:bg-[#111827] hover:shadow-2xl hover:-translate-y-1 transition-all group"
-                                    >
-                                        <div className="w-16 h-16 rounded-2xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 flex items-center justify-center text-lg font-black text-[#1A1A2E] dark:text-white/90 group-hover:bg-[#E8820C] dark:bg-[#F5A623] group-hover:text-white transition-all shadow-sm">
-                                            {(member.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 line-clamp-1">{member.name}</p>
-                                            <p className="text-[9px] font-bold text-black/30 dark:text-white/30 uppercase tracking-widest mt-1">{(member.role || 'Member').replace(/[-_]/g, ' ')}</p>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {isTreasurer && (
-                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10">
-                            <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
-                                <div className="space-y-1">
-                                    <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Monetary Statutes</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Financial Guardrails & Compliance</p>
-                                </div>
-                                <Database size={24} className="text-black/10" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Monthly Savings Target</label>
-                                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10">
-                                        <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">₦</span>
-                                        <input
-                                            type="number"
-                                            value={settings.monthlySavingsTarget}
-                                            onChange={e => setSettings({ ...settings, monthlySavingsTarget: e.target.value })}
-                                            className="w-full bg-transparent text-2xl font-black font-serif outline-none"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Loan Interest Rate (%)</label>
-                                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10">
-                                        <input
-                                            type="number"
-                                            value={settings.loanInterestRate}
-                                            onChange={e => setSettings({ ...settings, loanInterestRate: e.target.value })}
-                                            className="w-full bg-transparent text-2xl font-black font-serif outline-none text-right"
-                                        />
-                                        <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                <div className="bg-gradient-to-br from-[#1A1A2E] to-[#0F172A] dark:from-[#0F172A] dark:to-[#070B14] rounded-[2rem] md:rounded-[3.5rem] p-8 md:p-14 shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10 border border-white/5">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8820C] dark:bg-[#F5A623] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
+                    <div className="space-y-4 text-center lg:text-left">
+                        <h1 className="text-4xl md:text-6xl font-black text-white font-serif tracking-tight">System Control Panel</h1>
+                        <p className="text-white/40 text-lg font-serif italic max-w-xl leading-relaxed">Universal configuration of brotherhood operational protocols and security parameters.</p>
+                    </div>
+                    <button
+                        onClick={handleSaveProtocols}
+                        disabled={saving}
+                        className="w-full lg:w-auto flex items-center justify-center gap-4 px-12 py-6 rounded-[2rem] bg-[#E8820C] dark:bg-[#F5A623] text-white text-[12px] font-black uppercase tracking-[0.3em] shadow-xl hover:bg-[#F5A623] transition-all active:scale-95 disabled:opacity-50"
+                    >
+                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                        {saving ? 'Synchronizing...' : 'Save All Protocols'}
+                    </button>
                 </div>
 
-                <div className="lg:col-span-4 space-y-10">
-                    <div className="bg-gradient-to-b from-[#1A1A2E] to-[#0F172A] dark:from-[#0F172A] dark:to-[#070B14] rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 dark:border-white/10 space-y-8">
-                        <div className="border-b border-white/10 pb-6">
-                            <h3 className="text-2xl font-black font-serif">Security & Access</h3>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mt-1">Credential Protection Protocols</p>
-                        </div>
-                        <div className="space-y-3">
-                            {[
-                                { id: 'password', label: 'Update Access Key', icon: Lock, action: () => setActiveModal('password') },
-                                { id: '2fa', label: '2FA Configuration', icon: ShieldCheck, action: initiate2FA },
-                                { id: 'pin', label: 'Transaction PIN', icon: Wallet, action: () => setActiveModal('pin') },
-                                { id: 'notifications', label: 'Notification Matrix', icon: Bell, action: () => setActiveModal('notifications') },
-                            ].map(item => (
-                                <button
-                                    key={item.id}
-                                    onClick={item.action}
-                                    className="w-full flex items-center justify-between p-6 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all text-left group"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <item.icon size={18} className="text-[#E8820C] dark:text-[#F5A623] group-hover:scale-110 transition-transform" />
-                                        <span className="text-xs font-black uppercase tracking-widest text-white">{item.label}</span>
-                                    </div>
-                                    <ChevronRight size={14} className="text-white/20 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            ))}
-                        </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-8 space-y-10">
                         {isAdmin && (
-                            <div className="pt-8 border-t border-white/10 space-y-6">
-                                <div className="flex items-center justify-between">
+                            <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10">
+                                <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
                                     <div className="space-y-1">
-                                        <p className="text-[11px] font-black uppercase tracking-widest">Bio-Image Updates</p>
-                                        <p className="text-[10px] text-white/30 uppercase">Member permission</p>
+                                        <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Executive Council Registry</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Institutional Access Management</p>
                                     </div>
-                                    <button
-                                        onClick={() => setSettings({ ...settings, allowProfilePhotoChange: !settings.allowProfilePhotoChange })}
-                                        className={`w-12 h-7 rounded-full p-1 transition-all ${settings.allowProfilePhotoChange ? 'bg-[#E8820C] dark:bg-[#F5A623]' : 'bg-white dark:bg-[#111827]/10'}`}
-                                    >
-                                        <div className={`w-5 h-5 rounded-full bg-white dark:bg-[#111827] shadow-xl transform transition-transform ${settings.allowProfilePhotoChange ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                                    </button>
+                                    <Users size={24} className="text-black/10" />
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                                    {members.filter(m => m.role !== ROLES.SUPER_ADMIN).map(member => (
+                                        <button
+                                            key={member._id || member.id}
+                                            onClick={() => setSelectedMember(member)}
+                                            className="aspect-square bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-black/5 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center gap-4 hover:bg-white dark:bg-[#111827] hover:shadow-2xl hover:-translate-y-1 transition-all group"
+                                        >
+                                            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 flex items-center justify-center text-lg font-black text-[#1A1A2E] dark:text-white/90 group-hover:bg-[#E8820C] dark:bg-[#F5A623] group-hover:text-white transition-all shadow-sm">
+                                                {(member.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 line-clamp-1">{member.name}</p>
+                                                <p className="text-[9px] font-bold text-black/30 dark:text-white/30 uppercase tracking-widest mt-1">{(member.role || 'Member').replace(/[-_]/g, ' ')}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {isTreasurer && (
+                            <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-8 md:p-12 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10">
+                                <div className="flex items-center justify-between mb-10 pb-6 border-b border-black/5 dark:border-white/10">
+                                    <div className="space-y-1">
+                                        <h3 className="text-2xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Monetary Statutes</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Financial Guardrails & Compliance</p>
+                                    </div>
+                                    <Database size={24} className="text-black/10" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div className="space-y-4">
+                                        <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Weekly Contribution Target</label>
+                                        <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10 group focus-within:border-amber-500/50 transition-all">
+                                            <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">₦</span>
+                                            <input
+                                                type="number"
+                                                value={settings.weeklyContributionAmount}
+                                                onChange={e => setSettings({ ...settings, weeklyContributionAmount: Number(e.target.value) })}
+                                                className="w-full bg-transparent text-2xl font-black font-serif outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Monthly Savings Target</label>
+                                        <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10 group focus-within:border-amber-500/50 transition-all">
+                                            <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">₦</span>
+                                            <input
+                                                type="number"
+                                                value={settings.monthlySavingsTarget}
+                                                onChange={e => setSettings({ ...settings, monthlySavingsTarget: Number(e.target.value) })}
+                                                className="w-full bg-transparent text-2xl font-black font-serif outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <label className="text-[11px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40 ml-4">Loan Interest Rate (%)</label>
+                                        <div className="flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-6 rounded-3xl border border-black/5 dark:border-white/10 group focus-within:border-amber-500/50 transition-all">
+                                            <input
+                                                type="number"
+                                                value={settings.loanInterestRate}
+                                                onChange={e => setSettings({ ...settings, loanInterestRate: Number(e.target.value) })}
+                                                className="w-full bg-transparent text-2xl font-black font-serif outline-none text-right"
+                                            />
+                                            <span className="text-xl font-black font-serif text-black/20 dark:text-white/20">%</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {isAdmin && (
-                        <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-10 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10 space-y-6">
-                            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-6">
-                                <h3 className="text-xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Audit Ledger</h3>
-                                <Fingerprint size={20} className="text-black/10" />
+                    <div className="lg:col-span-4 space-y-10">
+                        <div className="bg-gradient-to-b from-[#1A1A2E] to-[#0F172A] dark:from-[#0F172A] dark:to-[#070B14] rounded-[2.5rem] p-10 text-white shadow-2xl border border-white/5 dark:border-white/10 space-y-8">
+                            <div className="border-b border-white/10 pb-6">
+                                <h3 className="text-2xl font-black font-serif">Security & Access</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mt-1">Credential Protection Protocols</p>
                             </div>
-                            <div className="space-y-4">
-                                {auditLogs.slice(0, 4).map(log => (
-                                    <div key={log.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1">
-                                        <p className="text-[10px] font-black text-[#E8820C] dark:text-[#F5A623] uppercase tracking-widest">{log.category}</p>
-                                        <p className="text-xs font-black text-[#1A1A2E] dark:text-white/90 line-clamp-1">{log.action}</p>
-                                        <p className="text-[9px] font-bold text-black/20 dark:text-white/20 italic">{log.timeDisplay}</p>
-                                    </div>
+                            <div className="space-y-3">
+                                {[
+                                    { id: 'password', label: 'Update Access Key', icon: Lock, action: () => setActiveModal('password') },
+                                    {
+                                        id: '2fa',
+                                        label: currentUser?.twoFactorEnabled ? 'Revoke 2FA Protocol' : '2FA Configuration',
+                                        icon: currentUser?.twoFactorEnabled ? ShieldAlert : ShieldCheck,
+                                        action: currentUser?.twoFactorEnabled ? () => setActiveModal('disable-2fa') : initiate2FA
+                                    },
+                                    { id: 'pin', label: 'Transaction PIN', icon: Wallet, action: () => setActiveModal('pin') },
+                                    { id: 'notifications', label: 'Notification Matrix', icon: Bell, action: () => setActiveModal('notifications') },
+                                ].map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={item.action}
+                                        className="w-full flex items-center justify-between p-6 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all text-left group"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <item.icon size={18} className="text-[#E8820C] dark:text-[#F5A623] group-hover:scale-110 transition-transform" />
+                                            <span className="text-xs font-black uppercase tracking-widest text-white">{item.label}</span>
+                                        </div>
+                                        <ChevronRight size={14} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                 ))}
                             </div>
-                            <button onClick={() => setShowFullLedger(true)} className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] dark:bg-[#0F172A] transition-all active:scale-95">Open Full Manifest</button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Modals */}
-            {selectedMember && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
-                    <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
-                        <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 relative overflow-hidden">
-                            <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white transition-all"><X size={24} /></button>
-                            <div className="flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-[#111827] flex items-center justify-center text-2xl font-black text-[#1A1A2E] dark:text-white/90">
-                                    {(selectedMember.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-black text-white font-serif">{selectedMember.name}</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Council Member Records</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="p-10 space-y-8 bg-gray-50 dark:bg-white/5/50">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30 ml-4">Access Level (Role)</label>
-                                <select
-                                    value={selectedMember.role || 'member'}
-                                    onChange={(e) => handleRoleUpdate(selectedMember._id || selectedMember.id, e.target.value)}
-                                    className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
-                                >
-                                    {Object.entries(ROLES).filter(([key, value]) => value !== ROLES.SUPER_ADMIN).map(([key, value]) => (
-                                        <option key={value} value={value}>
-                                            {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="p-8 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[2.5rem] space-y-4">
-                                <div className="flex items-center gap-3"><Mail size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90">{selectedMember.email}</p></div>
-                                <div className="flex items-center gap-3"><UserCheck size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest">{selectedMember.status || 'Active'}</p></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeModal && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/95 backdrop-blur-md" onClick={() => setActiveModal(null)}></div>
-                    <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
-                        <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 flex items-center gap-6">
-                            <div className="w-16 h-16 bg-white dark:bg-[#111827]/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#E8820C] dark:text-[#F5A623]">
-                                {activeModal === 'password' && <Lock size={28} />}
-                                {activeModal === '2fa' && <ShieldCheck size={28} />}
-                                {activeModal === 'pin' && <Wallet size={28} />}
-                                {activeModal === 'notifications' && <Bell size={28} />}
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-black text-white font-serif capitalize">{activeModal.replace('-', ' ')}</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Institutional Security Protocol</p>
-                            </div>
-                        </div>
-
-                        <div className="p-10 bg-gray-50 dark:bg-white/5/50">
-                            {activeModal === '2fa' && (
-                                <div className="space-y-10">
-                                    <div className="space-y-4">
-                                        <h4 className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest text-center">Step 1: Synchronize Authenticator</h4>
-                                        <div className="mx-auto w-48 h-48 bg-white dark:bg-[#111827] p-4 rounded-3xl border border-black/10 shadow-2xl flex items-center justify-center relative overflow-hidden">
-                                            {twoFactorData.otpauth && (
-                                                <QRCodeCanvas 
-                                                    value={twoFactorData.otpauth} 
-                                                    size={160}
-                                                    level="H"
-                                                />
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col items-center gap-2">
-                                            <p className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 tracking-widest">Secret Key</p>
-                                            <div className="flex items-center gap-3 bg-white dark:bg-[#111827] px-4 py-2 rounded-xl border border-black/5 dark:border-white/10">
-                                                <code className="text-xs font-black text-[#1A1A2E] dark:text-white/90">{twoFactorData.secret}</code>
-                                                <button onClick={() => { navigator.clipboard.writeText(twoFactorData.secret); toast.success('Secret key copied'); }} className="text-[#E8820C] dark:text-[#F5A623] hover:scale-110 transition-transform"><Copy size={14} /></button>
-                                            </div>
-                                        </div>
+                            {currentUser?.role === 'super_admin' && (
+                                <div className="pt-8 border-t border-white/10 space-y-6">
+                                    <div className="space-y-1">
+                                        <h4 className="text-[11px] font-black uppercase tracking-widest text-white">Admin Control Security Configuration</h4>
+                                        <p className="text-[9px] text-white/30 uppercase tracking-widest">Protocol for Administrative Portal Access</p>
                                     </div>
-                                    <div className="space-y-4 pt-8 border-t border-black/5 dark:border-white/10">
-                                        <h4 className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest text-center">Step 2: Verify Access Code</h4>
-                                        <div className="flex gap-2 justify-center">
-                                            {otpDigits.map((d, i) => (
-                                                <input
-                                                    key={i}
-                                                    id={`otp-${i}`}
-                                                    type="text"
-                                                    maxLength="1"
-                                                    value={d}
-                                                    onChange={e => handleOtpChange(i, e.target.value)}
-                                                    onKeyDown={e => handleOtpKeyDown(i, e)}
-                                                    className="w-10 h-14 text-center bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-xl text-xl font-black outline-none focus:border-[#E8820C]"
-                                                    placeholder="-"
-                                                />
-                                            ))}
+                                    <div className="grid grid-cols-3 gap-3">
+                                    {[
+                                        { id: 'password', label: 'Password', sub: '(Master)', icon: Key, ready: true },
+                                        { id: '2fa', label: '2FA Auth', sub: !currentUser?.twoFactorEnabled ? 'Set up first' : 'Ready', icon: Smartphone, ready: currentUser?.twoFactorEnabled },
+                                        // { id: 'facial', label: 'Face ID', sub: !userProfile?.facialUpload ? 'Upload photo' : 'Ready', icon: ScanFace, ready: !!userProfile?.facialUpload },
+                                    ].map(mode => (
+                                            <button
+                                                key={mode.id}
+                                                onClick={() => setAdminSecurityMode(mode.id)}
+                                                className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-1 group relative
+                                                ${adminSecurityMode === mode.id
+                                                        ? 'bg-[#E8820C] border-[#E8820C] text-white shadow-[0_0_20px_rgba(232,130,12,0.4)]'
+                                                        : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}
+                                            >
+                                                {!mode.ready && adminSecurityMode !== mode.id && (
+                                                    <div className="absolute top-2 right-2 text-red-500/50">
+                                                        <AlertCircle size={10} />
+                                                    </div>
+                                                )}
+                                                <mode.icon size={18} className={adminSecurityMode === mode.id ? '' : 'group-hover:scale-110 transition-transform'} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{mode.label}</span>
+                                                <span className={`text-[7px] uppercase tracking-widest opacity-40 font-bold`}>{mode.sub}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {isAdmin && (
+                                <div className="pt-8 border-t border-white/10 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <p className="text-[11px] font-black uppercase tracking-widest">Bio-Image Updates</p>
+                                            <p className="text-[10px] text-white/30 uppercase">Member permission</p>
                                         </div>
-                                        <button 
-                                            onClick={confirm2FA}
-                                            disabled={otpSaving}
-                                            className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50"
+                                        <button
+                                            onClick={() => setSettings({ ...settings, allowProfilePhotoChange: !settings.allowProfilePhotoChange })}
+                                            className={`w-12 h-7 rounded-full p-1 transition-all ${settings.allowProfilePhotoChange ? 'bg-[#E8820C] dark:bg-[#F5A623]' : 'bg-white dark:bg-[#111827]/10'}`}
                                         >
-                                            {otpSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirm Biometric Link'}
+                                            <div className={`w-5 h-5 rounded-full bg-white dark:bg-[#111827] shadow-xl transform transition-transform ${settings.allowProfilePhotoChange ? 'translate-x-5' : 'translate-x-0'}`}></div>
                                         </button>
                                     </div>
                                 </div>
                             )}
-
-                            {activeModal === 'password' && (
-                                <form onSubmit={handlePwChange} className="space-y-6">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 ml-4">Current Master Key</label>
-                                        <input type="password" required value={pwForm.current} onChange={e => setPwForm({ ...pwForm, current: e.target.value })} className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="••••••••" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 ml-4">New Encrypted Key</label>
-                                        <input type="password" required value={pwForm.next} onChange={e => setPwForm({ ...pwForm, next: e.target.value })} className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="Min. 8 characters" />
-                                    </div>
-                                    <button type="submit" disabled={pwSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
-                                        {pwSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Synchronize Master Key'}
-                                    </button>
-                                </form>
-                            )}
-
-                            {activeModal === 'pin' && (
-                                <form onSubmit={handlePinSubmit} className="space-y-6">
-                                    <div className="text-center space-y-2 mb-6">
-                                        <div className="w-12 h-12 bg-[#E8820C]/10 rounded-xl flex items-center justify-center mx-auto text-[#E8820C]">
-                                            <Shield size={24} />
-                                        </div>
-                                        <p className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">
-                                            {userProfile?.hasTransactionPin ? 'Rotate Security PIN' : 'Initialize Transaction PIN'}
-                                        </p>
-                                    </div>
-
-                                    {userProfile?.hasTransactionPin && (
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">Current PIN</label>
-                                            <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.old} onChange={e => setPinForm({ ...pinForm, old: e.target.value })}
-                                                className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">New Security PIN</label>
-                                        <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.new} onChange={e => setPinForm({ ...pinForm, new: e.target.value })}
-                                            className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">Confirm New PIN</label>
-                                        <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.confirm} onChange={e => setPinForm({ ...pinForm, confirm: e.target.value })}
-                                            className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
-                                    </div>
-
-                                    <button type="submit" disabled={pinSaving} className="w-full py-6 mt-4 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50">
-                                        {pinSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Synchronize Security PIN'}
-                                    </button>
-                                </form>
-                            )}
                         </div>
+
+                        {isAdmin && (
+                            <div className="bg-white dark:bg-[#111827] rounded-[2.5rem] p-10 shadow-[0_10px_30px_rgba(0,0,0,0.04),0_1px_8px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-white/10 space-y-6">
+                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-6">
+                                    <h3 className="text-xl font-black font-serif text-[#1A1A2E] dark:text-white/90">Audit Ledger</h3>
+                                    <Fingerprint size={20} className="text-black/10" />
+                                </div>
+                                <div className="space-y-4">
+                                    {auditLogs.slice(0, 4).map(log => (
+                                        <div key={log.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1">
+                                            <p className="text-[10px] font-black text-[#E8820C] dark:text-[#F5A623] uppercase tracking-widest">{log.category}</p>
+                                            <p className="text-xs font-black text-[#1A1A2E] dark:text-white/90 line-clamp-1">{log.action}</p>
+                                            <p className="text-[9px] font-bold text-black/20 dark:text-white/20 italic">{log.timeDisplay}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={() => setShowFullLedger(true)} className="w-full py-4 rounded-2xl bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] dark:bg-[#0F172A] transition-all active:scale-95">Open Full Manifest</button>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
-        </div>
+
+                {/* Modals */}
+                {selectedMember && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                        <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
+                        <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
+                            <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 relative overflow-hidden">
+                                <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white transition-all"><X size={24} /></button>
+                                <div className="flex items-center gap-6">
+                                    <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-[#111827] flex items-center justify-center text-2xl font-black text-[#1A1A2E] dark:text-white/90">
+                                        {(selectedMember.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white font-serif">{selectedMember.name}</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Council Member Records</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-10 space-y-8 bg-gray-50 dark:bg-white/5/50">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30 ml-4">Access Level (Role)</label>
+                                    <select
+                                        value={selectedMember.role || 'member'}
+                                        onChange={(e) => handleRoleUpdate(selectedMember._id || selectedMember.id, e.target.value)}
+                                        className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
+                                    >
+                                        {Object.entries(ROLES).filter(([key, value]) => value !== ROLES.SUPER_ADMIN).map(([key, value]) => (
+                                            <option key={value} value={value}>
+                                                {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="p-8 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[2.5rem] space-y-4">
+                                    <div className="flex items-center gap-3"><Mail size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90">{selectedMember.email}</p></div>
+                                    <div className="flex items-center gap-3"><UserCheck size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest">{selectedMember.status || 'Active'}</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeModal && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                        <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/95 backdrop-blur-md" onClick={() => setActiveModal(null)}></div>
+                        <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
+                            <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 flex items-center gap-6">
+                                <div className="w-16 h-16 bg-white dark:bg-[#111827]/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#E8820C] dark:text-[#F5A623]">
+                                    {activeModal === 'password' && <Lock size={28} />}
+                                    {activeModal === '2fa' && <ShieldCheck size={28} />}
+                                    {activeModal === 'disable-2fa' && <ShieldAlert size={28} className="text-red-500" />}
+                                    {activeModal === 'pin' && <Wallet size={28} />}
+                                    {activeModal === 'notifications' && <Bell size={28} />}
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white font-serif capitalize">{activeModal.replace('-', ' ')}</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Institutional Security Protocol</p>
+                                </div>
+                            </div>
+
+                            <div className="p-10 bg-gray-50 dark:bg-white/5/50">
+                                {activeModal === '2fa' && (
+                                    <div className="space-y-10">
+                                        <div className="space-y-4">
+                                            <h4 className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest text-center">Step 1: Synchronize Authenticator</h4>
+                                            <div className="mx-auto w-48 h-48 bg-white dark:bg-[#111827] p-4 rounded-3xl border border-black/10 shadow-2xl flex items-center justify-center relative overflow-hidden">
+                                                {twoFactorData.otpauth && (
+                                                    <QRCodeCanvas
+                                                        value={twoFactorData.otpauth}
+                                                        size={160}
+                                                        level="H"
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <p className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 tracking-widest">Secret Key</p>
+                                                <div className="flex items-center gap-3 bg-white dark:bg-[#111827] px-4 py-2 rounded-xl border border-black/5 dark:border-white/10">
+                                                    <code className="text-xs font-black text-[#1A1A2E] dark:text-white/90">{twoFactorData.secret}</code>
+                                                    <button onClick={() => { navigator.clipboard.writeText(twoFactorData.secret); toast.success('Secret key copied'); }} className="text-[#E8820C] dark:text-[#F5A623] hover:scale-110 transition-transform"><Copy size={14} /></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4 pt-8 border-t border-black/5 dark:border-white/10">
+                                            <h4 className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest text-center">Step 2: Verify Access Code</h4>
+                                            <div className="flex gap-2 justify-center">
+                                                {otpDigits.map((d, i) => (
+                                                    <input
+                                                        key={i}
+                                                        id={`otp-${i}`}
+                                                        type="text"
+                                                        maxLength="1"
+                                                        value={d}
+                                                        onChange={e => handleOtpChange(i, e.target.value)}
+                                                        onKeyDown={e => handleOtpKeyDown(i, e)}
+                                                        className="w-10 h-14 text-center bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-xl text-xl font-black outline-none focus:border-[#E8820C]"
+                                                        placeholder="-"
+                                                    />
+                                                ))}
+                                            </div>
+                                            <button
+                                                onClick={confirm2FA}
+                                                disabled={otpSaving}
+                                                className="w-full py-6 rounded-[2rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50"
+                                            >
+                                                {otpSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirm Biometric Link'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeModal === 'disable-2fa' && (
+                                    <div className="space-y-8 text-center py-4">
+                                        <div className="space-y-2">
+                                            <p className="text-black/60 dark:text-white/60 font-medium">Are you sure you want to disable Two-Factor Authentication?</p>
+                                            <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest">This will significantly reduce your account security.</p>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <button onClick={() => setActiveModal(null)} className="flex-1 py-4 rounded-2xl bg-gray-100 dark:bg-white/5 text-black dark:text-white font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>
+                                            <button onClick={handleDisable2FA} disabled={otpSaving} className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-bold text-xs uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-500/20">
+                                                {otpSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Revoke Access'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeModal === 'password' && (
+                                    <form onSubmit={handlePwChange} className="space-y-6">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 ml-4">Current Master Key</label>
+                                            <input type="password" required value={pwForm.current} onChange={e => setPwForm({ ...pwForm, current: e.target.value })} className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="••••••••" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase text-black/30 dark:text-white/30 ml-4">New Encrypted Key</label>
+                                            <input type="password" required value={pwForm.next} onChange={e => setPwForm({ ...pwForm, next: e.target.value })} className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-[2rem] px-8 py-5 text-sm font-bold outline-none focus:border-[#E8820C]/30 shadow-sm" placeholder="Min. 8 characters" />
+                                        </div>
+                                        <button type="submit" disabled={pwSaving} className="w-full py-6 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all">
+                                            {pwSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Synchronize Master Key'}
+                                        </button>
+                                    </form>
+                                )}
+
+                                {activeModal === 'pin' && (
+                                    <form onSubmit={handlePinSubmit} className="space-y-6">
+                                        <div className="text-center space-y-2 mb-6">
+                                            <div className="w-12 h-12 bg-[#E8820C]/10 rounded-xl flex items-center justify-center mx-auto text-[#E8820C]">
+                                                <Shield size={24} />
+                                            </div>
+                                            <p className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">
+                                                {userProfile?.hasTransactionPin ? 'Rotate Security PIN' : 'Initialize Transaction PIN'}
+                                            </p>
+                                        </div>
+
+                                        {userProfile?.hasTransactionPin && (
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">Current PIN</label>
+                                                <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.old} onChange={e => setPinForm({ ...pinForm, old: e.target.value })}
+                                                    className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">New Security PIN</label>
+                                            <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.new} onChange={e => setPinForm({ ...pinForm, new: e.target.value })}
+                                                className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2">Confirm New PIN</label>
+                                            <input required type="password" maxLength={4} pattern="\d{4}" value={pinForm.confirm} onChange={e => setPinForm({ ...pinForm, confirm: e.target.value })}
+                                                className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C] rounded-2xl px-6 py-4 text-center text-2xl tracking-[1em] font-black outline-none" placeholder="****" />
+                                        </div>
+
+                                        <button type="submit" disabled={pinSaving} className="w-full py-6 mt-4 rounded-[2.5rem] bg-[#1A1A2E] dark:bg-[#0F172A] text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50">
+                                            {pinSaving ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Synchronize Security PIN'}
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

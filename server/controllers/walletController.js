@@ -24,8 +24,12 @@ const getWalletInfo = async (req, res) => {
   const totalGiftsSent     = transactions.filter(t => t.type === 'debit').reduce((a, t) => a + t.amount, 0);
   const totalGiftsReceived = transactions.filter(t => t.type === 'credit').reduce((a, t) => a + t.amount, 0);
 
+  const settings = await Settings.findOne({});
+  const weeklyContributionAmount = settings?.weeklyContributionAmount || 100;
+
   res.json({
     balance: user.walletBalance || 0,
+    weeklyContributionAmount,
     recentTransactions: transactions,   // full history, not limited to 10
     totalGiftsSent,
     totalGiftsReceived,

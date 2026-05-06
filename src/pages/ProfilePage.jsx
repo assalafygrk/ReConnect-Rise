@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import {
     Phone, Mail, CheckCircle, XCircle, Edit, ShieldCheck, User, Calendar,
     Camera, Briefcase, AlertTriangle, Database, Loader2, MapPin, Fingerprint, Lock, Home, Users,
-    KeyRound, Eye, EyeOff, LogOut, ChevronRight, Bookmark, Settings
+    KeyRound, Eye, EyeOff, LogOut, ChevronRight, Bookmark, Settings, ScanFace
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,7 @@ import IdCard from '../components/IdCard';
 import { apiUpdateProfile, apiUpdatePassword, apiGetProfile } from '../api/auth';
 import { fetchUserContributions } from '../api/contributions';
 import { fetchSettings } from '../api/settings';
+import LiveFacialCapture from '../components/LiveFacialCapture';
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
@@ -23,8 +24,8 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [previewImage, setPreviewImage] = useState(user?.photoURL || user?.facialUpload || null);
     const [saving, setSaving] = useState(false);
-    const [show2FA, setShow2FA] = useState(false);
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    
+    const [showFacialRecorder, setShowFacialRecorder] = useState(false);
 
     const [ledger, setLedger] = useState([]);
     const [loadingLedger, setLoadingLedger] = useState(true);
@@ -72,6 +73,20 @@ export default function ProfilePage() {
             })
             .catch(err => toast.error('Failed to synchronize profile data'));
     }, []);
+
+    const startRecording = () => {
+        setShowFacialRecorder(true);
+    };
+
+    const stopRecording = () => {
+        setShowFacialRecorder(false);
+    };
+
+    const capturePhoto = (data) => {
+        setPreviewImage(data);
+        stopRecording();
+        toast.success('Biometric Identity Captured');
+    };
 
     useEffect(() => {
         if (user?._id || user?.id) {
@@ -146,13 +161,16 @@ export default function ProfilePage() {
                 
                 {/* Profile Photo - Serious Frame */}
                 <div className="relative group shrink-0">
-                    <div className="w-40 h-40 md:w-52 md:h-52 rounded-[3rem] bg-white dark:bg-white/5 border-[8px] border-white/10 shadow-2xl flex items-center justify-center text-4xl font-black text-white overflow-hidden backdrop-blur-xl group-hover:border-indigo-500/30 transition-all duration-500">
+                    <div 
+                        onClick={() => !previewImage && startRecording()}
+                        className={`w-40 h-40 md:w-52 md:h-52 rounded-[3rem] bg-white dark:bg-white/5 border-[8px] border-white/10 shadow-2xl flex items-center justify-center text-4xl font-black text-white overflow-hidden backdrop-blur-xl transition-all duration-500 ${!previewImage ? 'cursor-pointer hover:border-indigo-500/50' : 'group-hover:border-indigo-500/30'}`}
+                    >
                         {previewImage ? (
                             <img src={previewImage} alt="Profile" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                         ) : (
-                            <div className="flex flex-col items-center gap-2 opacity-20">
-                                <User size={64} />
-                                <span className="text-[10px] uppercase font-black tracking-widest">No Bio</span>
+                            <div className="flex flex-col items-center gap-2 opacity-20 group-hover:opacity-60 transition-opacity">
+                                <ScanFace size={64} className="animate-pulse" />
+                                <span className="text-[10px] uppercase font-black tracking-widest">Enroll Face</span>
                             </div>
                         )}
                     </div>
@@ -229,7 +247,6 @@ export default function ProfilePage() {
                         {[
                             { id: 'personal', label: 'Personal Intelligence', icon: Fingerprint },
                             { id: 'identity', label: 'Member Identity', icon: Bookmark },
-                            { id: 'security', label: 'Security & Access', icon: Lock },
                             { id: 'history', label: 'Financial Compliance', icon: Database },
                         ].map(tab => (
                             <button
@@ -393,6 +410,8 @@ export default function ProfilePage() {
                                             <div className="transform scale-[0.8] sm:scale-100 lg:scale-110 origin-center transition-transform">
                                                 <IdCard member={{
                                                     name: formData.name,
+                                                    email: formData.email,
+                                                    phone: formData.phone,
                                                     photo: previewImage,
                                                     occupation: formData.occupation,
                                                     idNo: user?.id ? `RR-MEM-${String(user.id).padStart(4, '0')}` : 'RR-MEM-0000',
@@ -404,112 +423,6 @@ export default function ProfilePage() {
                                     <div className="mt-16 flex gap-4">
                                         <button className="px-8 py-4 rounded-xl bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 text-[10px] font-black dark:text-white uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/20 transition-all active:scale-95">Download PDF</button>
                                         <button className="px-8 py-4 rounded-xl bg-indigo-600 dark:bg-[#3B82F6] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 dark:shadow-[#3B82F6]/30 hover:bg-indigo-500 dark:hover:bg-[#2563EB] transition-all active:scale-95">Verify Identity</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'security' && (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-12">
-                                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/10 pb-8">
-                                    <div className="space-y-1">
-                                        <h2 className="text-3xl font-serif font-black text-[#1A1A2E] dark:text-white">Security & Access</h2>
-                                        <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Credential Protection Protocol</p>
-                                    </div>
-                                    <Lock size={32} className="text-black/5 dark:text-white/10" />
-                                </div>
-
-                                <form onSubmit={handlePasswordChange} className="space-y-10 max-w-lg">
-                                    <div className="space-y-8">
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest flex items-center justify-between">
-                                                <span>Master Credentials</span>
-                                                <button type="button" onClick={() => setShowPasswords(!showPasswords)} className="text-indigo-600 dark:text-[#3B82F6] hover:underline flex items-center gap-1">
-                                                    {showPasswords ? <EyeOff size={12} /> : <Eye size={12} />}
-                                                    {showPasswords ? 'Shield' : 'Reveal'}
-                                                </button>
-                                            </label>
-                                            <div className="space-y-4">
-                                                <div className="relative">
-                                                    <KeyRound className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20" size={18} />
-                                                    <input
-                                                        type={showPasswords ? 'text' : 'password'}
-                                                        placeholder="New Security Key"
-                                                        value={passwords.new}
-                                                        onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-[#111827] rounded-2xl pl-16 pr-6 py-5 text-sm font-bold dark:text-white outline-none transition-all"
-                                                        minLength={8}
-                                                        maxLength={64}
-                                                    />
-                                                </div>
-                                                <div className="relative">
-                                                    <CheckCircle className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20" size={18} />
-                                                    <input
-                                                        type={showPasswords ? 'text' : 'password'}
-                                                        placeholder="Repeat New Key"
-                                                        value={passwords.confirm}
-                                                        onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent dark:border-white/10 focus:border-indigo-500/20 dark:focus:border-[#3B82F6]/50 focus:bg-white dark:focus:bg-[#111827] rounded-2xl pl-16 pr-6 py-5 text-sm font-bold dark:text-white outline-none transition-all"
-                                                        minLength={8}
-                                                        maxLength={64}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-8 bg-amber-50 dark:bg-amber-500/10 rounded-[2.5rem] border border-amber-100 dark:border-amber-500/20 flex gap-4">
-                                        <AlertTriangle className="text-amber-600 dark:text-amber-400 shrink-0" size={24} />
-                                        <div className="space-y-1">
-                                            <p className="text-[10px] font-black text-amber-900 dark:text-amber-300 uppercase">Warning Protocol</p>
-                                            <p className="text-xs font-bold text-amber-700 dark:text-amber-200/70 leading-relaxed">
-                                                Updating your master key will revoke all active sessions. Ensure you have memorized your new credentials before committing.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={saving || !passwords.new}
-                                        className="w-full py-6 rounded-3xl bg-[#1A1A2E] dark:bg-[#3B82F6] text-white font-black text-[12px] uppercase tracking-[0.3em] shadow-xl hover:bg-black dark:hover:bg-[#2563EB] transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
-                                    >
-                                        {saving ? <Loader2 size={20} className="animate-spin" /> : <Lock size={20} />}
-                                        Update Access Key
-                                    </button>
-                                </form>
-
-                                <div className="pt-12 border-t border-black/5 dark:border-white/10">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <div className="space-y-1">
-                                            <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white">Two-Factor Protocols</h3>
-                                            <p className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Multi-Layer Defense</p>
-                                        </div>
-                                        <ShieldCheck size={28} className={twoFactorEnabled ? "text-emerald-500" : "text-black/10 dark:text-white/10"} />
-                                    </div>
-
-                                    <div className={`p-8 rounded-[2.5rem] border transition-all ${twoFactorEnabled ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20' : 'bg-gray-50 dark:bg-white/5 border-black/5 dark:border-white/10'}`}>
-                                        <div className="flex items-center justify-between gap-6 flex-col sm:flex-row text-center sm:text-left">
-                                            <div className="flex flex-col sm:flex-row items-center gap-5">
-                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${twoFactorEnabled ? 'bg-white dark:bg-[#111827] text-emerald-600 dark:text-emerald-400' : 'bg-white dark:bg-white/5 text-black/20 dark:text-white/20'}`}>
-                                                    <Fingerprint size={28} />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-black text-[#1A1A2E] dark:text-white">Biometric Authenticator</p>
-                                                    <p className="text-[10px] text-black/40 dark:text-white/40 font-bold uppercase tracking-widest mt-1">
-                                                        {twoFactorEnabled ? 'Active Protection' : 'Protection Disabled'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button 
-                                                onClick={() => {
-                                                    setTwoFactorEnabled(!twoFactorEnabled);
-                                                    toast.success(`2FA Protocol ${!twoFactorEnabled ? 'Activated' : 'Revoked'}`);
-                                                }}
-                                                className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${twoFactorEnabled ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 dark:shadow-emerald-500/30' : 'bg-white dark:bg-white/10 border border-black/10 dark:border-white/5 text-[#1A1A2E] dark:text-white hover:bg-gray-50 dark:hover:bg-white/20'}`}
-                                            >
-                                                {twoFactorEnabled ? 'Disable' : 'Activate'}
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -574,6 +487,26 @@ export default function ProfilePage() {
 
             </div>
         </div>
+
+        {/* Facial Recording Modal */}
+        {showFacialRecorder && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={stopRecording}></div>
+                <div className="relative w-full max-w-lg bg-[#0F172A] rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-xl font-serif font-black text-white">Biometric Enrollment</h3>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[#3B82F6] mt-1">Live Facial Recording</p>
+                        </div>
+                        <button onClick={stopRecording} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all"><XCircle size={20} /></button>
+                    </div>
+                    
+                    <div className="p-8 space-y-8">
+                        <LiveFacialCapture onCapture={capturePhoto} onCancel={stopRecording} />
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 }

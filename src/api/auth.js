@@ -18,6 +18,26 @@ export async function apiLogin(email, password) {
     }
 
     if (!res.ok) throw new Error(data.message || 'Login failed');
+    return data; // { token, user } OR { twoFactorRequired, preAuthToken, email }
+}
+
+export async function apiVerifyLogin2FA(token, preAuthToken) {
+    const res = await fetch(`${BASE_URL}/users/login/2fa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, preAuthToken }),
+    });
+
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || '2FA Verification failed');
     return data; // { token, user }
 }
 

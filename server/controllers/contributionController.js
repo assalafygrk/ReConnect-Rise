@@ -445,7 +445,7 @@ const recordHistory = async (req, res) => {
 
   try {
     const settings = await Settings.findOne({});
-    const baseAmount = settings?.weeklyContributionAmount || 1000;
+    const baseAmount = settings?.weeklyContributionAmount || 100;
     const paidAmount = parseFloat(amount);
     const bonus = paidAmount > baseAmount ? paidAmount - baseAmount : 0;
 
