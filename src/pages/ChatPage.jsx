@@ -10,6 +10,7 @@ import {
 import { fetchMessages, sendMessage } from '../api/chat';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
+import { fetchMembers } from '../api/members';
 
 export default function ChatPage() {
     const { user } = useAuth();
@@ -22,11 +23,7 @@ export default function ChatPage() {
     const [showSidebar, setShowSidebar] = useState(false); // Mobile default hidden
     const scrollRef = useRef();
 
-    const brothers = [
-        { id: '1', name: 'Ola Fashola', role: 'Official Member', lastMsg: 'Strategic agenda synchronized.' },
-        { id: '2', name: 'Seun Adeyemi', role: 'Official Member', lastMsg: 'Gratitude for the resource.' },
-        { id: '3', name: 'Kola Ayoola', role: 'Treasurer', lastMsg: 'Fiscal ledger verified.' },
-    ];
+    const [brothers, setBrothers] = useState([]);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -40,6 +37,24 @@ export default function ChatPage() {
             .then(setMessages)
             .finally(() => setLoading(false));
     }, [activeTab]);
+
+    useEffect(() => {
+        fetchMembers()
+            .then(data => {
+                const membersList = data
+                    .filter(m => m._id !== user?.id && m.id !== user?.id)
+                    .map(m => ({
+                        id: m._id || m.id,
+                        name: m.name,
+                        role: m.role,
+                        lastMsg: 'Tap to view conversation'
+                    }));
+                setBrothers(membersList);
+            })
+            .catch(err => {
+                console.error('Failed to load brotherhood registry:', err);
+            });
+    }, [user]);
 
     useEffect(() => {
         if (scrollRef.current && !isSearchOpen) {
@@ -73,20 +88,39 @@ export default function ChatPage() {
 
     const handleAttachmentClick = (type) => {
         toast.success(`Initializing ${type.toUpperCase()} Protocol...`);
-        // Simulate sending an attachment for demo
-        const mockAttachments = {
-            image: { type: 'image', text: 'Encrypted Visual Data', url: 'https://images.unsplash.com/photo-1523240715630-971c469b71f9?q=80&w=400' },
-            video: { type: 'video', text: 'Secure Video Feed', url: '#', duration: '0:45' },
-            voice: { type: 'voice', text: 'Voice Directive', duration: '0:12' },
-            location: { type: 'location', text: 'Coordinate Sync', address: '123 Brotherhood Way, Lagos' },
-            poll: { type: 'poll', text: 'Ballot: Strategic Direction?', options: ['Tier 1', 'Tier 2', 'Tier 3'], votes: [5, 2, 1] },
-            event: { type: 'event', text: 'Summit Invitation', eventDate: '2026-04-05', location: 'Command Hall' },
-            document: { type: 'document', text: 'Operational_Briefing.pdf', size: '3.1 MB' },
-        };
+        let contentData = null;
 
-        if (mockAttachments[type]) {
-            const data = mockAttachments[type];
-            handleSend(null, data.type, data);
+        if (type === 'image') {
+            const url = prompt('Enter Image URL:');
+            if (url) contentData = { type: 'image', text: 'Encrypted Visual Data', url };
+        } else if (type === 'video') {
+            const url = prompt('Enter Video URL:');
+            if (url) contentData = { type: 'video', text: 'Secure Video Feed', url, duration: '0:00' };
+        } else if (type === 'voice') {
+            toast.error('Voice recording not yet integrated');
+        } else if (type === 'location') {
+            const address = prompt('Enter Location Address:');
+            if (address) contentData = { type: 'location', text: 'Coordinate Sync', address };
+        } else if (type === 'poll') {
+            const question = prompt('Enter Poll Question:');
+            const opts = prompt('Enter Options (comma separated):');
+            if (question && opts) {
+                const optionsArray = opts.split(',').map(o => o.trim());
+                contentData = { type: 'poll', text: question, options: optionsArray, votes: new Array(optionsArray.length).fill(0) };
+            }
+        } else if (type === 'event') {
+            const title = prompt('Enter Event Title:');
+            const date = prompt('Enter Event Date (YYYY-MM-DD):');
+            if (title && date) contentData = { type: 'event', text: title, eventDate: date, location: 'TBD' };
+        } else if (type === 'document') {
+            const text = prompt('Enter Document Name:');
+            if (text) contentData = { type: 'document', text, size: 'Unknown' };
+        } else {
+            toast.error('Protocol not recognized');
+        }
+
+        if (contentData) {
+            handleSend(null, contentData.type, contentData);
         }
     };
 
