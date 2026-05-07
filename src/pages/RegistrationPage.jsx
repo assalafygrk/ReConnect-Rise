@@ -78,7 +78,7 @@ export default function RegistrationPage() {
         setLoading(true);
         try {
             const data = await apiRegister(formData);
-            login(data.token);
+            // login(data.token); // Don't login yet, wait for email verification
 
             setShowSuccessModal(true);
         } catch (err) {
@@ -89,8 +89,8 @@ export default function RegistrationPage() {
     };
 
     const finishRegistration = () => {
-        toast.success('Identity Secured. Welcome!');
-        navigate('/dashboard');
+        // toast.success('Identity Secured. Welcome!');
+        navigate('/login');
     };
 
     return (
@@ -147,11 +147,11 @@ export default function RegistrationPage() {
                         </div>
 
                         <div className="text-center mb-10 mt-4">
-                            <div className="inline-flex p-1.5 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6">
+                            <Link to="/" className="inline-flex p-1.5 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6 hover:scale-105 transition-transform">
                                 <div className="w-16 h-16 rounded-xl overflow-hidden shadow-2xl">
                                     <img src={brand.logoUrl} alt={brand.orgName + ' Logo'} className="w-full h-full object-cover" />
                                 </div>
-                            </div>
+                            </Link>
                             <h2 className="text-3xl font-black text-white mb-3 font-serif tracking-wide">
                                 {step === 1 ? 'Join the Brotherhood' : 'Biometric Verification'}
                             </h2>
@@ -426,14 +426,14 @@ export default function RegistrationPage() {
                             Identity Secured
                         </h2>
                         <p className="text-white/50 text-center text-sm mb-10 leading-relaxed">
-                            Your biometric data and profile have been successfully registered to the network. Welcome to the Brotherhood.
+                            Your biometric data and profile have been successfully registered. We've sent a verification link to <span className="text-white font-bold">{formData.email}</span>. Please verify your email to activate your account.
                         </p>
 
                         <button
                             onClick={finishRegistration}
                             className="w-full py-4 rounded-2xl font-bold text-white transition-all bg-[#3B82F6] hover:bg-[#2563EB] shadow-[0_8px_20px_rgba(59,130,246,0.3)] active:scale-95 flex items-center justify-center gap-2 border border-white/10"
                         >
-                            Access Dashboard <ArrowRight size={18} />
+                            Return to Login <ArrowRight size={18} />
                         </button>
                     </div>
                 </div>

@@ -5,7 +5,7 @@ import { Eye, EyeOff, ShieldCheck, ArrowRight, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useBrand } from '../context/BrandContext';
 import { usePageConfig } from '../context/PageConfigContext';
-import { apiLogin, apiVerifyLogin2FA } from '../api/auth';
+import { apiLogin, apiVerifyLogin2FA, apiResendVerification } from '../api/auth';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -21,6 +21,8 @@ export default function LoginPage() {
     const [twoFactorStep, setTwoFactorStep] = useState(false);
     const [preAuthToken, setPreAuthToken] = useState(null);
     const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+    const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+    const [resending, setResending] = useState(false);
 
     if (!isPageEnabled('login')) {
         return (
@@ -53,9 +55,28 @@ export default function LoginPage() {
             toast.success('Welcome back, brother!');
             navigate('/dashboard');
         } catch (err) {
-            toast.error(err.message || 'Login failed');
+            if (err.message.includes('verify your email')) {
+                setUnverifiedEmail(email);
+                toast.error('Email not verified. Check your inbox.');
+            } else {
+                toast.error(err.message || 'Login failed');
+            }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResendLink = async () => {
+        if (!unverifiedEmail) return;
+        setResending(true);
+        try {
+            await apiResendVerification(unverifiedEmail);
+            toast.success('Verification link sent! Please check your email.');
+            setUnverifiedEmail(null);
+        } catch (err) {
+            toast.error(err.message || 'Failed to resend link');
+        } finally {
+            setResending(false);
         }
     };
 
@@ -144,22 +165,36 @@ export default function LoginPage() {
 
                         {/* Mobile Header (Hidden on LG) */}
                         <div className="lg:hidden text-center mb-8">
-                            <h1 className="text-4xl font-black text-white mb-2 font-serif">{brand.orgName}</h1>
-                            <p className="text-[#FCD34D] text-[10px] uppercase tracking-[0.3em] font-black">{brand.orgSlogan}</p>
+                            <Link to="/">
+                                <h1 className="text-4xl font-black text-white mb-2 font-serif">{brand.orgName}</h1>
+                                <p className="text-[#FCD34D] text-[10px] uppercase tracking-[0.3em] font-black">{brand.orgSlogan}</p>
+                            </Link>
                         </div>
 
                         <div className="text-center mb-10 mt-4 hidden lg:block">
-                            <div className="inline-flex p-1.5 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6">
+                            <Link to="/" className="inline-flex p-1.5 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-6 hover:scale-105 transition-transform">
                                 <div className="w-16 h-16 rounded-xl overflow-hidden shadow-2xl">
                                     <img src={brand.logoUrl} alt={brand.orgName + ' Logo'} className="w-full h-full object-cover" />
                                 </div>
-                            </div>
+                            </Link>
                             <h2 className="text-3xl font-black text-white mb-3 font-serif tracking-wide">
                                 Welcome Back, Brother
                             </h2>
                             <p className="text-white/40 text-sm font-medium">
                                 Secure access to your digital vault
                             </p>
+                            {unverifiedEmail && (
+                                <div className="mt-4 p-4 rounded-2xl bg-[#3B82F6]/10 border border-[#3B82F6]/20 text-sm animate-in fade-in duration-300">
+                                    <p className="text-white/60 mb-3">Check your inbox for a verification link sent to <span className="text-white font-bold">{unverifiedEmail}</span>.</p>
+                                    <button 
+                                        onClick={handleResendLink}
+                                        disabled={resending}
+                                        className="text-[#FCD34D] font-bold text-xs uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50"
+                                    >
+                                        {resending ? 'Sending...' : 'Resend Verification Link'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {!twoFactorStep ? (

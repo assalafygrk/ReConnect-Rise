@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
 const { generateSecret, generateURI, verify } = require('otplib');
 
 // Helper to catch async errors
@@ -46,8 +48,14 @@ const authUser = async (req, res) => {
   }
 
   const user = await User.findOne({ email }).select('+password');
-
+  
   if (user && (await user.matchPassword(password))) {
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      res.status(401);
+      throw new Error('Please verify your email to login');
+    }
+    
     // If 2FA is enabled, don't issue the full token yet
     if (user.twoFactorEnabled) {
       // Issue a short-lived "pre-auth" token that only allows 2FA verification
@@ -150,31 +158,62 @@ const registerUser = async (req, res) => {
     throw new Error('User already exists');
   }
 
-  const user = await User.create({
-    name,
-    email,
-    password,
-    phone,
-    role: role || 'member',
-    firstName,
-    lastName,
-    middleName,
-    dateOfBirth,
-    residentialAddress,
-    occupation,
     facialUpload
   });
 
   if (user) {
-    res.status(201).json({
-      token: generateToken(user),
-      user: {
-        _id: user._id,
-        name: user.name,
+    // Create verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.emailVerificationToken = crypto
+      .createHash('sha256')
+      .update(verificationToken)
+      .digest('hex');
+    
+    // Set expiry (24 hours)
+    user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+    
+    await user.save();
+
+    // Verification URL
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    const message = `Welcome to ReConnect & Rise! Please verify your email by clicking the link below:\n\n${verificationUrl}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+        <h2 style="color: #4a90e2; text-align: center;">Welcome to ReConnect & Rise</h2>
+        <p>Hi ${user.name},</p>
+        <p>Thank you for registering. Please click the button below to verify your email address and activate your account:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" style="background-color: #4a90e2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
+        </div>
+        <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+        <p style="word-break: break-all; color: #4a90e2;">${verificationUrl}</p>
+        <p>This link will expire in 24 hours.</p>
+        <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;">
+        <p style="font-size: 12px; color: #888888; text-align: center;">If you did not create an account, please ignore this email.</p>
+      </div>
+    `;
+
+    try {
+      await sendEmail({
         email: user.email,
-        role: mapRole(user.role),
-      }
-    });
+        subject: 'Email Verification - ReConnect & Rise',
+        message,
+        html
+      });
+
+      res.status(201).json({
+        message: 'Registration successful. Please check your email to verify your account.',
+        userId: user._id
+      });
+    } catch (error) {
+      console.error('Email could not be sent', error);
+      res.status(201).json({
+        message: 'Registration successful, but verification email could not be sent. Please contact support.',
+        userId: user._id
+      });
+    }
   } else {
     res.status(400);
     throw new Error('Invalid user data');
@@ -353,4 +392,95 @@ module.exports = {
   updatePassword: asyncHandler(updatePassword),
   setTransactionPin: asyncHandler(setTransactionPin),
   changeTransactionPin: asyncHandler(changeTransactionPin),
+  verifyEmail: asyncHandler(async (req, res) => {
+    const { token } = req.params;
+
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      res.status(400);
+      throw new Error('Invalid or expired verification token');
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    user.status = 'active'; // Activate user upon verification
+    await user.save();
+
+    res.json({
+      message: 'Email verified successfully! You can now login.',
+      token: generateToken(user),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: mapRole(user.role),
+      }
+    });
+  }),
+  resendVerificationEmail: asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      res.status(400);
+      throw new Error('Email is already verified');
+    }
+
+    // Create verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.emailVerificationToken = crypto
+      .createHash('sha256')
+      .update(verificationToken)
+      .digest('hex');
+    
+    // Set expiry (24 hours)
+    user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+    
+    await user.save();
+
+    // Verification URL
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    const message = `Please verify your email by clicking the link below:\n\n${verificationUrl}`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+        <h2 style="color: #4a90e2; text-align: center;">ReConnect & Rise</h2>
+        <p>Hi ${user.name},</p>
+        <p>You requested to resend the verification email. Please click the button below to verify your email address:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" style="background-color: #4a90e2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
+        </div>
+        <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+        <p style="word-break: break-all; color: #4a90e2;">${verificationUrl}</p>
+        <p>This link will expire in 24 hours.</p>
+        <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 20px 0;">
+      </div>
+    `;
+
+    await sendEmail({
+      email: user.email,
+      subject: 'Resend Email Verification - ReConnect & Rise',
+      message,
+      html
+    });
+
+    res.json({ message: 'Verification email sent successfully' });
+  }),
 };

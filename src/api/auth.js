@@ -192,3 +192,41 @@ export async function apiChangeTransactionPin(oldPin, newPin) {
     if (!res.ok) throw new Error(data.message || 'Failed to change transaction PIN');
     return data;
 }
+
+// ─── Email Verification ───────────────────────────────────────────────────────
+export async function apiVerifyEmail(token) {
+    const res = await fetch(`${BASE_URL}/users/verify-email/${token}`);
+
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Email verification failed');
+    return data;
+}
+
+export async function apiResendVerification(email) {
+    const res = await fetch(`${BASE_URL}/users/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+
+    let data;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
+    }
+
+    if (!res.ok) throw new Error(data.message || 'Failed to resend verification email');
+    return data;
+}
+

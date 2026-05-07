@@ -23,6 +23,7 @@
     "mongoose": "^9.1.1",
     "morgan": "^1.10.1",
     "node-fetch": "^2.7.0",
+    "nodemailer": "^8.0.7",
     "otplib": "^13.4.0"
   },
   "devDependencies": {

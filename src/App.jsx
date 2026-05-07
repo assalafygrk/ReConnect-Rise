@@ -12,6 +12,9 @@ import AppLayout from './components/layout/AppLayout';
 // Lazy load all pages
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegistrationPage = lazy(() => import('./pages/RegistrationPage'));
+const MockRegisterPage = lazy(() => import('./pages/MockRegisterPage'));
+const MockLoginPage = lazy(() => import('./pages/MockLoginPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ContributionsPage = lazy(() => import('./pages/ContributionsPage'));
 const MembersPage = lazy(() => import('./pages/MembersPage'));
@@ -28,6 +31,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const DocumentaryPage = lazy(() => import('./pages/DocumentaryPage'));
 const AdviceRoomPage = lazy(() => import('./pages/AdviceRoomPage'));
 const ModuleNexusPage = lazy(() => import('./pages/ModuleNexusPage'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 
 function PageLoader() {
   return (
@@ -73,7 +77,10 @@ export default function App() {
                     {/* Public */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegistrationPage />} />
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/mock-login" element={<MockLoginPage />} />
+                    <Route path="/mock-register" element={<MockRegisterPage />} />
+                    <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+                    <Route path="/" element={<HomePage />} />
 
                     {/* Protected — inside layout */}
                     <Route

@@ -9,10 +9,14 @@ const {
   updatePassword,
   setTransactionPin,
   changeTransactionPin,
+  verifyEmail,
+  resendVerificationEmail,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', registerUser);
+router.get('/verify-email/:token', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
 router.post('/login', authUser);
 router.post('/login/2fa', verifyLogin2FA);
 router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
