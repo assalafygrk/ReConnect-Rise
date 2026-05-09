@@ -158,7 +158,11 @@ const registerUser = async (req, res) => {
     throw new Error('User already exists');
   }
 
-    facialUpload
+  const user = await User.create({
+    name, email, password, phone, role,
+    firstName, lastName, middleName, 
+    dateOfBirth, residentialAddress, 
+    occupation, facialUpload 
   });
 
   if (user) {
