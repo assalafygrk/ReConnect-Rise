@@ -1,588 +1,446 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { useBrand } from '../context/BrandContext';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
-    ShieldCheck, 
-    ArrowRight, 
-    Smartphone, 
-    Wifi, 
-    Zap, 
-    Tv, 
-    ChevronRight,
-    CreditCard,
-    History,
-    CheckCircle2,
-    Users
+  ArrowRight, 
+  Users, 
+  ShieldCheck, 
+  Zap, 
+  TrendingUp, 
+  MessageSquare, 
+  Globe, 
+  ChevronRight,
+  Menu,
+  X,
+  CreditCard,
+  Target,
+  Award
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HomePage() {
-    const { brand } = useBrand();
-    const services = [
-        { 
-            id: 'airtime', 
-            name: 'Airtime Top-up', 
-            icon: <Smartphone size={32} />, 
-            desc: "Instantly recharge your mobile lines with zero delays. Supports all major networks with exclusive bonus offers on every top-up.",
-            value: "1% - 5% Cashback on every recharge"
-        },
-        { 
-            id: 'data', 
-            name: 'Data Bundles', 
-            icon: <Wifi size={32} />, 
-            desc: "High-speed 4G/5G data plans for all networks. Choose from daily, weekly, or monthly bundles at the most affordable rates in Nigeria.",
-            value: "Cheapest rates starting from ₦250/GB"
-        },
-        { 
-            id: 'electricity', 
-            name: 'Electricity Bills', 
-            icon: <Zap size={32} />, 
-            desc: "Pay your electricity bills for all distribution companies (IKEDC, EKEDC, PHED, etc.) and get your token instantly via SMS.",
-            value: "Instant Token generation 24/7"
-        },
-        { 
-            id: 'cable', 
-            name: 'Cable TV', 
-            icon: <Tv size={32} />, 
-            desc: "Renew your DSTV, GOtv, and StarTimes subscriptions effortlessly. Automatic activation ensures you never miss your favorite shows.",
-            value: "Zero convenience fee on renewals"
-        },
-        { 
-            id: 'exam', 
-            name: 'Exam Pins', 
-            icon: <CheckCircle2 size={32} />, 
-            desc: "Get your WAEC, NECO, and NABTEB result checker pins instantly. Reliable and authenticated pins delivered to your dashboard.",
-            value: "Bulk purchase available for schools"
-        },
-        { 
-            id: 'bulk_sms', 
-            name: 'Bulk SMS', 
-            icon: <History size={32} />, 
-            desc: "Send customized SMS to multiple recipients with your own Sender ID. High delivery rate to all networks including DND numbers.",
-            value: "Starting from ₦2.50 per unit"
-        }
-    ];
+  const { user } = useAuth();
+  const { theme } = useTheme();
+  const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const [selectedService, setSelectedService] = useState(services[0]);
-    const [showAllPlans, setShowAllPlans] = useState(false);
-    const [focusedPlan, setFocusedPlan] = useState(null);
-    const [activeFooterLink, setActiveFooterLink] = useState(null);
-
-    const footerContent = {
-        'about': {
-            title: 'About ReConnect & Rise VTU',
-            content: 'ReConnect & Rise VTU is Nigeria\'s premier digital distribution platform for airtime, data, and utility payments. Founded with the mission to provide seamless connectivity, we bridge the gap between service providers and consumers with high-speed automated systems.',
-            extra: 'Our infrastructure handles over 100,000 transactions daily with a 99.9% success rate.'
-        },
-        'terms': {
-            title: 'Terms of Service',
-            content: 'By using our platform, you agree to our automated processing terms. All VTU transactions are final once delivered. We ensure bank-grade security for all payment data. Users are responsible for providing accurate phone numbers and meter details.',
-            extra: 'Last Updated: May 2026'
-        },
-        'support': {
-            title: 'Contact Support',
-            content: 'Our dedicated support team is available 24/7 to assist you with any transaction issues or inquiries.',
-            extra: 'Email: risereconnect@gmail.com \nPhone: +234 9160048633'
-        },
-        'api': {
-            title: 'API Documentation',
-            content: 'Integrate our robust VTU engine into your own applications. Our RESTful API supports instant recharge, balance checks, and transaction status queries.',
-            extra: 'Base URL: https://api.reconnectrise.com/v1 \nAuth: Bearer Token Required'
-        },
-        'help': {
-            title: 'Help Center & FAQ',
-            content: 'Common questions: \n1. How fast is delivery? (Instant) \n2. What if a transaction fails? (Auto-refund to wallet) \n3. How do I become a merchant? (Register via the Sign Up button).',
-            extra: 'Need more help? Use our Contact Support option.'
-        }
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
     };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    const handleContactSubmit = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const name = formData.get('name');
-        
-        toast.success(`Thank you, ${name || 'there'}! Your message has been sent successfully.`, {
-            duration: 5000,
-            icon: '✉️',
-            style: {
-                borderRadius: '20px',
-                background: '#1A2235',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.1)'
-            }
-        });
-        e.target.reset();
-    };
+  const features = [
+    {
+      icon: <Users className="w-6 h-6" />,
+      title: "Community Driven",
+      description: "Join a network of like-minded individuals focused on collective growth and mutual support."
+    },
+    {
+      icon: <ShieldCheck className="w-6 h-6" />,
+      title: "Secure & Transparent",
+      description: "Enterprise-grade security ensuring your data and financial contributions are always protected."
+    },
+    {
+      icon: <Zap className="w-6 h-6" />,
+      title: "Instant Processing",
+      description: "Fast disbursements and real-time wallet updates for a seamless experience."
+    },
+    {
+      icon: <TrendingUp className="w-6 h-6" />,
+      title: "Growth Focused",
+      description: "Tools and resources designed to help members achieve their personal and professional goals."
+    },
+    {
+      icon: <MessageSquare className="w-6 h-6" />,
+      title: "Active Dialogue",
+      description: "Engage in meaningful conversations through our integrated chat and advice rooms."
+    },
+    {
+      icon: <Globe className="w-6 h-6" />,
+      title: "Global Reach",
+      description: "Connecting communities across boundaries to create a larger impact together."
+    }
+  ];
 
-    return (
-        <div className="min-h-screen bg-[#0B1221] text-white selection:bg-[#3B82F6]/30 selection:text-white">
-            
-            {/* --- Footer Modal Overlay --- */}
-            {activeFooterLink && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
-                    <div 
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        onClick={() => setActiveFooterLink(null)}
-                    ></div>
-                    <div className="relative w-full max-w-2xl bg-[#1A2235] border border-white/10 rounded-[2.5rem] p-10 shadow-2xl animate-in fade-in zoom-in duration-300">
-                        <button 
-                            onClick={() => setActiveFooterLink(null)}
-                            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
-                        >
-                            ✕
-                        </button>
-                        <div className="space-y-6">
-                            <div className="inline-flex p-3 rounded-2xl bg-[#3B82F6]/20 text-[#3B82F6]">
-                                <ShieldCheck size={32} />
-                            </div>
-                            <h2 className="text-3xl font-black font-serif">{footerContent[activeFooterLink].title}</h2>
-                            <p className="text-white/60 leading-relaxed text-lg font-serif italic">
-                                {footerContent[activeFooterLink].content}
-                            </p>
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                                <p className="text-[#3B82F6] font-mono text-sm whitespace-pre-line leading-loose">
-                                    {footerContent[activeFooterLink].extra}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <div className="min-h-screen bg-bg dark:bg-[#0B1221] transition-colors duration-500 overflow-x-hidden selection:bg-accent selection:text-white">
+      {/* Navigation */}
+      <nav 
+        className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 border-b ${
+          isScrolled 
+            ? 'bg-white/80 dark:bg-[#0B1221]/80 backdrop-blur-xl py-3 border-navy/5 dark:border-white/5 shadow-lg' 
+            : 'bg-transparent py-6 border-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-gold flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform">
+              <Zap className="text-white w-6 h-6" fill="currentColor" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-navy dark:text-white font-heading">
+              ReConnect <span className="text-accent">&</span> Rise
+            </span>
+          </div>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-navy/70 dark:text-white/70 hover:text-accent dark:hover:text-gold transition-colors font-medium">Features</a>
+            <Link to="/about" className="text-navy/70 dark:text-white/70 hover:text-accent dark:hover:text-gold transition-colors font-medium">About</Link>
+            <a href="#community" className="text-navy/70 dark:text-white/70 hover:text-accent dark:hover:text-gold transition-colors font-medium">Community</a>
+            {user ? (
+              <Link 
+                to="/dashboard" 
+                className="bg-navy dark:bg-white text-white dark:text-navy px-6 py-2.5 rounded-full font-semibold hover:bg-accent dark:hover:bg-gold hover:text-white dark:hover:text-navy transition-all shadow-md active:scale-95"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <div className="flex items-center gap-4">
+                <Link to="/login" className="text-navy dark:text-white font-semibold hover:text-accent transition-colors">Log In</Link>
+                <Link 
+                  to="/register" 
+                  className="bg-accent text-white px-6 py-2.5 rounded-full font-semibold hover:bg-accent/90 transition-all shadow-md hover:shadow-accent/20 active:scale-95"
+                >
+                  Join Now
+                </Link>
+              </div>
             )}
-            
-            {/* --- Animated Background Elements --- */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#3B82F6]/20 rounded-full blur-[120px] animate-blob"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#F5A623]/10 rounded-full blur-[150px] animate-blob" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#6366F1]/5 rounded-full blur-[180px] animate-pulse"></div>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button className="md:hidden text-navy dark:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+
+        {/* Mobile Nav */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-[#0B1221] border-b border-navy/5 dark:border-white/5 py-6 px-4 animate-in fade-in slide-in-from-top-4">
+            <div className="flex flex-col gap-6 items-center">
+              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium">Features</a>
+              <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium">About</Link>
+              <a href="#community" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium">Community</a>
+              {user ? (
+                <Link to="/dashboard" className="w-full text-center bg-navy dark:bg-white text-white dark:text-navy py-3 rounded-xl font-bold">Dashboard</Link>
+              ) : (
+                <>
+                  <Link to="/login" className="text-xl font-semibold">Log In</Link>
+                  <Link to="/register" className="w-full text-center bg-accent text-white py-3 rounded-xl font-bold">Join Now</Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        {/* Background Blobs */}
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[600px] h-[600px] bg-accent/10 dark:bg-accent/5 rounded-full blur-[120px] animate-blob"></div>
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[500px] h-[500px] bg-gold/10 dark:bg-gold/5 rounded-full blur-[100px] animate-blob" style={{ animationDelay: '2s' }}></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 bg-accent/10 dark:bg-accent/20 text-accent px-4 py-2 rounded-full text-sm font-bold mb-6 animate-fade-in">
+                <Award size={16} />
+                <span>Empowering Over 5,000+ Members</span>
+              </div>
+              <h1 className="text-5xl lg:text-7xl font-bold font-heading text-navy dark:text-white leading-[1.1] mb-8">
+                Reconnect with <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-gold">Your Purpose</span>, Rise Together.
+              </h1>
+              <p className="text-lg lg:text-xl text-navy/60 dark:text-white/60 mb-10 max-w-2xl mx-auto lg:mx-0">
+                A unified platform for community growth, secure financial empowerment, and professional networking. Build your future with a community that cares.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <Link 
+                  to="/register" 
+                  className="w-full sm:w-auto bg-navy dark:bg-white text-white dark:text-navy px-8 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 group hover:bg-accent dark:hover:bg-gold hover:text-white dark:hover:text-navy transition-all shadow-xl hover:-translate-y-1"
+                >
+                  Get Started Today
+                  <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link 
+                  to="/login" 
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-lg border-2 border-navy/10 dark:border-white/10 hover:border-accent dark:hover:border-gold transition-all flex items-center justify-center gap-2"
+                >
+                  Member Login
+                </Link>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="mt-12 flex flex-wrap justify-center lg:justify-start items-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={24} />
+                  <span className="font-bold">Secure SSL</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CreditCard size={24} />
+                  <span className="font-bold">Verified Payments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target size={24} />
+                  <span className="font-bold">Result Driven</span>
+                </div>
+              </div>
             </div>
 
-            {/* --- Navbar --- */}
-            <nav className="fixed top-0 left-0 w-full z-50 px-6 py-4">
-                <div className="max-w-7xl mx-auto flex items-center justify-between glass-card rounded-2xl px-6 py-3 shadow-2xl">
-                    <div className="flex items-center gap-3">
-                        <Link to="/" className="flex items-center gap-2 group">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5 shrink-0 group-hover:scale-110 transition-transform">
-                                <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                            </div>
-                            <span className="text-lg sm:text-xl font-black font-serif tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent truncate max-w-[120px] sm:max-w-none">
-                                {brand.orgName}
-                            </span>
-                        </Link>
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:gap-6">
-                        <Link to="/mock-login" className="text-sm font-bold text-white/70 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5">
-                            Login
-                        </Link>
-                        <Link 
-                            to="/mock-register" 
-                            className="bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white px-6 py-2.5 rounded-xl font-black text-sm hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all active:scale-95 shadow-lg"
-                        >
-                            Sign Up
-                        </Link>
-                    </div>
+            <div className="relative animate-float">
+              <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-gold/20 rounded-3xl blur-3xl -rotate-6 scale-95"></div>
+              <img 
+                src="/hero.png" 
+                alt="Community Unity" 
+                className="relative z-10 w-full rounded-3xl shadow-2xl border border-white/20 dark:border-white/10 object-cover"
+              />
+              
+              {/* Floating Cards */}
+              <div className="absolute -bottom-6 -left-6 z-20 bg-white dark:bg-navy-light p-4 rounded-2xl shadow-xl border border-navy/5 dark:border-white/5 animate-bounce-slow">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-navy/50 dark:text-white/50">Total Contributions</p>
+                    <p className="text-lg font-bold text-navy dark:text-white">$1,240,500</p>
+                  </div>
                 </div>
-            </nav>
+              </div>
 
-            {/* --- Hero & Services Grid --- */}
-            <section className="relative pt-40 pb-20 px-6 overflow-hidden">
-                <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-                    
-                    {/* Left: Text Content */}
-                    <div className="lg:col-span-6 space-y-8 pt-10">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#3B82F6] text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md animate-float">
-                            <Zap size={14} className="animate-pulse" />
-                            Premium Utility Network
-                        </div>
-                        <h1 className="text-4xl sm:text-5xl md:text-8xl font-black leading-[0.95] font-serif tracking-tighter">
-                            Empower <br />
-                            <span className="bg-gradient-to-r from-[#3B82F6] to-[#6366F1] bg-clip-text text-transparent">Your Future.</span>
-                        </h1>
-                        <p className="text-white/40 text-lg sm:text-2xl max-w-xl leading-relaxed font-serif italic">
-                            Fast. Reliable. Seamless. ReConnect & Rise provides the most stable VTU infrastructure in Africa.
-                        </p>
-                        
-                        {/* Service Detail Display */}
-                        <div className="mt-12 p-10 rounded-[3rem] glass-card relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#3B82F6]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
-                            <div className="flex items-center gap-6 mb-6">
-                                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#3B82F6] to-[#2563EB] text-white shadow-xl animate-float">
-                                    {selectedService.icon}
-                                </div>
-                                <h3 className="text-3xl font-black font-serif tracking-tight">{selectedService.name}</h3>
-                            </div>
-                            <p className="text-white/60 mb-8 text-lg leading-relaxed italic font-serif">"{selectedService.desc}"</p>
-                            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 text-[#3B82F6] text-sm font-black uppercase tracking-widest border border-white/10 hover:border-[#3B82F6]/50 transition-colors">
-                                <ArrowRight size={18} /> {selectedService.value}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right: Service Widget Grid */}
-                    <div className="lg:col-span-6 relative">
-                        <div className="bg-[#1A2235]/60 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 p-8 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#3B82F6] to-[#F5A623]"></div>
-                            
-                            <h3 className="text-xl font-black mb-8 flex items-center gap-2">
-                                <ChevronRight className="text-[#3B82F6]" size={20} /> Select a Service
-                            </h3>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {services.map(s => (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => setSelectedService(s)}
-                                        className={`flex flex-col items-center justify-center gap-4 aspect-square rounded-[2rem] transition-all relative overflow-hidden border ${
-                                            selectedService.id === s.id 
-                                            ? 'bg-[#3B82F6] border-white/20 scale-105 shadow-[0_0_40px_rgba(59,130,246,0.3)]' 
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-[1.05] hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]'
-                                        }`}
-                                    >
-                                        <div className={`${selectedService.id === s.id ? 'text-white' : 'text-[#3B82F6]'}`}>
-                                            {s.icon}
-                                        </div>
-                                        <span className={`text-[10px] font-black uppercase tracking-widest text-center px-2 ${selectedService.id === s.id ? 'text-white' : 'text-white/60'}`}>
-                                            {s.name}
-                                        </span>
-                                        {selectedService.id === s.id && (
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="mt-8">
-                                <Link 
-                                    to="/mock-register"
-                                    className="w-full py-5 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 border border-white/10"
-                                >
-                                    Access Full Dashboard <ArrowRight size={16} />
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
+              <div className="absolute -top-6 -right-6 z-20 bg-white dark:bg-navy-light p-4 rounded-2xl shadow-xl border border-navy/5 dark:border-white/5 animate-bounce-slow" style={{ animationDelay: '1s' }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-navy/50 dark:text-white/50">Active Members</p>
+                    <p className="text-lg font-bold text-navy dark:text-white">5,842</p>
+                  </div>
                 </div>
-            </section>
-
-            {/* --- Removed Live Transactions Ticker --- */}
-
-
-            {/* --- Trusted By Section --- */}
-            <section className="py-20 border-y border-white/5 bg-white/[0.01]">
-                <div className="max-w-7xl mx-auto px-6">
-                    <p className="text-center text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mb-12">Powering Transactions Across Major Networks & Banks</p>
-                    <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
-                        {/* Mock Logos for Realism */}
-                        <div className="text-2xl font-black font-serif italic tracking-tighter">ZENITH</div>
-                        <div className="text-2xl font-black font-serif italic tracking-tighter">ACCESS</div>
-                        <div className="text-2xl font-black font-serif italic tracking-tighter">GTBank</div>
-                        <div className="text-2xl font-black font-serif italic tracking-tighter">UBA</div>
-                        <div className="text-2xl font-black font-serif italic tracking-tighter">Kuda.</div>
-                        <div className="text-2xl font-black font-serif italic tracking-tighter">Opay</div>
-                    </div>
-                </div>
-            </section>
-
-            {/* --- How It Works --- */}
-            <section className="py-32 px-6 relative overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[#3B82F6]/5 rounded-full blur-[120px] pointer-events-none"></div>
-                <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="text-center mb-20 space-y-4">
-                        <h2 className="text-4xl md:text-6xl font-black font-serif">Three Simple Steps</h2>
-                        <p className="text-white/40 font-medium max-w-lg mx-auto">Get started in minutes with our streamlined onboarding process.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                        {[
-                            { step: "01", title: "Create Account", desc: "Sign up for free as a regular user or apply for a Merchant account to get better rates." },
-                            { step: "02", title: "Fund Wallet", desc: "Add funds to your secure digital wallet via Bank Transfer or Debit Card instantly." },
-                            { step: "03", title: "Start Transacting", desc: "Recharge phones, pay bills, and manage your utilities with one-click automation." }
-                        ].map((item, i) => (
-                            <div key={i} className="relative p-12 rounded-[3rem] bg-white/[0.03] border border-white/10 group hover:border-[#3B82F6]/50 transition-all">
-                                <div className="text-6xl font-black text-[#3B82F6]/20 absolute top-8 right-10 group-hover:text-[#3B82F6]/40 transition-colors font-serif">{item.step}</div>
-                                <h3 className="text-2xl font-black mb-4 mt-8 font-serif">{item.title}</h3>
-                                <p className="text-white/40 leading-relaxed">{item.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* --- Testimonials --- */}
-            <section className="py-32 px-6 bg-white/[0.01]">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-                        <div className="space-y-4">
-                            <div className="inline-flex items-center gap-2 text-[#3B82F6] font-black text-[10px] uppercase tracking-widest">
-                                <Users size={16} /> Community Feedback
-                            </div>
-                            <h2 className="text-4xl md:text-6xl font-black font-serif">What Our <br /> Users Say.</h2>
-                        </div>
-                        <p className="text-white/40 max-w-sm font-medium leading-relaxed italic">"Joining ReConnect & Rise transformed how I handle my utility expenses. The speed is unmatched."</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[
-                            { 
-                                name: "Chidi Okafor", 
-                                role: "Retail Merchant", 
-                                text: "The API integration was seamless. My retail shop now handles over 200 recharges daily without a single failure.",
-                                img: "CO"
-                            },
-                            { 
-                                name: "Aisha Bello", 
-                                role: "Corporate User", 
-                                text: "I love the scheduled payments feature. My electricity bill is always paid on time, and the token arrives instantly.",
-                                img: "AB"
-                            },
-                            { 
-                                name: "Tunde Ednut", 
-                                role: "Financial Analyst", 
-                                text: "Security was my biggest concern, but their bank-grade encryption and 2FA give me total peace of mind.",
-                                img: "TE"
-                            }
-                        ].map((user, i) => (
-                            <div key={i} className="p-10 rounded-[2.5rem] bg-[#1A2235]/60 border border-white/10 hover:-translate-y-2 transition-all">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="w-12 h-12 rounded-full bg-[#3B82F6] flex items-center justify-center font-black text-white text-sm">
-                                        {user.img}
-                                    </div>
-                                    <div>
-                                        <div className="font-black text-white">{user.name}</div>
-                                        <div className="text-[10px] font-black uppercase text-[#3B82F6] tracking-widest">{user.role}</div>
-                                    </div>
-                                </div>
-                                <p className="text-white/60 leading-relaxed italic font-serif">"{user.text}"</p>
-                                <div className="flex gap-1 mt-6">
-                                    {[1, 2, 3, 4, 5].map(star => <Zap key={star} size={12} className="text-yellow-400 fill-yellow-400" />)}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* --- App Download CTA --- */}
-            <section className="py-32 px-6">
-                <div className="max-w-7xl mx-auto rounded-[2.5rem] sm:rounded-[4rem] bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] p-8 sm:p-12 md:p-24 relative overflow-hidden flex flex-col lg:flex-row items-center gap-12 sm:gap-16 shadow-2xl">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="space-y-6 sm:space-y-8 relative z-10 text-center lg:text-left">
-                        <h2 className="text-4xl sm:text-5xl md:text-7xl font-black font-serif leading-tight">Ready to Rise? <br className="hidden sm:block" /> Download the App.</h2>
-                        <p className="text-white/80 text-lg sm:text-xl max-w-xl leading-relaxed">Take your VTU business anywhere. Available now for iOS and Android with exclusive mobile-only bonuses.</p>
-                        <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                            <button 
-                                onClick={() => toast.success("Mobile App Coming Soon!", { icon: '🚀' })}
-                                className="bg-black text-white px-8 py-4 rounded-2xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl"
-                            >
-                                <Smartphone size={24} />
-                                <div className="text-left">
-                                    <div className="text-[10px] uppercase font-black opacity-50 tracking-widest">Get it on</div>
-                                    <div className="text-lg font-black leading-none">Google Play</div>
-                                </div>
-                            </button>
-                            <button 
-                                onClick={() => toast.success("Mobile App Coming Soon!", { icon: '🚀' })}
-                                className="bg-white text-black px-8 py-4 rounded-2xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl"
-                            >
-                                <ShieldCheck size={24} />
-                                <div className="text-left">
-                                    <div className="text-[10px] uppercase font-black opacity-50 tracking-widest">Download on</div>
-                                    <div className="text-lg font-black leading-none">App Store</div>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="relative z-10 hidden lg:block">
-                        <div className="w-64 h-[500px] bg-[#0B1221] rounded-[3rem] border-[8px] border-black shadow-2xl overflow-hidden relative">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-b-2xl"></div>
-                            <div className="p-4 pt-12 space-y-4">
-                                <div className="w-full h-8 bg-white/5 rounded-lg animate-pulse"></div>
-                                <div className="w-3/4 h-8 bg-white/5 rounded-lg animate-pulse"></div>
-                                <div className="grid grid-cols-2 gap-4 pt-8">
-                                    <div className="aspect-square bg-[#3B82F6]/20 rounded-xl animate-pulse"></div>
-                                    <div className="aspect-square bg-white/5 rounded-xl animate-pulse"></div>
-                                    <div className="aspect-square bg-white/5 rounded-xl animate-pulse"></div>
-                                    <div className="aspect-square bg-[#F5A623]/20 rounded-xl animate-pulse"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* --- Mock Pricing / Data Plans --- */}
-            <section className="py-24 px-6 bg-white/[0.02] border-y border-white/5">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-between mb-16">
-                        <div>
-                            <h2 className="text-3xl md:text-5xl font-black font-serif mb-2">Popular Bundles</h2>
-                            <p className="text-white/40 font-medium">Get the most value for your money with our top-selling plans.</p>
-                        </div>
-                        <button 
-                            onClick={() => setShowAllPlans(!showAllPlans)}
-                            className="hidden sm:flex items-center gap-2 text-[#3B82F6] font-black text-sm uppercase tracking-widest hover:underline"
-                        >
-                            {showAllPlans ? 'Hide All Plans' : 'View All Plans'} <ChevronRight size={16} className={showAllPlans ? 'rotate-90' : ''} />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {(showAllPlans ? [
-                            { network: 'MTN', data: '1GB', price: '300', duration: '30 Days', desc: 'MTN SME Data - High speed and reliable.' },
-                            { network: 'Airtel', data: '2.5GB', price: '600', duration: '30 Days', desc: 'Airtel Corporate - Best for streaming.' },
-                            { network: 'Glo', data: '5GB', price: '1,200', duration: '30 Days', desc: 'Glo Gifting - Maximum data for less.' },
-                            { network: '9mobile', data: '1.5GB', price: '500', duration: '30 Days', desc: '9mobile Special - Premium connectivity.' },
-                            { network: 'MTN', data: '10GB', price: '2,500', duration: '30 Days', desc: 'MTN Monthly - For heavy users.' },
-                            { network: 'Airtel', data: '5GB', price: '1,100', duration: '30 Days', desc: 'Airtel Weekly - Fast and flexible.' },
-                            { network: 'Glo', data: '10GB', price: '2,000', duration: '30 Days', desc: 'Glo Mega - Never run out of data.' },
-                            { network: '9mobile', data: '10GB', price: '3,000', duration: '30 Days', desc: '9mobile Pro - Uninterrupted speed.' }
-                        ] : [
-                            { network: 'MTN', data: '1GB', price: '300', duration: '30 Days', desc: 'MTN SME Data - High speed and reliable.' },
-                            { network: 'Airtel', data: '2.5GB', price: '600', duration: '30 Days', desc: 'Airtel Corporate - Best for streaming.' },
-                            { network: 'Glo', data: '5GB', price: '1,200', duration: '30 Days', desc: 'Glo Gifting - Maximum data for less.' },
-                            { network: '9mobile', data: '1.5GB', price: '500', duration: '30 Days', desc: '9mobile Special - Premium connectivity.' }
-                        ]).map((plan, i) => (
-                            <div 
-                                key={i} 
-                                onClick={() => setFocusedPlan(focusedPlan === i ? null : i)}
-                                className="p-8 rounded-[2.5rem] glass-card hover:border-[#3B82F6]/50 transition-all group relative overflow-hidden cursor-pointer h-[240px] flex flex-col justify-between hover:shadow-[0_0_40px_rgba(59,130,246,0.15)] hover:-translate-y-2"
-                            >
-                                <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-[#3B82F6] rounded-full blur-[60px] opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                                
-                                {focusedPlan === i ? (
-                                    <div className="animate-in fade-in zoom-in duration-300 h-full flex flex-col justify-center text-center">
-                                        <p className="text-white/80 text-base font-serif italic leading-relaxed">{plan.desc}</p>
-                                        <p className="text-[#3B82F6] text-[10px] font-black uppercase mt-6 tracking-[0.2em] animate-pulse">Click to dismiss</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#3B82F6] mb-4 group-hover:tracking-[0.4em] transition-all">{plan.network} SPECIAL</div>
-                                            <div className="text-5xl font-black mb-2 tracking-tighter">{plan.data}</div>
-                                            <div className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-8">{plan.duration}</div>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-2xl font-black font-serif italic">₦{plan.price}</div>
-                                            <button className="p-3 rounded-2xl bg-white/5 text-white group-hover:bg-[#3B82F6] group-hover:shadow-lg transition-all">
-                                                <ArrowRight size={18} />
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* --- Contact Us Section --- */}
-            <section className="py-32 px-6">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-                    <div className="space-y-8">
-                        <div className="inline-flex items-center gap-2 text-[#FCD34D] font-black text-[10px] uppercase tracking-widest">
-                            <ShieldCheck size={16} /> Support Center
-                        </div>
-                        <h2 className="text-4xl md:text-6xl font-black font-serif">Get in <span className="text-[#3B82F6]">Touch</span>.</h2>
-                        <p className="text-white/40 text-lg leading-relaxed max-w-md">Have questions about our API or Merchant partnership? Our team is ready to help you rise.</p>
-                        
-                        <div className="space-y-6 pt-8">
-                            <div className="flex items-center gap-6 group cursor-pointer" onClick={() => setActiveFooterLink('support')}>
-                                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#3B82F6] group-hover:bg-[#3B82F6] group-hover:text-white transition-all">
-                                    <Smartphone size={24} />
-                                </div>
-                                <div>
-                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest">Phone Support</div>
-                                    <div className="text-xl font-black">+234 9160048633</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-6 group cursor-pointer" onClick={() => setActiveFooterLink('support')}>
-                                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#3B82F6] group-hover:bg-[#3B82F6] group-hover:text-white transition-all">
-                                    <ShieldCheck size={24} />
-                                </div>
-                                <div>
-                                    <div className="text-[10px] font-black uppercase text-white/30 tracking-widest">Email Inquiry</div>
-                                    <div className="text-xl font-black">risereconnect@gmail.com</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-[#1A2235]/60 backdrop-blur-3xl p-10 md:p-16 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#3B82F6] rounded-full blur-[80px] opacity-10"></div>
-                        <form className="space-y-6" onSubmit={handleContactSubmit}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-2">Name</label>
-                                    <input name="name" type="text" placeholder="John Doe" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-2">Email</label>
-                                    <input name="email" type="email" placeholder="john@example.com" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all" required />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-2">Subject</label>
-                                <select className="w-full px-6 py-4 rounded-2xl bg-[#0B1221] border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all">
-                                    <option>General Inquiry</option>
-                                    <option>Merchant Partnership</option>
-                                    <option>Technical API Support</option>
-                                    <option>Transaction Issue</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-2">Message</label>
-                                <textarea rows="4" placeholder="How can we help you?" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all resize-none"></textarea>
-                            </div>
-                            <button className="w-full py-5 rounded-2xl bg-[#3B82F6] text-white font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-[#3B82F6]/20 hover:bg-[#2563EB] transition-all active:scale-95">
-                                Send Message
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-
-            {/* --- Footer --- */}
-            <footer className="py-20 px-6 border-t border-white/10">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-                    <div className="space-y-4 text-center md:text-left">
-                        <div className="flex items-center gap-3 justify-center md:justify-start">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/20 p-1">
-                                <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                            </div>
-                            <span className="text-2xl font-black font-serif">{brand.orgName}</span>
-                        </div>
-                        <p className="text-white/30 text-xs font-black uppercase tracking-[0.2em]">{brand.orgSlogan}</p>
-                    </div>
-
-                    <div className="flex gap-12 text-center md:text-left">
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40">Company</h4>
-                            <ul className="space-y-2 text-sm text-white/60 font-medium">
-                                <li onClick={() => setActiveFooterLink('about')} className="hover:text-white transition-colors cursor-pointer">About Us</li>
-                                <li onClick={() => setActiveFooterLink('terms')} className="hover:text-white transition-colors cursor-pointer">Terms of Service</li>
-                            </ul>
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40">Help</h4>
-                            <ul className="space-y-2 text-sm text-white/60 font-medium">
-                                <li onClick={() => setActiveFooterLink('support')} className="hover:text-white transition-colors cursor-pointer">Contact Support</li>
-                                <li onClick={() => setActiveFooterLink('api')} className="hover:text-white transition-colors cursor-pointer">API Documentation</li>
-                                <li onClick={() => setActiveFooterLink('help')} className="hover:text-white transition-colors cursor-pointer">Help Center</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-                    <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">
-                        © {new Date().getFullYear()} {brand.orgName} VTU. All Rights Reserved.
-                    </p>
-                    <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
-                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Support: risereconnect@gmail.com</span>
-                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">+234 9160048633</span>
-                    </div>
-                </div>
-            </footer>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 bg-navy dark:bg-navy-dark text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <img src="/pattern.png" alt="" className="w-full h-full object-cover" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            {[
+              { label: "Active Members", value: "5,800+" },
+              { label: "Total Distributed", value: "$4.2M" },
+              { label: "Community Projects", value: "150+" },
+              { label: "Countries Served", value: "12+" }
+            ].map((stat, i) => (
+              <div key={i} className="text-center group">
+                <div className="text-4xl lg:text-5xl font-bold text-accent mb-2 group-hover:scale-110 transition-transform duration-300">{stat.value}</div>
+                <div className="text-white/60 font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section id="features" className="py-24 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="text-center mb-16">
+            <h2 className="text-accent font-bold tracking-widest uppercase text-sm mb-4">Core Ecosystem</h2>
+            <h3 className="text-4xl lg:text-5xl font-bold font-heading text-navy dark:text-white mb-6">Built for Modern Communities</h3>
+            <p className="text-navy/60 dark:text-white/60 max-w-2xl mx-auto">
+              Everything you need to manage, grow, and empower your community in one secure and intuitive dashboard.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, i) => (
+              <div key={i} className="glass-card p-8 rounded-3xl hover:border-accent/30 transition-all group hover:-translate-y-2">
+                <div className="w-14 h-14 rounded-2xl bg-accent/10 dark:bg-accent/20 text-accent flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                  {feature.icon}
+                </div>
+                <h4 className="text-xl font-bold text-navy dark:text-white mb-4">{feature.title}</h4>
+                <p className="text-navy/60 dark:text-white/60 leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Feature Section */}
+      <section className="py-24 bg-navy-light/5 dark:bg-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="order-2 lg:order-1">
+              <div className="relative">
+                <div className="absolute inset-0 bg-accent/20 rounded-3xl blur-3xl"></div>
+                <img 
+                  src="/features.png" 
+                  alt="Secure Transactions" 
+                  className="relative z-10 w-full rounded-3xl shadow-2xl border border-navy/5 dark:border-white/5"
+                />
+              </div>
+            </div>
+            <div className="order-1 lg:order-2">
+              <h2 className="text-4xl lg:text-5xl font-bold font-heading text-navy dark:text-white mb-8">
+                Financial Empowerment, <span className="text-accent">Redefined.</span>
+              </h2>
+              <div className="space-y-8">
+                {[
+                  {
+                    title: "Automated Wallet Systems",
+                    desc: "Manage your contributions and withdrawals with our secure automated system. No manual intervention required."
+                  },
+                  {
+                    title: "Democratic Governance",
+                    desc: "Every member has a voice. Participate in community decisions through our transparent voting modules."
+                  },
+                  {
+                    title: "Peer-to-Peer Support",
+                    desc: "Request welfare or apply for loans directly from the community fund with fair, member-approved terms."
+                  }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-bold">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <h5 className="text-xl font-bold text-navy dark:text-white mb-2">{item.title}</h5>
+                      <p className="text-navy/60 dark:text-white/60">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-12">
+                <Link 
+                  to="/register" 
+                  className="inline-flex items-center gap-2 text-accent font-bold hover:gap-4 transition-all"
+                >
+                  Explore Financial Modules <ChevronRight />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials/Community CTA */}
+      <section id="community" className="py-24 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-5 pointer-events-none">
+          <img src="/pattern.png" alt="" className="w-full h-full object-cover scale-150 rotate-12" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="bg-navy dark:bg-navy-dark rounded-[40px] p-8 lg:p-20 text-center relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2"></div>
+            
+            <h2 className="text-4xl lg:text-6xl font-bold font-heading text-white mb-8">Ready to Rise with Us?</h2>
+            <p className="text-xl text-white/70 mb-12 max-w-2xl mx-auto">
+              Join thousands of professionals and community leaders who are already leveraging ReConnect & Rise to transform their future.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Link 
+                to="/register" 
+                className="w-full sm:w-auto bg-accent text-white px-10 py-5 rounded-2xl font-bold text-xl hover:bg-gold transition-all shadow-xl hover:-translate-y-1"
+              >
+                Create Free Account
+              </Link>
+              <Link 
+                to="/login" 
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white px-10 py-5 rounded-2xl font-bold text-xl backdrop-blur-md transition-all border border-white/20"
+              >
+                Talk to an Expert
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white dark:bg-[#050912] pt-20 pb-10 border-t border-navy/5 dark:border-white/5 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+            <div className="col-span-1 lg:col-span-1">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+                  <Zap className="text-white w-5 h-5" fill="currentColor" />
+                </div>
+                <span className="text-xl font-bold text-navy dark:text-white font-heading">
+                  ReConnect <span className="text-accent">&</span> Rise
+                </span>
+              </div>
+              <p className="text-navy/60 dark:text-white/60 mb-8 leading-relaxed">
+                A secure digital ecosystem designed to foster community growth, provide transparent financial support, and empower members through collective governance.
+              </p>
+              <div className="flex gap-4">
+                {[
+                  { icon: <Globe size={18} />, label: 'Website' },
+                  { icon: <Users size={18} />, label: 'Community' },
+                  { icon: <ShieldCheck size={18} />, label: 'Security' }
+                ].map((social, i) => (
+                  <a key={i} href="#" className="w-10 h-10 rounded-full bg-navy/5 dark:bg-white/5 flex items-center justify-center hover:bg-accent hover:text-white transition-all" title={social.label}>
+                    {social.icon}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h5 className="font-bold text-navy dark:text-white mb-6 uppercase tracking-wider text-xs">Core Modules</h5>
+              <ul className="space-y-4">
+                <li><Link to="/contributions" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Monthly Contributions</Link></li>
+                <li><Link to="/loans" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Loan Applications</Link></li>
+                <li><Link to="/welfare" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Welfare Support</Link></li>
+                <li><Link to="/votes" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Governance Voting</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h5 className="font-bold text-navy dark:text-white mb-6 uppercase tracking-wider text-xs">Resources</h5>
+              <ul className="space-y-4">
+                <li><a href="#" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Member Handbook</a></li>
+                <li><Link to="/documentary" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">System Archives</Link></li>
+                <li><Link to="/advice" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Expert Advice Room</Link></li>
+                <li><a href="#" className="text-navy/60 dark:text-white/60 hover:text-accent transition-colors">Security Protocols</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h5 className="font-bold text-navy dark:text-white mb-6 uppercase tracking-wider text-xs">Community Pulse</h5>
+              <p className="text-navy/60 dark:text-white/60 mb-6 text-sm">Subscribe to receive monthly reports and governance updates.</p>
+              <form className="relative" onSubmit={(e) => e.preventDefault()}>
+                <input 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  className="w-full bg-navy/5 dark:bg-white/5 border border-navy/10 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:border-accent transition-colors text-sm"
+                />
+                <button className="absolute right-2 top-2 bottom-2 bg-accent text-white px-4 rounded-lg hover:bg-accent/90 transition-colors">
+                  <ArrowRight size={18} />
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div className="pt-10 border-t border-navy/5 dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-navy/40 dark:text-white/40 text-sm">
+              &copy; {new Date().getFullYear()} ReConnect & Rise. Empowering Communities Worldwide.
+            </p>
+            <div className="flex gap-8 text-sm text-navy/40 dark:text-white/40">
+              <Link to="/privacy" className="hover:text-accent transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-accent transition-colors">Terms of Use</Link>
+              <button className="hover:text-accent transition-colors">Cookie Settings</button>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 }

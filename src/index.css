@@ -150,3 +150,12 @@ h4 {
 .glow-orange {
   box-shadow: 0 0 30px rgba(245, 166, 35, 0.2);
 }
+
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 4s ease-in-out infinite;
+}

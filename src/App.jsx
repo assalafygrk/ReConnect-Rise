@@ -12,9 +12,10 @@ import AppLayout from './components/layout/AppLayout';
 // Lazy load all pages
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegistrationPage = lazy(() => import('./pages/RegistrationPage'));
-const MockRegisterPage = lazy(() => import('./pages/MockRegisterPage'));
-const MockLoginPage = lazy(() => import('./pages/MockLoginPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfUsePage = lazy(() => import('./pages/TermsOfUsePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const ContributionsPage = lazy(() => import('./pages/ContributionsPage'));
 const MembersPage = lazy(() => import('./pages/MembersPage'));
@@ -77,10 +78,11 @@ export default function App() {
                     {/* Public */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegistrationPage />} />
-                    <Route path="/mock-login" element={<MockLoginPage />} />
-                    <Route path="/mock-register" element={<MockRegisterPage />} />
                     <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                    <Route path="/terms" element={<TermsOfUsePage />} />
 
                     {/* Protected — inside layout */}
                     <Route

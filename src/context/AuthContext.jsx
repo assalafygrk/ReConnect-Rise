@@ -84,6 +84,15 @@ export function AuthProvider({ children }) {
         return localStorage.getItem(ADMIN_SEC_MODE) || 'password';
     });
 
+    const [sessions, setSessions] = useState(() => {
+        try {
+            const saved = localStorage.getItem('rr_sessions');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+
     useEffect(() => {
         const loadInitialSettings = async () => {
             try {
@@ -99,9 +108,7 @@ export function AuthProvider({ children }) {
                         });
                     }
                     
-                    // Priority: Always default to password if nothing set or if facial is unconfigured
                     let mode = settings.adminSecurityMode || 'password';
-                    
                     setAdminSecurityModeState(mode);
                     localStorage.setItem(ADMIN_SEC_MODE, mode);
                 }
@@ -114,13 +121,26 @@ export function AuthProvider({ children }) {
         loadInitialSettings();
 
         const token = localStorage.getItem('rr_token');
+        const savedSessions = localStorage.getItem('rr_sessions');
+        let parsedSessions = [];
+        try {
+            parsedSessions = savedSessions ? JSON.parse(savedSessions) : [];
+        } catch {}
+
         if (token) {
             const payload = parseJwt(token);
             if (payload && payload.exp * 1000 > Date.now()) {
                 setUser(payload);
                 setActiveRole(payload.role);
-                // Fetch full profile (includes facialUpload avatar)
                 apiGetProfile().then(profile => setUserProfile(profile)).catch(() => {});
+                
+                const exists = parsedSessions.find(s => s.userId === payload.id);
+                if (!exists) {
+                    const newSession = { token: token, userId: payload.id, name: payload.name, email: payload.email, role: payload.role };
+                    parsedSessions.push(newSession);
+                    localStorage.setItem('rr_sessions', JSON.stringify(parsedSessions));
+                    setSessions(parsedSessions);
+                }
             } else {
                 localStorage.removeItem('rr_token');
             }
@@ -129,18 +149,69 @@ export function AuthProvider({ children }) {
     }, []);
 
     const login = (token) => {
-        localStorage.setItem('rr_token', token);
         const payload = parseJwt(token);
+        if (!payload) return;
+
+        localStorage.setItem('rr_token', token);
         setUser(payload);
         setActiveRole(payload.role);
-        // Fetch full profile after login to get facialUpload avatar
+
+        setSessions(prev => {
+            const exists = prev.find(s => s.userId === payload.id);
+            let next;
+            if (exists) {
+                next = prev.map(s => s.userId === payload.id ? { ...s, token } : s);
+            } else {
+                next = [...prev, { token, userId: payload.id, name: payload.name, email: payload.email, role: payload.role }];
+            }
+            localStorage.setItem('rr_sessions', JSON.stringify(next));
+            return next;
+        });
+
         apiGetProfile().then(profile => setUserProfile(profile)).catch(() => {});
+    };
+
+    const switchAccount = (userId) => {
+        const target = sessions.find(s => s.userId === userId);
+        if (target) {
+            localStorage.setItem('rr_token', target.token);
+            const payload = parseJwt(target.token);
+            setUser(payload);
+            setActiveRole(payload.role);
+            apiGetProfile().then(profile => setUserProfile(profile)).catch(() => {});
+            toast.success(`Switched to account: ${target.name || target.email}`);
+        }
+    };
+
+    const removeAccount = (userId) => {
+        setSessions(prev => {
+            const next = prev.filter(s => s.userId !== userId);
+            localStorage.setItem('rr_sessions', JSON.stringify(next));
+            
+            if (user?.id === userId) {
+                if (next.length > 0) {
+                    switchAccount(next[0].userId);
+                } else {
+                    logout();
+                }
+            }
+            return next;
+        });
     };
 
     const logout = () => {
         localStorage.removeItem('rr_token');
         localStorage.removeItem('rr_mock_role');
         localStorage.removeItem(UNLOCK_KEY);
+        
+        if (user) {
+            setSessions(prev => {
+                const next = prev.filter(s => s.userId !== user.id);
+                localStorage.setItem('rr_sessions', JSON.stringify(next));
+                return next;
+            });
+        }
+
         setUser(null);
         setUserProfile(null);
         setActiveRole(null);
@@ -254,6 +325,9 @@ export function AuthProvider({ children }) {
             loading,
             login,
             logout,
+            switchAccount,
+            removeAccount,
+            sessions,
             hasRole,
             switchActiveRole,
             updateUser,

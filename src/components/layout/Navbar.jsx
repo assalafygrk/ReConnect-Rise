@@ -5,12 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useTheme } from '../../context/ThemeContext';
 import NotificationPopover from './NotificationPopover';
+import AccountSwitcher from './AccountSwitcher';
 
 export default function Navbar({ onMenuToggle, pageTitle }) {
     const { user, userProfile } = useAuth();
     const { unreadCount } = useNotifications();
     const { theme, toggleTheme } = useTheme();
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
 
     const initials = user?.name
         ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -65,27 +67,37 @@ export default function Navbar({ onMenuToggle, pageTitle }) {
                 />
 
                 <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
-
-                {/* Avatar */}
-                <Link to="/profile" className="flex items-center gap-2 group hover:opacity-80 transition-all">
-                    <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-md group-hover:scale-110 transition-transform overflow-hidden bg-gradient-to-br from-[#E8820C] to-[#F5A623] dark:from-[#3B82F6] dark:to-[#1D4ED8]"
+ 
+                {/* Avatar / Account Switcher Trigger */}
+                <div className="relative">
+                    <button 
+                        onClick={() => setIsAccountSwitcherOpen(!isAccountSwitcherOpen)}
+                        className="flex items-center gap-2 group hover:opacity-80 transition-all text-left"
                     >
-                        {userProfile?.facialUpload ? (
-                            <img src={userProfile.facialUpload} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                            initials
-                        )}
-                    </div>
-                    <div className="hidden sm:block">
-                        <p className="text-sm font-medium leading-tight group-hover:text-[#E8820C] dark:group-hover:text-[#3B82F6] transition-colors text-[#1A1A2E] dark:text-white">
-                            {user?.name || user?.email?.split('@')[0]}
-                        </p>
-                        <p className="text-xs capitalize text-[#1A1A2E]/50 dark:text-white/40">
-                            {user?.role?.replace(/[-_]/g, ' ')}
-                        </p>
-                    </div>
-                </Link>
+                        <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-md group-hover:scale-110 transition-transform overflow-hidden bg-gradient-to-br from-[#E8820C] to-[#F5A623] dark:from-[#3B82F6] dark:to-[#1D4ED8]"
+                        >
+                            {userProfile?.facialUpload ? (
+                                <img src={userProfile.facialUpload} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                initials
+                            )}
+                        </div>
+                        <div className="hidden sm:block">
+                            <p className="text-sm font-medium leading-tight group-hover:text-[#E8820C] dark:group-hover:text-[#3B82F6] transition-colors text-[#1A1A2E] dark:text-white">
+                                {user?.name || user?.email?.split('@')[0]}
+                            </p>
+                            <p className="text-xs capitalize text-[#1A1A2E]/50 dark:text-white/40">
+                                {user?.role?.replace(/[-_]/g, ' ')}
+                            </p>
+                        </div>
+                    </button>
+
+                    <AccountSwitcher 
+                        isOpen={isAccountSwitcherOpen}
+                        onClose={() => setIsAccountSwitcherOpen(false)}
+                    />
+                </div>
             </div>
         </header>
     );

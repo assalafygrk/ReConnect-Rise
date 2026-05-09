@@ -9,7 +9,7 @@ import { apiLogin, apiVerifyLogin2FA, apiResendVerification } from '../api/auth'
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const { login, isPageEnabled } = useAuth();
+    const { login, isPageEnabled, user } = useAuth();
     const { brand } = useBrand();
     const { config } = usePageConfig('login');
     const [email, setEmail] = useState('');
@@ -23,6 +23,15 @@ export default function LoginPage() {
     const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
     const [unverifiedEmail, setUnverifiedEmail] = useState(null);
     const [resending, setResending] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const addAccount = params.get('addAccount') === 'true';
+        
+        if (user && !twoFactorStep && !addAccount) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate, twoFactorStep]);
 
     useEffect(() => {
         if (twoFactorStep) {

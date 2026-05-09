@@ -11,9 +11,15 @@ import IdCard from '../components/IdCard';
 
 export default function RegistrationPage() {
     const navigate = useNavigate();
-    const { login, isPageEnabled } = useAuth();
+    const { login, isPageEnabled, user } = useAuth();
     const { brand } = useBrand();
     const { config } = usePageConfig('register');
+
+    useEffect(() => {
+        if (user) {
+            navigate('/dashboard');
+        }
+    }, [user, navigate]);
 
     if (!isPageEnabled('register') || config.registrationOpen === false) {
         return (
