@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { useBrand } from '../context/BrandContext';
 import { 
     ShieldCheck, 
@@ -134,11 +135,11 @@ export default function HomePage() {
             <nav className="fixed top-0 left-0 w-full z-50 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
                     <div className="flex items-center gap-3">
-                        <Link to="/" className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5">
+                        <Link to="/" className="flex items-center gap-2">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5 shrink-0">
                                 <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-xl font-black font-serif tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent hidden sm:block">
+                            <span className="text-lg sm:text-xl font-black font-serif tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent truncate max-w-[120px] sm:max-w-none">
                                 {brand.orgName}
                             </span>
                         </Link>
@@ -146,7 +147,7 @@ export default function HomePage() {
 
                     <div className="flex items-center gap-2 sm:gap-6">
                         <Link to="/mock-login" className="text-sm font-bold text-white/70 hover:text-white transition-colors">
-                            Merchant Portal
+                            Login
                         </Link>
                         <Link 
                             to="/mock-register" 
@@ -171,11 +172,11 @@ export default function HomePage() {
                             <Zap size={14} className="animate-pulse" />
                             Premium Utility Network
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-black leading-[1.1] font-serif tracking-tight">
-                            Smart <span className="text-[#3B82F6]">Solutions</span> <br /> 
+                        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[1.1] font-serif tracking-tight">
+                            Smart <span className="text-[#3B82F6]">Solutions</span> <br className="hidden sm:block" /> 
                             For Your Daily Needs.
                         </h1>
-                        <p className="text-white/50 text-xl max-w-xl leading-relaxed font-serif">
+                        <p className="text-white/50 text-lg sm:text-xl max-w-xl leading-relaxed font-serif">
                             Experience the future of utility payments. Secure, fast, and automated services tailored for the modern consumer.
                         </p>
                         
@@ -240,38 +241,8 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* --- Live Transactions Ticker --- */}
-            <div className="bg-[#3B82F6]/5 border-y border-white/5 py-3 overflow-hidden whitespace-nowrap relative">
-                <div className="flex animate-marquee gap-12 items-center">
-                    {[
-                        "MTN Airtime ₦2,000 sent to 0803***1234",
-                        "Airtel Data 2.5GB sent to 0901***5678",
-                        "Ikeja Electric ₦5,000 paid for 4501***9901",
-                        "DSTV Premium renewed for 0123***4567",
-                        "Glo Airtime ₦500 sent to 0705***8812",
-                        "9mobile Data 1.5GB sent to 0809***4432"
-                    ].map((text, i) => (
-                        <div key={i} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                            {text}
-                        </div>
-                    ))}
-                    {/* Duplicate for seamless loop */}
-                    {[
-                        "MTN Airtime ₦2,000 sent to 0803***1234",
-                        "Airtel Data 2.5GB sent to 0901***5678",
-                        "Ikeja Electric ₦5,000 paid for 4501***9901",
-                        "DSTV Premium renewed for 0123***4567",
-                        "Glo Airtime ₦500 sent to 0705***8812",
-                        "9mobile Data 1.5GB sent to 0809***4432"
-                    ].map((text, i) => (
-                        <div key={i + 10} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                            {text}
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* --- Removed Live Transactions Ticker --- */}
+
 
             {/* --- Trusted By Section --- */}
             <section className="py-20 border-y border-white/5 bg-white/[0.01]">
@@ -370,20 +341,26 @@ export default function HomePage() {
 
             {/* --- App Download CTA --- */}
             <section className="py-32 px-6">
-                <div className="max-w-7xl mx-auto rounded-[4rem] bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] p-12 md:p-24 relative overflow-hidden flex flex-col lg:flex-row items-center gap-16 shadow-2xl">
+                <div className="max-w-7xl mx-auto rounded-[2.5rem] sm:rounded-[4rem] bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] p-8 sm:p-12 md:p-24 relative overflow-hidden flex flex-col lg:flex-row items-center gap-12 sm:gap-16 shadow-2xl">
                     <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="space-y-8 relative z-10 text-center lg:text-left">
-                        <h2 className="text-5xl md:text-7xl font-black font-serif leading-tight">Ready to Rise? <br /> Download the App.</h2>
-                        <p className="text-white/80 text-xl max-w-xl leading-relaxed">Take your VTU business anywhere. Available now for iOS and Android with exclusive mobile-only bonuses.</p>
+                    <div className="space-y-6 sm:space-y-8 relative z-10 text-center lg:text-left">
+                        <h2 className="text-4xl sm:text-5xl md:text-7xl font-black font-serif leading-tight">Ready to Rise? <br className="hidden sm:block" /> Download the App.</h2>
+                        <p className="text-white/80 text-lg sm:text-xl max-w-xl leading-relaxed">Take your VTU business anywhere. Available now for iOS and Android with exclusive mobile-only bonuses.</p>
                         <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                            <button className="bg-black text-white px-8 py-4 rounded-2xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl">
+                            <button 
+                                onClick={() => toast.success("Mobile App Coming Soon!", { icon: '🚀' })}
+                                className="bg-black text-white px-8 py-4 rounded-2xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl"
+                            >
                                 <Smartphone size={24} />
                                 <div className="text-left">
                                     <div className="text-[10px] uppercase font-black opacity-50 tracking-widest">Get it on</div>
                                     <div className="text-lg font-black leading-none">Google Play</div>
                                 </div>
                             </button>
-                            <button className="bg-white text-black px-8 py-4 rounded-2xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl">
+                            <button 
+                                onClick={() => toast.success("Mobile App Coming Soon!", { icon: '🚀' })}
+                                className="bg-white text-black px-8 py-4 rounded-2xl flex items-center gap-4 hover:scale-105 transition-all shadow-xl"
+                            >
                                 <ShieldCheck size={24} />
                                 <div className="text-left">
                                     <div className="text-[10px] uppercase font-black opacity-50 tracking-widest">Download on</div>
@@ -543,7 +520,7 @@ export default function HomePage() {
 
             {/* --- Footer --- */}
             <footer className="py-20 px-6 border-t border-white/10">
-                <div className="max-w-7xl mx-auto flex flex-col md:row justify-between items-center gap-12">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
                     <div className="space-y-4 text-center md:text-left">
                         <div className="flex items-center gap-3 justify-center md:justify-start">
                             <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/20 p-1">
