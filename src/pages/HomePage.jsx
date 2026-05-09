@@ -96,6 +96,24 @@ export default function HomePage() {
         }
     };
 
+    const handleContactSubmit = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const name = formData.get('name');
+        
+        toast.success(`Thank you, ${name || 'there'}! Your message has been sent successfully.`, {
+            duration: 5000,
+            icon: '✉️',
+            style: {
+                borderRadius: '20px',
+                background: '#1A2235',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.1)'
+            }
+        });
+        e.target.reset();
+    };
+
     return (
         <div className="min-h-screen bg-[#0B1221] text-white selection:bg-[#3B82F6]/30 selection:text-white">
             
@@ -131,12 +149,19 @@ export default function HomePage() {
                 </div>
             )}
             
+            {/* --- Animated Background Elements --- */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#3B82F6]/20 rounded-full blur-[120px] animate-blob"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#F5A623]/10 rounded-full blur-[150px] animate-blob" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#6366F1]/5 rounded-full blur-[180px] animate-pulse"></div>
+            </div>
+
             {/* --- Navbar --- */}
             <nav className="fixed top-0 left-0 w-full z-50 px-6 py-4">
-                <div className="max-w-7xl mx-auto flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                <div className="max-w-7xl mx-auto flex items-center justify-between glass-card rounded-2xl px-6 py-3 shadow-2xl">
                     <div className="flex items-center gap-3">
-                        <Link to="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5 shrink-0">
+                        <Link to="/" className="flex items-center gap-2 group">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg border border-white/10 bg-white/5 shrink-0 group-hover:scale-110 transition-transform">
                                 <img src={brand.logoUrl} alt="Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="text-lg sm:text-xl font-black font-serif tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent truncate max-w-[120px] sm:max-w-none">
@@ -146,12 +171,12 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex items-center gap-2 sm:gap-6">
-                        <Link to="/mock-login" className="text-sm font-bold text-white/70 hover:text-white transition-colors">
+                        <Link to="/mock-login" className="text-sm font-bold text-white/70 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5">
                             Login
                         </Link>
                         <Link 
                             to="/mock-register" 
-                            className="bg-[#3B82F6] text-white px-5 py-2.5 rounded-xl font-black text-sm hover:bg-[#2563EB] transition-all active:scale-95 shadow-lg shadow-[#3B82F6]/20"
+                            className="bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white px-6 py-2.5 rounded-xl font-black text-sm hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all active:scale-95 shadow-lg"
                         >
                             Sign Up
                         </Link>
@@ -160,37 +185,35 @@ export default function HomePage() {
             </nav>
 
             {/* --- Hero & Services Grid --- */}
-            <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#3B82F6] rounded-full blur-[150px] opacity-10 pointer-events-none animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[700px] h-[700px] bg-[#F5A623] rounded-full blur-[150px] opacity-10 pointer-events-none animate-pulse"></div>
-
-                <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+            <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+                <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
                     
                     {/* Left: Text Content */}
                     <div className="lg:col-span-6 space-y-8 pt-10">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#3B82F6] text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#3B82F6] text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-md animate-float">
                             <Zap size={14} className="animate-pulse" />
                             Premium Utility Network
                         </div>
-                        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[1.1] font-serif tracking-tight">
-                            Smart <span className="text-[#3B82F6]">Solutions</span> <br className="hidden sm:block" /> 
-                            For Your Daily Needs.
+                        <h1 className="text-4xl sm:text-5xl md:text-8xl font-black leading-[0.95] font-serif tracking-tighter">
+                            Empower <br />
+                            <span className="bg-gradient-to-r from-[#3B82F6] to-[#6366F1] bg-clip-text text-transparent">Your Future.</span>
                         </h1>
-                        <p className="text-white/50 text-lg sm:text-xl max-w-xl leading-relaxed font-serif">
-                            Experience the future of utility payments. Secure, fast, and automated services tailored for the modern consumer.
+                        <p className="text-white/40 text-lg sm:text-2xl max-w-xl leading-relaxed font-serif italic">
+                            Fast. Reliable. Seamless. ReConnect & Rise provides the most stable VTU infrastructure in Africa.
                         </p>
                         
                         {/* Service Detail Display */}
-                        <div className="mt-12 p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/10 animate-in fade-in slide-in-from-left-4 duration-500">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="p-3 rounded-2xl bg-[#3B82F6]/20 text-[#3B82F6]">
+                        <div className="mt-12 p-10 rounded-[3rem] glass-card relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#3B82F6]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform"></div>
+                            <div className="flex items-center gap-6 mb-6">
+                                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#3B82F6] to-[#2563EB] text-white shadow-xl animate-float">
                                     {selectedService.icon}
                                 </div>
-                                <h3 className="text-2xl font-black font-serif">{selectedService.name}</h3>
+                                <h3 className="text-3xl font-black font-serif tracking-tight">{selectedService.name}</h3>
                             </div>
-                            <p className="text-white/60 mb-6 leading-relaxed italic font-serif">"{selectedService.desc}"</p>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3B82F6]/10 text-[#3B82F6] text-xs font-bold uppercase tracking-widest border border-[#3B82F6]/20">
-                                <ArrowRight size={14} /> {selectedService.value}
+                            <p className="text-white/60 mb-8 text-lg leading-relaxed italic font-serif">"{selectedService.desc}"</p>
+                            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 text-[#3B82F6] text-sm font-black uppercase tracking-widest border border-white/10 hover:border-[#3B82F6]/50 transition-colors">
+                                <ArrowRight size={18} /> {selectedService.value}
                             </div>
                         </div>
                     </div>
@@ -211,8 +234,8 @@ export default function HomePage() {
                                         onClick={() => setSelectedService(s)}
                                         className={`flex flex-col items-center justify-center gap-4 aspect-square rounded-[2rem] transition-all relative overflow-hidden border ${
                                             selectedService.id === s.id 
-                                            ? 'bg-[#3B82F6] border-white/20 scale-105 shadow-2xl shadow-[#3B82F6]/30' 
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-[1.02]'
+                                            ? 'bg-[#3B82F6] border-white/20 scale-105 shadow-[0_0_40px_rgba(59,130,246,0.3)]' 
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:scale-[1.05] hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]'
                                         }`}
                                     >
                                         <div className={`${selectedService.id === s.id ? 'text-white' : 'text-[#3B82F6]'}`}>
@@ -222,7 +245,7 @@ export default function HomePage() {
                                             {s.name}
                                         </span>
                                         {selectedService.id === s.id && (
-                                            <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
                                         )}
                                     </button>
                                 ))}
@@ -422,25 +445,25 @@ export default function HomePage() {
                             <div 
                                 key={i} 
                                 onClick={() => setFocusedPlan(focusedPlan === i ? null : i)}
-                                className="p-8 rounded-3xl bg-[#1A2235]/60 border border-white/10 hover:border-[#3B82F6]/50 transition-all group relative overflow-hidden cursor-pointer h-[240px] flex flex-col justify-between"
+                                className="p-8 rounded-[2.5rem] glass-card hover:border-[#3B82F6]/50 transition-all group relative overflow-hidden cursor-pointer h-[240px] flex flex-col justify-between hover:shadow-[0_0_40px_rgba(59,130,246,0.15)] hover:-translate-y-2"
                             >
                                 <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-[#3B82F6] rounded-full blur-[60px] opacity-0 group-hover:opacity-10 transition-opacity"></div>
                                 
                                 {focusedPlan === i ? (
                                     <div className="animate-in fade-in zoom-in duration-300 h-full flex flex-col justify-center text-center">
-                                        <p className="text-white/80 text-sm font-medium leading-relaxed">{plan.desc}</p>
-                                        <p className="text-[#3B82F6] text-[10px] font-black uppercase mt-4 tracking-widest">Click to dismiss</p>
+                                        <p className="text-white/80 text-base font-serif italic leading-relaxed">{plan.desc}</p>
+                                        <p className="text-[#3B82F6] text-[10px] font-black uppercase mt-6 tracking-[0.2em] animate-pulse">Click to dismiss</p>
                                     </div>
                                 ) : (
                                     <>
                                         <div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#3B82F6] mb-4">{plan.network} SPECIAL</div>
-                                            <div className="text-4xl font-black mb-2">{plan.data}</div>
-                                            <div className="text-white/40 text-xs mb-8">{plan.duration}</div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#3B82F6] mb-4 group-hover:tracking-[0.4em] transition-all">{plan.network} SPECIAL</div>
+                                            <div className="text-5xl font-black mb-2 tracking-tighter">{plan.data}</div>
+                                            <div className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-8">{plan.duration}</div>
                                         </div>
                                         <div className="flex items-center justify-between">
-                                            <div className="text-2xl font-black">₦{plan.price}</div>
-                                            <button className="p-3 rounded-2xl bg-white/5 text-white group-hover:bg-[#3B82F6] transition-all">
+                                            <div className="text-2xl font-black font-serif italic">₦{plan.price}</div>
+                                            <button className="p-3 rounded-2xl bg-white/5 text-white group-hover:bg-[#3B82F6] group-hover:shadow-lg transition-all">
                                                 <ArrowRight size={18} />
                                             </button>
                                         </div>
@@ -486,15 +509,15 @@ export default function HomePage() {
 
                     <div className="bg-[#1A2235]/60 backdrop-blur-3xl p-10 md:p-16 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#3B82F6] rounded-full blur-[80px] opacity-10"></div>
-                        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                        <form className="space-y-6" onSubmit={handleContactSubmit}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-2">Name</label>
-                                    <input type="text" placeholder="John Doe" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all" />
+                                    <input name="name" type="text" placeholder="John Doe" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all" required />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-2">Email</label>
-                                    <input type="email" placeholder="john@example.com" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all" />
+                                    <input name="email" type="email" placeholder="john@example.com" className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-[#3B82F6] transition-all" required />
                                 </div>
                             </div>
                             <div className="space-y-2">
