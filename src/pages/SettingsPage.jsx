@@ -105,6 +105,14 @@ export default function SettingsPage() {
         };
         loadInitialData();
     }, [refreshLogs]);
+    
+    useEffect(() => {
+        if (activeModal === '2fa') {
+            setTimeout(() => {
+                document.getElementById('otp-0')?.focus();
+            }, 100);
+        }
+    }, [activeModal]);
 
     const handleSaveProtocols = async () => {
         setSaving(true);
@@ -163,13 +171,13 @@ export default function SettingsPage() {
             
             // Auto-submit if full code
             if (newDigits.every(d => d !== '')) {
-                setTimeout(() => confirm2FA(), 100);
+                confirm2FA(newDigits.join(''));
             }
             return;
         }
 
         const newDigits = [...otpDigits];
-        newDigits[index] = value;
+        newDigits[index] = value.slice(-1);
         setOtpDigits(newDigits);
 
         if (value && index < 5) {
@@ -181,7 +189,7 @@ export default function SettingsPage() {
         if (value && index === 5) {
             const finalCode = newDigits.join('');
             if (finalCode.length === 6) {
-                setTimeout(() => confirm2FA(), 100);
+                confirm2FA(finalCode);
             }
         }
     };
@@ -191,11 +199,11 @@ export default function SettingsPage() {
         const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
         if (pasteData) {
             const newDigits = pasteData.split('');
-            const updated = [...otpDigits];
+            const updated = ['','','','','',''];
             newDigits.forEach((d, i) => { updated[i] = d; });
             setOtpDigits(updated);
             if (updated.every(d => d !== '')) {
-                setTimeout(() => confirm2FA(), 100);
+                confirm2FA(updated.join(''));
             }
         }
     };
@@ -207,8 +215,8 @@ export default function SettingsPage() {
         }
     };
 
-    const confirm2FA = async () => {
-        const token = otpDigits.join('');
+    const confirm2FA = async (forcedToken = null) => {
+        const token = forcedToken || otpDigits.join('');
         if (token.length !== 6) return toast.error('Enter 6-digit code');
         setOtpSaving(true);
         try {
@@ -219,6 +227,8 @@ export default function SettingsPage() {
             setOtpDigits(['', '', '', '', '', '']);
         } catch (err) {
             toast.error(err.message || 'Verification failed');
+            setOtpDigits(['', '', '', '', '', '']);
+            document.getElementById('otp-0')?.focus();
         } finally {
             setOtpSaving(false);
         }

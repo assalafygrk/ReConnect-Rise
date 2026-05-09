@@ -24,6 +24,14 @@ export default function LoginPage() {
     const [unverifiedEmail, setUnverifiedEmail] = useState(null);
     const [resending, setResending] = useState(false);
 
+    useEffect(() => {
+        if (twoFactorStep) {
+            setTimeout(() => {
+                document.getElementById('otp-0')?.focus();
+            }, 100);
+        }
+    }, [twoFactorStep]);
+
     if (!isPageEnabled('login')) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#0B1221] text-white space-y-4 px-4 text-center">
@@ -80,9 +88,9 @@ export default function LoginPage() {
         }
     };
 
-    const handle2FASubmit = async (e) => {
+    const handle2FASubmit = async (e, forcedToken = null) => {
         e?.preventDefault();
-        const token = otpDigits.join('');
+        const token = forcedToken || otpDigits.join('');
         if (token.length !== 6) {
             toast.error('Please enter the 6-digit code');
             return;
@@ -97,6 +105,7 @@ export default function LoginPage() {
         } catch (err) {
             toast.error(err.message || '2FA Verification failed');
             setOtpDigits(['', '', '', '', '', '']);
+            document.getElementById('otp-0')?.focus();
         } finally {
             setLoading(false);
         }
@@ -116,13 +125,13 @@ export default function LoginPage() {
             
             // Auto-submit if full code
             if (newDigits.every(d => d !== '')) {
-                setTimeout(() => handle2FASubmit(), 100);
+                handle2FASubmit(null, newDigits.join(''));
             }
             return;
         }
 
         const newDigits = [...otpDigits];
-        newDigits[index] = value;
+        newDigits[index] = value.slice(-1); // Ensure only one digit
         setOtpDigits(newDigits);
 
         // Auto-focus next
@@ -135,8 +144,15 @@ export default function LoginPage() {
         if (value && index === 5) {
             const finalCode = newDigits.join('');
             if (finalCode.length === 6) {
-                setTimeout(() => handle2FASubmit(), 100);
+                handle2FASubmit(null, finalCode);
             }
+        }
+    };
+
+    const handleOtpKeyDown = (index, e) => {
+        if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`);
+            prevInput?.focus();
         }
     };
 
@@ -145,11 +161,11 @@ export default function LoginPage() {
         const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
         if (pasteData) {
             const newDigits = pasteData.split('');
-            const updated = [...otpDigits];
+            const updated = ['','','','','',''];
             newDigits.forEach((d, i) => { updated[i] = d; });
             setOtpDigits(updated);
             if (updated.every(d => d !== '')) {
-                setTimeout(() => handle2FASubmit(), 100);
+                handle2FASubmit(null, updated.join(''));
             }
         }
     };
@@ -314,6 +330,7 @@ export default function LoginPage() {
                                         maxLength="1"
                                         value={d}
                                         onChange={e => handleOtpChange(i, e.target.value)}
+                                        onKeyDown={e => handleOtpKeyDown(i, e)}
                                         onPaste={handlePaste}
                                         className="w-10 h-14 text-center bg-white/5 border-2 border-white/10 rounded-xl text-xl font-black text-white outline-none focus:border-[#F5A623] transition-all"
                                         placeholder="-"

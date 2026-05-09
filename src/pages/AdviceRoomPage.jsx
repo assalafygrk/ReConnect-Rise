@@ -61,20 +61,20 @@ const AdviceRoomPage = () => {
         try {
             const data = await fetchArchives();
             // Use specific 'advice' array if backend provides it, otherwise filter all
-            const adviceData = data.advice || (data.files || []).concat(data.gallery || []).filter(item => item.type === 'advice');
+            const adviceData = (data?.advice || []).concat((data?.files || []).filter(item => item.type === 'advice'));
             
             setIdeas(adviceData.map(d => ({
                 id: d._id,
                 author: d.uploaderName || 'Unknown',
-                content: d.title,
-                type: d.fileType || 'text',
+                content: d.title || '',
+                type: d.fileType === 'voice' ? 'voice' : 'text',
                 category: d.category || 'others',
                 upvotes: d.upvotes || 0,
-                date: d.createdAt,
+                date: d.createdAt ? dayjs(d.createdAt).format('MMM DD, YYYY') : 'Recent',
                 status: d.status || 'published',
-                audioUrl: d.url,
-                duration: d.duration || '0:00',
-                avatar: d.uploaderAvatar
+                audioUrl: d.url || '',
+                duration: d.fileType === 'voice' ? 'Voice Directive' : '',
+                avatar: d.uploaderAvatar || null
             })));
         } catch (err) {
             setIdeas([]);
@@ -191,7 +191,7 @@ const AdviceRoomPage = () => {
             let finalUrl = '';
             
             // If there's a voice recording, convert to base64 for persistence
-            if (recordedAudio?.blob) {
+            if (recordedAudio?.blob instanceof Blob) {
                 const reader = new FileReader();
                 const base64Promise = new Promise((resolve) => {
                     reader.onloadend = () => resolve(reader.result);
