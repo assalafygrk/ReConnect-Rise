@@ -64,9 +64,70 @@ export default function HomePage() {
     const [selectedService, setSelectedService] = useState(services[0]);
     const [showAllPlans, setShowAllPlans] = useState(false);
     const [focusedPlan, setFocusedPlan] = useState(null);
+    const [activeFooterLink, setActiveFooterLink] = useState(null);
+
+    const footerContent = {
+        'about': {
+            title: 'About ReConnect & Rise VTU',
+            content: 'ReConnect & Rise VTU is Nigeria\'s premier digital distribution platform for airtime, data, and utility payments. Founded with the mission to provide seamless connectivity, we bridge the gap between service providers and consumers with high-speed automated systems.',
+            extra: 'Our infrastructure handles over 100,000 transactions daily with a 99.9% success rate.'
+        },
+        'terms': {
+            title: 'Terms of Service',
+            content: 'By using our platform, you agree to our automated processing terms. All VTU transactions are final once delivered. We ensure bank-grade security for all payment data. Users are responsible for providing accurate phone numbers and meter details.',
+            extra: 'Last Updated: May 2026'
+        },
+        'support': {
+            title: 'Contact Support',
+            content: 'Our dedicated support team is available 24/7 to assist you with any transaction issues or inquiries.',
+            extra: 'Email: risereconnect@gmail.com \nPhone: +234 9160048633'
+        },
+        'api': {
+            title: 'API Documentation',
+            content: 'Integrate our robust VTU engine into your own applications. Our RESTful API supports instant recharge, balance checks, and transaction status queries.',
+            extra: 'Base URL: https://api.reconnectrise.com/v1 \nAuth: Bearer Token Required'
+        },
+        'help': {
+            title: 'Help Center & FAQ',
+            content: 'Common questions: \n1. How fast is delivery? (Instant) \n2. What if a transaction fails? (Auto-refund to wallet) \n3. How do I become a merchant? (Register via the Sign Up button).',
+            extra: 'Need more help? Use our Contact Support option.'
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#0B1221] text-white selection:bg-[#3B82F6]/30 selection:text-white">
+            
+            {/* --- Footer Modal Overlay --- */}
+            {activeFooterLink && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+                    <div 
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        onClick={() => setActiveFooterLink(null)}
+                    ></div>
+                    <div className="relative w-full max-w-2xl bg-[#1A2235] border border-white/10 rounded-[2.5rem] p-10 shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <button 
+                            onClick={() => setActiveFooterLink(null)}
+                            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+                        >
+                            ✕
+                        </button>
+                        <div className="space-y-6">
+                            <div className="inline-flex p-3 rounded-2xl bg-[#3B82F6]/20 text-[#3B82F6]">
+                                <ShieldCheck size={32} />
+                            </div>
+                            <h2 className="text-3xl font-black font-serif">{footerContent[activeFooterLink].title}</h2>
+                            <p className="text-white/60 leading-relaxed text-lg font-serif italic">
+                                {footerContent[activeFooterLink].content}
+                            </p>
+                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                                <p className="text-[#3B82F6] font-mono text-sm whitespace-pre-line leading-loose">
+                                    {footerContent[activeFooterLink].extra}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             {/* --- Navbar --- */}
             <nav className="fixed top-0 left-0 w-full z-50 px-6 py-4">
@@ -322,24 +383,29 @@ export default function HomePage() {
                         <div className="space-y-4">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40">Company</h4>
                             <ul className="space-y-2 text-sm text-white/60 font-medium">
-                                <li className="hover:text-white transition-colors cursor-pointer">About Us</li>
-                                <li className="hover:text-white transition-colors cursor-pointer">Terms of Service</li>
+                                <li onClick={() => setActiveFooterLink('about')} className="hover:text-white transition-colors cursor-pointer">About Us</li>
+                                <li onClick={() => setActiveFooterLink('terms')} className="hover:text-white transition-colors cursor-pointer">Terms of Service</li>
                             </ul>
                         </div>
                         <div className="space-y-4">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-white/40">Help</h4>
                             <ul className="space-y-2 text-sm text-white/60 font-medium">
-                                <li className="hover:text-white transition-colors cursor-pointer">Contact Support</li>
-                                <li className="hover:text-white transition-colors cursor-pointer">API Documentation</li>
+                                <li onClick={() => setActiveFooterLink('support')} className="hover:text-white transition-colors cursor-pointer">Contact Support</li>
+                                <li onClick={() => setActiveFooterLink('api')} className="hover:text-white transition-colors cursor-pointer">API Documentation</li>
+                                <li onClick={() => setActiveFooterLink('help')} className="hover:text-white transition-colors cursor-pointer">Help Center</li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 
-                <div className="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 text-center">
+                <div className="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
                     <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">
                         © {new Date().getFullYear()} {brand.orgName} VTU. All Rights Reserved.
                     </p>
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-center">
+                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Support: risereconnect@gmail.com</span>
+                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">+234 9160048633</span>
+                    </div>
                 </div>
             </footer>
         </div>
