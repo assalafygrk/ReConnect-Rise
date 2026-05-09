@@ -45,6 +45,9 @@ const AdviceRoomPage = () => {
     const audioRef = useRef(null); // Initialize as null and create in toggleAudio
     const [activeSubmissionCategory, setActiveSubmissionCategory] = useState('community');
     const [inputText, setInputText] = useState('');
+    const [playbackRate, setPlaybackRate] = useState(1);
+    const [audioProgress, setAudioProgress] = useState({}); // { id: percentage }
+    const [audioCurrentTime, setAudioCurrentTime] = useState({}); // { id: currentSeconds }
 
     const timerRef = useRef(null);
     const startXRef = useRef(0);
@@ -105,7 +108,15 @@ const AdviceRoomPage = () => {
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
+            
+            // Optimize for low memory using Opus codec if supported
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+                ? 'audio/webm;codecs=opus' 
+                : 'audio/ogg;codecs=opus';
+                
+            mediaRecorderRef.current = new MediaRecorder(stream, {
+                audioBitsPerSecond: 32000 // 32kbps is perfect for voice and very low size
+            });
             audioChunksRef.current = [];
 
             mediaRecorderRef.current.ondataavailable = (e) => {
@@ -114,7 +125,7 @@ const AdviceRoomPage = () => {
 
             mediaRecorderRef.current.onstop = () => {
                 if (audioChunksRef.current.length === 0) return;
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 setRecordedAudio({ url: audioUrl, blob: audioBlob, duration: formatDuration(recordingDuration) });
             };
@@ -182,17 +193,34 @@ const AdviceRoomPage = () => {
     };
 
     const handleStopRecording = () => {
-        if (!isHolding || isLocked) return;
+        if (!isHolding && !isLocked) return;
         setIsHolding(false);
         
-        // Short press handling - give it a tiny bit of grace for state updates
         if (recordingDuration < 1) {
             cancelRecording(true);
             toast.error('Duration Insufficient');
             return;
         }
         
-        stopRecording();
+        if (!isLocked) {
+            stopRecording();
+            // Automatically send after stopping if it wasn't locked
+            setTimeout(() => {
+                handleSendAdvice();
+            }, 500);
+        }
+    };
+
+    const handleSendAction = () => {
+        if (inputText.trim()) {
+            handleSendAdvice();
+        } else if (isRecording && isLocked) {
+            stopRecording();
+            // Automatically send after stopping
+            setTimeout(() => {
+                handleSendAdvice();
+            }, 500);
+        }
     };
 
     const handleSendAdvice = async () => {
@@ -242,11 +270,47 @@ const AdviceRoomPage = () => {
             setPlayingId(null);
         } else {
             audioRef.current.src = url;
+            audioRef.current.playbackRate = playbackRate;
             audioRef.current.play().catch(e => console.error("Audio playback failed", e));
             setPlayingId(id);
-            audioRef.current.onended = () => setPlayingId(null);
+            
+            audioRef.current.ontimeupdate = () => {
+                const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+                setAudioProgress(prev => ({ ...prev, [id]: progress }));
+                setAudioCurrentTime(prev => ({ ...prev, [id]: Math.floor(audioRef.current.currentTime) }));
+            };
+            
+            audioRef.current.onended = () => {
+                setPlayingId(null);
+                setAudioProgress(prev => ({ ...prev, [id]: 0 }));
+            };
         }
     };
+
+    const cyclePlaybackRate = () => {
+        const rates = [1, 1.5, 2];
+        const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+        setPlaybackRate(nextRate);
+        if (audioRef.current) {
+            audioRef.current.playbackRate = nextRate;
+        }
+    };
+
+    const WaveformBars = ({ progress = 0, count = 20 }) => (
+        <div className="flex items-center gap-0.5 h-6">
+            {[...Array(count)].map((_, i) => {
+                const isActive = (i / count) * 100 < progress;
+                const height = 20 + Math.sin(i * 0.5) * 40; // Simulated waveform
+                return (
+                    <div 
+                        key={i} 
+                        className={`w-1 rounded-full transition-all duration-300 ${isActive ? 'bg-[#E8820C]' : 'bg-black/10 dark:bg-white/10'}`}
+                        style={{ height: `${Math.max(20, height)}%` }}
+                    />
+                );
+            })}
+        </div>
+    );
 
     const handleUpvote = async (id) => {
         try {
@@ -333,71 +397,108 @@ const AdviceRoomPage = () => {
                                 ))}
                             </div>
 
-                            <div className="relative group/field">
+                            <div className="relative group/field bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-2 border-2 border-transparent focus-within:border-[#E8820C]/20 focus-within:bg-white dark:focus-within:bg-[#111827] transition-all">
                                 <textarea
                                     value={inputText}
                                     onChange={(e) => setInputText(e.target.value)}
-                                    placeholder="Enter your formal advice or strategic vision..."
-                                    className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/20 rounded-[2.5rem] p-8 text-lg font-serif italic outline-none focus:bg-white dark:bg-[#111827] focus:shadow-2xl transition-all min-h-[180px] resize-none"
+                                    placeholder={isRecording ? "" : "Enter your formal advice or strategic vision..."}
+                                    disabled={isRecording}
+                                    className="w-full bg-transparent border-none rounded-[2rem] p-6 text-lg font-serif italic outline-none min-h-[180px] resize-none disabled:opacity-0"
                                 />
-                            </div>
 
-
-
-                            <div className="flex flex-col md:flex-row items-center gap-4">
-                                <div className="flex-1 w-full bg-gray-50 dark:bg-white/5 rounded-2xl md:rounded-[2rem] p-3 md:p-4 border border-black/5 dark:border-white/10 flex items-center gap-4 relative min-h-[64px]"
-                                    onMouseMove={handleMouseMove}
-                                    onTouchMove={handleMouseMove}
-                                    onMouseUp={handleStopRecording}
-                                    onTouchEnd={handleStopRecording}
-                                >
-                                    {isRecording ? (
-                                        <div className="flex items-center gap-4 w-full px-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 bg-red-600 rounded-full animate-ping"></div>
-                                                <span className="text-xs font-black text-red-600 tabular-nums">{formatDuration(recordingDuration)}</span>
+                                {/* Recording Overlay */}
+                                {isRecording && (
+                                    <div className="absolute inset-0 flex items-center px-8 pointer-events-none">
+                                        <div className="flex items-center gap-6 w-full">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.5)]"></div>
+                                                <span className="text-xl font-black text-red-600 tabular-nums font-serif">{formatDuration(recordingDuration)}</span>
                                             </div>
+                                            
                                             <div className="flex-1 text-center">
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-black/20 animate-pulse">
-                                                    {isLocked ? "Recording..." : "Slide to cancel"}
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-black/40 dark:text-white/40 animate-pulse">
+                                                    {isLocked ? "Recording Hands-Free" : "Slide up to lock • Slide right to cancel"}
                                                 </p>
                                             </div>
-                                        </div>
-                                    ) : recordedAudio ? (
-                                        <div className="flex items-center gap-4 w-full animate-in fade-in px-2">
-                                            <button 
-                                                onClick={() => toggleAudio('preview', recordedAudio.url)}
-                                                className="w-8 h-8 bg-[#E8820C] text-white rounded-lg shadow-lg flex items-center justify-center"
-                                            >
-                                                {playingId === 'preview' ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
-                                            </button>
-                                            <div className="flex-1 h-1 bg-black/10 rounded-full overflow-hidden">
-                                                <div className="h-full bg-[#E8820C] w-[60%]"></div>
-                                            </div>
-                                            <span className="text-[9px] font-black text-black/40">{recordedAudio.duration}</span>
-                                            <button onClick={() => setRecordedAudio(null)} className="text-red-500 hover:scale-110 transition-transform"><Trash2 size={16} /></button>
-                                        </div>
-                                    ) : (
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-black/20 ml-4">Hold to record voice advice</p>
-                                    )}
 
+                                            {isLocked && (
+                                                <button 
+                                                    onClick={() => cancelRecording()}
+                                                    className="pointer-events-auto p-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-colors"
+                                                >
+                                                    <Trash2 size={24} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Main Action Button (Mic/Send) */}
+                                <div className="absolute bottom-4 right-4 flex items-center gap-3">
+                                    {recordedAudio && !isRecording && (
+                                        <button 
+                                            onClick={() => setRecordedAudio(null)}
+                                            className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-full transition-colors"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    )}
+                                    
                                     <button
-                                        onMouseDown={handleStartRecording}
-                                        onTouchStart={handleStartRecording}
-                                        className={`absolute right-1 w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-all ${isRecording ? 'bg-red-600 text-white scale-110 shadow-2xl' : 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] hover:bg-[#E8820C] hover:text-white shadow-xl'}`}
+                                        onMouseDown={!inputText.trim() && !isLocked ? handleStartRecording : null}
+                                        onTouchStart={!inputText.trim() && !isLocked ? handleStartRecording : null}
+                                        onMouseUp={!isLocked ? handleStopRecording : null}
+                                        onTouchEnd={!isLocked ? handleStopRecording : null}
+                                        onClick={inputText.trim() || isLocked ? handleSendAction : null}
+                                        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl ${
+                                            isRecording 
+                                                ? 'bg-red-600 text-white scale-110 shadow-red-600/20' 
+                                                : 'bg-[#E8820C] text-white hover:-translate-y-1 active:scale-95 shadow-[#E8820C]/20'
+                                        }`}
                                     >
-                                        <Mic size={20} />
+                                        {inputText.trim() || isLocked ? (
+                                            submitting ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />
+                                        ) : (
+                                            <Mic size={24} />
+                                        )}
                                     </button>
                                 </div>
-
-                                <button
-                                    onClick={handleSendAdvice}
-                                    disabled={submitting || (!inputText && !recordedAudio)}
-                                    className="w-full md:w-40 py-4 rounded-[1.5rem] md:rounded-[2rem] bg-[#E8820C] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#E8820C]/20 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-30"
-                                >
-                                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Relay
-                                </button>
                             </div>
+
+                            {/* Voice Preview (If not sending immediately) */}
+                            {recordedAudio && !isRecording && (
+                                <div className="animate-in slide-in-from-bottom-4 fade-in">
+                                    <div className="flex items-center gap-4 w-full px-6 py-4 bg-[#1A1A2E]/5 dark:bg-white/5 rounded-3xl border border-black/5 dark:border-white/5">
+                                        <button 
+                                            onClick={() => toggleAudio('preview', recordedAudio.url)}
+                                            className="w-12 h-12 bg-[#E8820C] text-white rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-90"
+                                        >
+                                            {playingId === 'preview' ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+                                        </button>
+                                        
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="relative h-8 flex items-center">
+                                                <WaveformBars progress={audioProgress['preview'] || 0} count={50} />
+                                                <div 
+                                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#E8820C] rounded-full shadow-md border-2 border-white transition-all duration-100"
+                                                    style={{ left: `${audioProgress['preview'] || 0}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between text-[10px] font-black text-black/40 dark:text-white/40 tabular-nums uppercase tracking-widest">
+                                                <span>{formatDuration(audioCurrentTime['preview'] || 0)}</span>
+                                                <span>{recordedAudio.duration}</span>
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            onClick={cyclePlaybackRate}
+                                            className="px-3 py-1.5 bg-black/10 dark:bg-white/10 rounded-xl text-[11px] font-black text-[#E8820C] min-w-[44px] text-center"
+                                        >
+                                            {playbackRate}x
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -439,22 +540,38 @@ const AdviceRoomPage = () => {
 
                                     <div className="mb-6">
                                         {idea.type === 'voice' ? (
-                                            <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-[1.5rem] flex items-center gap-4 border border-black/5">
+                                            <div className="bg-gray-50 dark:bg-[#1A1A2E]/40 p-5 md:p-6 rounded-[2.5rem] flex items-center gap-5 border border-black/5 dark:border-white/5 relative overflow-hidden group/player">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-[#E8820C]/5 to-transparent opacity-0 group-hover/player:opacity-100 transition-opacity"></div>
+                                                
                                                 <button 
                                                     onClick={() => toggleAudio(idea.id, idea.audioUrl)}
-                                                    className="w-10 h-10 bg-[#1A1A2E] dark:bg-[#F5A623] text-white rounded-xl flex items-center justify-center shadow-lg transition-transform active:scale-90"
+                                                    className="relative z-10 w-12 h-12 bg-[#1A1A2E] dark:bg-[#E8820C] text-white rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 hover:scale-105"
                                                 >
-                                                    {playingId === idea.id ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                                                    {playingId === idea.id ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
                                                 </button>
-                                                <div className="flex-1 space-y-1.5">
-                                                    <div className="h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-                                                        <div className={`h-full bg-[#E8820C] transition-all duration-300 ${playingId === idea.id ? 'w-full' : 'w-0'}`}></div>
+
+                                                <div className="flex-1 space-y-2.5 relative z-10">
+                                                    <div className="relative h-8 flex items-center">
+                                                        <WaveformBars progress={audioProgress[idea.id] || 0} count={45} />
+                                                        <div 
+                                                            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-[#E8820C] rounded-full shadow-lg border-2 border-white dark:border-[#0F172A] transition-all duration-100 cursor-pointer hover:scale-125"
+                                                            style={{ left: `${audioProgress[idea.id] || 0}%` }}
+                                                        />
                                                     </div>
-                                                    <div className="flex justify-between text-[7px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest">
-                                                        <span>{playingId === idea.id ? 'Playing...' : 'Voice Directive'}</span>
+                                                    <div className="flex justify-between text-[8px] md:text-[9px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] tabular-nums">
+                                                        <span className={playingId === idea.id ? 'text-[#E8820C]' : ''}>
+                                                            {playingId === idea.id ? formatDuration(audioCurrentTime[idea.id] || 0) : 'Voice Directive'}
+                                                        </span>
                                                         <span>{idea.duration}</span>
                                                     </div>
                                                 </div>
+
+                                                <button 
+                                                    onClick={cyclePlaybackRate}
+                                                    className="relative z-10 px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-xl text-[10px] font-black text-[#E8820C] min-w-[40px] text-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-[#E8820C]/10"
+                                                >
+                                                    {playbackRate}x
+                                                </button>
                                             </div>
                                         ) : (
                                             <p className="text-lg md:text-xl font-serif italic text-[#1A1A2E] dark:text-white/80 leading-relaxed">
