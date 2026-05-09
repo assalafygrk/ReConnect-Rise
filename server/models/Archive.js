@@ -16,7 +16,7 @@ const archiveSchema = new mongoose.Schema({
   },
   fileType: {
     type: String,
-    enum: ['image', 'video', 'pdf', 'pptx', 'voice', 'other'],
+    enum: ['image', 'video', 'pdf', 'pptx', 'voice', 'text', 'other'],
     default: 'other',
   },
   thumbnail: {

@@ -113,6 +113,7 @@ const AdviceRoomPage = () => {
             };
 
             mediaRecorderRef.current.onstop = () => {
+                if (audioChunksRef.current.length === 0) return;
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 setRecordedAudio({ url: audioUrl, blob: audioBlob, duration: formatDuration(recordingDuration) });
@@ -121,6 +122,7 @@ const AdviceRoomPage = () => {
             mediaRecorderRef.current.start();
             setIsRecording(true);
         } catch (err) {
+            console.error('Mic access error:', err);
             toast.error('Microphone Access Denied');
         }
     };
@@ -161,9 +163,13 @@ const AdviceRoomPage = () => {
         }
     };
 
-    const cancelRecording = () => {
+    const cancelRecording = (silent = false) => {
         if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop();
+            // Stop without triggering onstop logic that saves the audio
+            audioChunksRef.current = [];
+            if (mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            }
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         }
         setIsRecording(false);
@@ -171,18 +177,22 @@ const AdviceRoomPage = () => {
         setIsLocked(false);
         setSlideDistance(0);
         setRecordingDuration(0);
-        toast.error('Voice Capture Aborted');
+        setRecordedAudio(null);
+        if (!silent) toast.error('Voice Capture Aborted');
     };
 
     const handleStopRecording = () => {
         if (!isHolding || isLocked) return;
         setIsHolding(false);
-        stopRecording();
-        // Short press handling
+        
+        // Short press handling - give it a tiny bit of grace for state updates
         if (recordingDuration < 1) {
-            cancelRecording();
+            cancelRecording(true);
             toast.error('Duration Insufficient');
+            return;
         }
+        
+        stopRecording();
     };
 
     const handleSendAdvice = async () => {
@@ -355,7 +365,12 @@ const AdviceRoomPage = () => {
                                         </div>
                                     ) : recordedAudio ? (
                                         <div className="flex items-center gap-4 w-full animate-in fade-in px-2">
-                                            <button className="w-8 h-8 bg-[#E8820C] text-white rounded-lg shadow-lg flex items-center justify-center"><Play size={14} fill="currentColor" className="ml-0.5" /></button>
+                                            <button 
+                                                onClick={() => toggleAudio('preview', recordedAudio.url)}
+                                                className="w-8 h-8 bg-[#E8820C] text-white rounded-lg shadow-lg flex items-center justify-center"
+                                            >
+                                                {playingId === 'preview' ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                                            </button>
                                             <div className="flex-1 h-1 bg-black/10 rounded-full overflow-hidden">
                                                 <div className="h-full bg-[#E8820C] w-[60%]"></div>
                                             </div>
