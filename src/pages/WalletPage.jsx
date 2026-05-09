@@ -4,13 +4,32 @@ import { Wallet, ArrowUpRight, ArrowDownLeft, Send, History, Heart, X, Search, F
 import dayjs from 'dayjs';
 import { fetchWallet, transferFunds, depositFunds, withdrawFunds, payWeeklyContribution, payGeneralContribution } from '../api/wallet';
 import { fetchMembers } from '../api/members';
-import { generateVirtualAccount } from '../api/payment';
+import { generateVirtualAccount, resolveAccount } from '../api/payment';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
 }
+
+const NIGERIAN_BANKS = [
+    { code: '044', name: 'Access Bank' },
+    { code: '011', name: 'First Bank of Nigeria' },
+    { code: '058', name: 'Guaranty Trust Bank (GTB)' },
+    { code: '033', name: 'United Bank for Africa (UBA)' },
+    { code: '057', name: 'Zenith Bank' },
+    { code: '214', name: 'First City Monument Bank (FCMB)' },
+    { code: '070', name: 'Fidelity Bank' },
+    { code: '232', name: 'Sterling Bank' },
+    { code: '032', name: 'Union Bank of Nigeria' },
+    { code: '035', name: 'Wema Bank' },
+    { code: '215', name: 'Unity Bank' },
+    { code: '050', name: 'Ecobank Nigeria' },
+    { code: '100004', name: 'Opay' },
+    { code: '100013', name: 'Palmpay' },
+    { code: '090267', name: 'Kuda Microfinance Bank' },
+    { code: '100015', name: 'Moniepoint MFB' }
+].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function WalletPage() {
     const { user } = useAuth();
@@ -25,7 +44,8 @@ export default function WalletPage() {
     // Forms
     const [transferForm, setTransferForm] = useState({ toId: '', toName: '', amount: '', note: '', pin: '' });
     const [depositForm, setDepositForm] = useState({ amount: '', note: '' });
-    const [withdrawForm, setWithdrawForm] = useState({ amount: '', note: '', bankName: '', accountNumber: '', pin: '' });
+    const [withdrawForm, setWithdrawForm] = useState({ amount: '', note: '', bankCode: '', bankName: '', accountNumber: '', pin: '', accountName: '' });
+    const [resolvingAccount, setResolvingAccount] = useState(false);
     const [contributeForm, setContributeForm] = useState({ type: 'weekly', amount: '', note: '', pin: '' });
     
     const [sending, setSending] = useState(false);
@@ -72,9 +92,32 @@ export default function WalletPage() {
         setSearchRecipient('');
         setTransferForm({ toId: '', toName: '', amount: '', note: '', pin: '' });
         setDepositForm({ amount: '', note: '' });
-        setWithdrawForm({ amount: '', note: '', bankName: '', accountNumber: '', pin: '' });
+        setWithdrawForm({ amount: '', note: '', bankCode: '', bankName: '', accountNumber: '', pin: '', accountName: '' });
         setContributeForm({ type: 'weekly', amount: '', note: '', pin: '' });
     };
+
+    useEffect(() => {
+        const verifyAccount = async () => {
+            if (withdrawForm.bankCode && withdrawForm.accountNumber.length === 10) {
+                setResolvingAccount(true);
+                setWithdrawForm(prev => ({ ...prev, accountName: '' }));
+                try {
+                    const res = await resolveAccount(withdrawForm.bankCode, withdrawForm.accountNumber);
+                    if (res.success && res.accountName) {
+                        setWithdrawForm(prev => ({ ...prev, accountName: res.accountName }));
+                    }
+                } catch (err) {
+                    toast.error('Could not verify account name');
+                } finally {
+                    setResolvingAccount(false);
+                }
+            } else {
+                setWithdrawForm(prev => ({ ...prev, accountName: '' }));
+            }
+        };
+        const timer = setTimeout(verifyAccount, 500);
+        return () => clearTimeout(timer);
+    }, [withdrawForm.bankCode, withdrawForm.accountNumber]);
 
     const handleGenerateVirtualAccount = async () => {
         setGeneratingVA(true);
@@ -451,12 +494,30 @@ export default function WalletPage() {
                             <div className="grid grid-cols-1 gap-4">
                                 <div>
                                     <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Recipient Bank</label>
-                                    <input required value={withdrawForm.bankName} onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500/20" placeholder="e.g. Zenith Bank" />
+                                    <select required value={withdrawForm.bankCode} onChange={(e) => {
+                                        const bank = NIGERIAN_BANKS.find(b => b.code === e.target.value);
+                                        setWithdrawForm({ ...withdrawForm, bankCode: bank?.code || '', bankName: bank?.name || '' });
+                                    }} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500/20 appearance-none cursor-pointer">
+                                        <option value="" disabled>Select Bank...</option>
+                                        {NIGERIAN_BANKS.map(b => <option key={b.code} value={b.code}>{b.name}</option>)}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Account Number</label>
                                     <input required type="text" maxLength="10" value={withdrawForm.accountNumber} onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-black font-mono outline-none focus:ring-2 focus:ring-red-500/20" placeholder="0123456789" />
                                 </div>
+                                {(resolvingAccount || withdrawForm.accountName) && (
+                                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 flex items-center gap-3">
+                                        {resolvingAccount ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500/30 border-t-red-500"></div>
+                                        ) : (
+                                            <ShieldCheck size={16} className="text-emerald-500" />
+                                        )}
+                                        <p className="text-[11px] font-black uppercase text-[#1A1A2E] dark:text-white/90 truncate">
+                                            {resolvingAccount ? 'Verifying Account...' : withdrawForm.accountName}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Amount (₦)</label>
@@ -464,13 +525,24 @@ export default function WalletPage() {
                                     <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 dark:text-white/20 text-base">₦</span>
                                     <input required type="number" min="1" value={withdrawForm.amount} onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-12 pr-6 py-4 text-base font-black outline-none focus:ring-2 focus:ring-red-500/20" placeholder="0" />
                                 </div>
-                                <p className="text-[10px] text-black/40 dark:text-white/40 mt-2 text-right">Available: {formatNaira(data.balance)}</p>
+                                <div className="flex justify-between items-center mt-2 px-2">
+                                    {data?.dailyWithdrawalsCount >= 3 && Number(withdrawForm.amount) > 0 ? (
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">
+                                            Fee: ₦{Math.min(Number(withdrawForm.amount) * 0.01, 50).toFixed(2)}
+                                        </p>
+                                    ) : (
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">
+                                            Fee: ₦0.00
+                                        </p>
+                                    )}
+                                    <p className="text-[10px] text-black/40 dark:text-white/40">Available: {formatNaira(data.balance)}</p>
+                                </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Transaction PIN</label>
                                 <input required type="password" maxLength="4" value={withdrawForm.pin} onChange={(e) => setWithdrawForm({ ...withdrawForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-red-500/20" placeholder="••••" />
                             </div>
-                            <button type="submit" disabled={sending || Number(withdrawForm.amount) > data.balance || withdrawForm.pin.length !== 4} className="w-full py-5 rounded-[2rem] bg-rose-500 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                            <button type="submit" disabled={sending || Number(withdrawForm.amount) > data.balance || withdrawForm.pin.length !== 4 || (!resolvingAccount && !withdrawForm.accountName)} className="w-full py-5 rounded-[2rem] bg-rose-500 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                 {sending ? 'Processing...' : 'Request Withdrawal'}
                             </button>
                         </form>

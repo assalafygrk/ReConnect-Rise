@@ -14,3 +14,13 @@ export async function generateVirtualAccount() {
     if (!res.ok) throw new Error(data.message || 'Failed to generate virtual account');
     return data;
 }
+export async function resolveAccount(bankCode, accountNumber) {
+    const res = await fetch(`${BASE_URL}/payment/resolve-account`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ bankCode, accountNumber }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to resolve account');
+    return data;
+}

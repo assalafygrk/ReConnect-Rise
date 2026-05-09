@@ -27,12 +27,24 @@ const getWalletInfo = async (req, res) => {
   const settings = await Settings.findOne({});
   const weeklyContributionAmount = settings?.weeklyContributionAmount || 100;
 
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const dailyWithdrawalsCount = await Transaction.countDocuments({
+    user: user._id,
+    category: 'withdrawal',
+    createdAt: { $gte: startOfDay, $lte: endOfDay }
+  });
+
   res.json({
     balance: user.walletBalance || 0,
     weeklyContributionAmount,
     recentTransactions: transactions,   // full history, not limited to 10
     totalGiftsSent,
     totalGiftsReceived,
+    dailyWithdrawalsCount,
     virtualAccount: user.paymentPointVirtualAccount ? {
       accountNumber: user.paymentPointVirtualAccount,
       bankName: user.paymentPointBankName,
@@ -126,7 +138,7 @@ const withdrawFunds = async (req, res) => {
   });
 
   let fee = 0;
-  if (dailyWithdrawals > 0) {
+  if (dailyWithdrawals >= 3) {
     const rawFee = Number(amount) * 0.01;
     fee = rawFee > 50 ? 50 : rawFee;
   }
