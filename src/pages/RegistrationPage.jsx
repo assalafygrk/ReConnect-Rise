@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Eye, EyeOff, ShieldCheck, ArrowRight, UserPlus, Upload, ArrowLeft, Camera, CheckCircle2, Fingerprint } from 'lucide-react';

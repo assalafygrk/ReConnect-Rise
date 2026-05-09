@@ -37,6 +37,7 @@ app.use(async (req, res, next) => {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/public', require('./routes/publicRoutes'));
 app.use('/api/members', require('./routes/memberRoutes'));
 app.use('/api/contributions', require('./routes/contributionRoutes'));
 app.use('/api/loans', require('./routes/loanRoutes'));

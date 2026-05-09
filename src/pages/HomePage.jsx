@@ -17,19 +17,34 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useBrand } from '../context/BrandContext';
+import { fetchPublicStats } from '../api/public';
 
 export default function HomePage() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
+  const { brand } = useBrand();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [stats, setStats] = useState({
+    activeMembers: 0,
+    totalDistributed: 0,
+    communityProjects: 0,
+    countriesServed: 0
+  });
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
+
+    // Fetch real public stats
+    fetchPublicStats()
+      .then(data => setStats(data))
+      .catch(err => console.error('Failed to load real stats:', err));
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -205,7 +220,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="text-xs text-navy/50 dark:text-white/50">Total Contributions</p>
-                    <p className="text-lg font-bold text-navy dark:text-white">$1,240,500</p>
+                    <p className="text-lg font-bold text-navy dark:text-white">${stats.totalDistributed.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -217,7 +232,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="text-xs text-navy/50 dark:text-white/50">Active Members</p>
-                    <p className="text-lg font-bold text-navy dark:text-white">5,842</p>
+                    <p className="text-lg font-bold text-navy dark:text-white">{stats.activeMembers.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -234,10 +249,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {[
-              { label: "Active Members", value: "5,800+" },
-              { label: "Total Distributed", value: "$4.2M" },
-              { label: "Community Projects", value: "150+" },
-              { label: "Countries Served", value: "12+" }
+              { label: "Active Members", value: stats.activeMembers.toLocaleString() + "+" },
+              { label: "Total Distributed", value: stats.totalDistributed >= 1000000 
+                  ? `$${(stats.totalDistributed / 1000000).toFixed(1)}M` 
+                  : `$${(stats.totalDistributed / 1000).toFixed(1)}K` },
+              { label: "Community Projects", value: stats.communityProjects + "+" },
+              { label: "Countries Served", value: stats.countriesServed + "+" }
             ].map((stat, i) => (
               <div key={i} className="text-center group">
                 <div className="text-4xl lg:text-5xl font-bold text-accent mb-2 group-hover:scale-110 transition-transform duration-300">{stat.value}</div>
