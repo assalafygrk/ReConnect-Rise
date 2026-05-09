@@ -6,6 +6,8 @@ import { usePageConfig } from '../context/PageConfigContext';
 import SuperAdminDash from '../components/dashboard/SuperAdminDash';
 import TreasurerDash from '../components/dashboard/TreasurerDash';
 import GroupLeaderDash from '../components/dashboard/GroupLeaderDash';
+import WelfareDash from '../components/dashboard/WelfareDash';
+import AdvisorDash from '../components/dashboard/AdvisorDash';
 import MemberDash from '../components/dashboard/MemberDash';
 
 export default function DashboardPage() {
@@ -36,5 +38,7 @@ export default function DashboardPage() {
   if (role === 'super_admin' || role === 'admin') return <SuperAdminDash {...props} />;
   if (role === 'treasurer') return <TreasurerDash {...props} />;
   if (role === 'group_leader') return <GroupLeaderDash {...props} />;
+  if (role === 'welfare') return <WelfareDash {...props} />;
+  if (role === 'special_advicer') return <AdvisorDash {...props} />;
   return <MemberDash {...props} />;
 }
