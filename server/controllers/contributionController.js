@@ -20,13 +20,14 @@ function getWeekMonday(date = new Date()) {
 }
 
 /**
- * Returns the Thursday 23:59:59 deadline of the current week.
+ * Returns the Sunday 23:49:59 deadline of the current week.
+ * (System closes for 10 minutes to process weekly records)
  */
 function getWeekDeadline(monday = getWeekMonday()) {
-  const thursday = new Date(monday);
-  thursday.setDate(monday.getDate() + 3); // Mon+3 = Thu
-  thursday.setHours(23, 59, 59, 999);
-  return thursday;
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6); // Mon+6 = Sun
+  sunday.setHours(23, 49, 59, 999);
+  return sunday;
 }
 
 /**
@@ -240,7 +241,7 @@ const payViaWallet = async (req, res) => {
 
   if (new Date() > deadline) {
     res.status(400);
-    throw new Error('This week\'s contribution window has closed (deadline: Thursday 23:59)');
+    throw new Error('This week\'s contribution window has closed (system locked for weekly reconciliation until Monday 00:00).');
   }
 
   const settings = await Settings.findOne({});
