@@ -122,7 +122,7 @@ export default function WalletPage() {
         setSending(true);
         try {
             await withdrawFunds(Number(withdrawForm.amount), withdrawForm.bankName, withdrawForm.accountNumber, withdrawForm.note, withdrawForm.pin);
-            toast.success(`Successfully withdrew ₦${withdrawForm.amount}`);
+            toast.success(`Withdrawal request of ₦${withdrawForm.amount} is pending Treasurer approval.`);
             closeModal();
             loadData();
         } catch (err) { toast.error(err.message); } 
@@ -266,7 +266,13 @@ export default function WalletPage() {
                                     <p className={`text-xl md:text-2xl font-black ${tx.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`} style={{ fontFamily: "'Playfair Display', serif" }}>
                                         {tx.type === 'credit' ? '+' : '-'}{formatNaira(tx.amount)}
                                     </p>
-                                    <p className="text-[9px] md:text-[10px] text-black/20 dark:text-white/20 font-black uppercase tracking-[0.2em] mt-1">Verified</p>
+                                    <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mt-1 ${
+                                        tx.status === 'pending' ? 'text-amber-500' :
+                                        tx.status === 'declined' ? 'text-rose-500' :
+                                        'text-black/20 dark:text-white/20'
+                                    }`}>
+                                        {tx.status || 'Verified'}
+                                    </p>
                                 </div>
                             </div>
                         )) : (

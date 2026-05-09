@@ -23,7 +23,7 @@ const disbursementSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['loan', 'welfare', 'general', 'other'],
+    enum: ['loan', 'welfare', 'general', 'withdrawal', 'other'],
     default: 'general',
     required: true,
   },

@@ -66,8 +66,8 @@ const transferFunds = async (req, res) => {
   await fromUser.save();
   await toUser.save();
 
-  await Transaction.create({ user: fromUser._id, type: 'debit',  amount: Number(amount), note: note || `Gift to ${toUser.name}`,   relatedUser: toUser._id });
-  await Transaction.create({ user: toUser._id,   type: 'credit', amount: Number(amount), note: note || `Gift from ${fromUser.name}`, relatedUser: fromUser._id });
+  await Transaction.create({ user: fromUser._id, type: 'debit',  amount: Number(amount), note: note || `Gift to ${toUser.name}`,   relatedUser: toUser._id, category: 'gift' });
+  await Transaction.create({ user: toUser._id,   type: 'credit', amount: Number(amount), note: note || `Gift from ${fromUser.name}`, relatedUser: fromUser._id, category: 'gift' });
 
   res.json({ success: true, message: 'Transfer successful', newBalance: fromUser.walletBalance });
 };
@@ -92,6 +92,7 @@ const depositFunds = async (req, res) => {
     user: targetUser._id, type: 'credit', amount: Number(amount),
     note: note || 'Wallet Top-up / Deposit',
     relatedUser: req.user._id,
+    category: 'deposit',
   });
 
   res.json({ success: true, newBalance: targetUser.walletBalance });
@@ -111,17 +112,102 @@ const withdrawFunds = async (req, res) => {
   if (!user.transactionPin || !(await bcrypt.compare(pin, user.transactionPin))) {
     res.status(401); throw new Error('Invalid transaction PIN');
   }
-  if ((user.walletBalance || 0) < Number(amount)) { res.status(400); throw new Error('Insufficient wallet balance'); }
 
-  user.walletBalance -= Number(amount);
-  await user.save();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
 
-  await Transaction.create({
-    user: user._id, type: 'debit', amount: Number(amount),
-    note: note || `Withdrawal to ${bankName} (${accountNumber})`,
+  // Check for previous withdrawals today
+  const dailyWithdrawals = await Transaction.countDocuments({
+    user: user._id,
+    category: 'withdrawal',
+    createdAt: { $gte: startOfDay, $lte: endOfDay }
   });
 
-  res.json({ success: true, newBalance: user.walletBalance });
+  let fee = 0;
+  if (dailyWithdrawals > 0) {
+    const rawFee = Number(amount) * 0.01;
+    fee = rawFee > 50 ? 50 : rawFee;
+  }
+
+  const totalDeduction = Number(amount) + fee;
+
+  if ((user.walletBalance || 0) < totalDeduction) {
+    res.status(400);
+    throw new Error(`Insufficient wallet balance. Total deduction (including ₦${fee} fee) is ₦${totalDeduction}`);
+  }
+
+  // Deduct immediately but hold in pending state
+  user.walletBalance -= totalDeduction;
+  await user.save();
+
+  // Create Disbursement request for Treasurer
+  const Disbursement = require('../models/Disbursement');
+  const disbursement = await Disbursement.create({
+    memberId: user._id,
+    amount: Number(amount),
+    type: 'withdrawal',
+    reason: note || `Wallet Withdrawal to ${bankName} (${accountNumber})`,
+    method: 'bank_transfer',
+    bankName,
+    bankAccountNumber: accountNumber,
+    status: 'pending',
+  });
+
+  // Create pending transaction to reflect on user ledger
+  const tx = await Transaction.create({
+    user: user._id, type: 'debit', amount: Number(amount),
+    note: note || `Withdrawal to ${bankName} (${accountNumber})`,
+    category: 'withdrawal',
+    status: 'pending',
+  });
+
+  // Link disbursement and transaction via sourceId if needed
+  disbursement.sourceId = tx._id;
+  await disbursement.save();
+
+  if (fee > 0) {
+    await Transaction.create({
+      user: user._id, type: 'debit', amount: fee,
+      note: `Withdrawal Fee (Subsequent withdrawal today)`,
+      category: 'other',
+      status: 'pending',
+    });
+  }
+
+  // Notify Treasurers via Email
+  try {
+    const treasurers = await User.find({ role: 'treasurer' });
+    if (treasurers.length > 0) {
+      const sendEmail = require('../utils/sendEmail');
+      for (const treasurer of treasurers) {
+        await sendEmail({
+          email: treasurer.email,
+          subject: 'Action Required: New Withdrawal Request',
+          message: `Dear Treasurer,\n\nA new withdrawal request of ₦${Number(amount).toLocaleString('en-NG')} has been requested by ${user.name}.\n\nBank: ${bankName}\nAccount Number: ${accountNumber}\n\nPlease review and approve or decline this request on the ReConnect & Rise admin portal.`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px;">
+              <h2>New Withdrawal Request</h2>
+              <p>Dear Treasurer,</p>
+              <p>A new withdrawal request has been submitted and requires your attention.</p>
+              <ul>
+                <li><strong>Member:</strong> ${user.name}</li>
+                <li><strong>Amount:</strong> ₦${Number(amount).toLocaleString('en-NG')}</li>
+                <li><strong>Bank:</strong> ${bankName}</li>
+                <li><strong>Account Number:</strong> ${accountNumber}</li>
+              </ul>
+              <p>Please log in to the ReConnect & Rise portal to review and process this transaction.</p>
+            </div>
+          `
+        });
+      }
+    }
+  } catch (emailErr) {
+    console.error('Failed to send treasurer withdrawal email:', emailErr);
+  }
+
+  res.json({ success: true, newBalance: user.walletBalance, feeApplied: fee, status: 'pending' });
 };
 
 /**
@@ -165,6 +251,7 @@ const payGeneralContribution = async (req, res) => {
   await Transaction.create({
     user: user._id, type: 'debit', amount: Number(amount),
     note: note || 'General Pool Contribution (wallet)',
+    category: 'contribution',
   });
 
   // Track pool credit separately with a system marker

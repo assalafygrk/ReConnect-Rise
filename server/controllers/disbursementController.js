@@ -100,6 +100,31 @@ const treasurerAction = async (req, res) => {
     disbursement.declineReason = declineReason || 'Declined by Treasurer';
     disbursement.reviewedBy = req.user._id;
     disbursement.reviewedAt = new Date();
+
+    // Reverse withdrawal
+    if (disbursement.type === 'withdrawal') {
+      const member = await User.findById(disbursement.memberId);
+      if (member) {
+        member.walletBalance = (member.walletBalance || 0) + disbursement.amount;
+        await member.save();
+        
+        await Transaction.create({
+          user: member._id, type: 'credit', amount: disbursement.amount,
+          note: `Withdrawal Declined: Refunded to wallet`,
+          category: 'withdrawal',
+          status: 'completed',
+        });
+
+        if (disbursement.sourceId) {
+          const tx = await Transaction.findById(disbursement.sourceId);
+          if (tx) {
+            tx.status = 'declined';
+            await tx.save();
+          }
+        }
+      }
+    }
+
     await disbursement.save();
     const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
     return res.json(transformDisbursement(populated));
@@ -112,7 +137,7 @@ const treasurerAction = async (req, res) => {
   disbursement.reviewedAt = new Date();
 
   // Auto-credit wallet if method is wallet
-  if (disbursement.method === 'wallet') {
+  if (disbursement.method === 'wallet' && disbursement.type !== 'withdrawal') {
     const member = await User.findById(disbursement.memberId);
     if (!member) { res.status(404); throw new Error('Beneficiary not found'); }
     member.walletBalance = (member.walletBalance || 0) + disbursement.amount;
@@ -121,11 +146,22 @@ const treasurerAction = async (req, res) => {
     disbursement.completedAt = new Date();
   }
 
-  await Transaction.create({
-    user: disbursement.memberId, type: 'credit', amount: disbursement.amount,
-    note: `Disbursement ${disbursement.method === 'wallet' ? '(wallet)' : `(${disbursement.method})`}: ${disbursement.reason}`,
-    relatedUser: req.user._id,
-  });
+  if (disbursement.type !== 'withdrawal') {
+    await Transaction.create({
+      user: disbursement.memberId, type: 'credit', amount: disbursement.amount,
+      note: `Disbursement ${disbursement.method === 'wallet' ? '(wallet)' : `(${disbursement.method})`}: ${disbursement.reason}`,
+      relatedUser: req.user._id,
+    });
+  } else {
+    // It's a withdrawal, mark the pending transaction as completed
+    if (disbursement.sourceId) {
+      const tx = await Transaction.findById(disbursement.sourceId);
+      if (tx) {
+        tx.status = 'completed';
+        await tx.save();
+      }
+    }
+  }
 
   await disbursement.save();
   const populated = await populateDisbursement(Disbursement.findById(disbursement._id));
@@ -134,18 +170,22 @@ const treasurerAction = async (req, res) => {
   if (action === 'approve') {
     await createNotification({
       recipient: disbursement.memberId,
-      title: 'Disbursement Approved',
-      message: `Your disbursement of ₦${disbursement.amount.toLocaleString()} for "${disbursement.reason}" has been approved.`,
+      title: disbursement.type === 'withdrawal' ? 'Withdrawal Approved' : 'Disbursement Approved',
+      message: disbursement.type === 'withdrawal' 
+        ? `Your withdrawal of ₦${disbursement.amount.toLocaleString()} has been approved and processed.`
+        : `Your disbursement of ₦${disbursement.amount.toLocaleString()} for "${disbursement.reason}" has been approved.`,
       type: 'success',
-      link: '/disbursements'
+      link: disbursement.type === 'withdrawal' ? '/wallet' : '/disbursements'
     });
   } else {
     await createNotification({
       recipient: disbursement.memberId,
-      title: 'Disbursement Declined',
-      message: `Your disbursement request for ₦${disbursement.amount.toLocaleString()} was declined. Reason: ${declineReason}`,
+      title: disbursement.type === 'withdrawal' ? 'Withdrawal Declined' : 'Disbursement Declined',
+      message: disbursement.type === 'withdrawal'
+        ? `Your withdrawal request for ₦${disbursement.amount.toLocaleString()} was declined. Funds have been returned to your wallet. Reason: ${declineReason}`
+        : `Your disbursement request for ₦${disbursement.amount.toLocaleString()} was declined. Reason: ${declineReason}`,
       type: 'urgent',
-      link: '/disbursements'
+      link: disbursement.type === 'withdrawal' ? '/wallet' : '/disbursements'
     });
   }
 

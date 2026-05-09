@@ -22,6 +22,16 @@ const transactionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  status: {
+    type: String,
+    enum: ['pending', 'completed', 'declined'],
+    default: 'completed',
+  },
+  category: {
+    type: String,
+    enum: ['transfer', 'withdrawal', 'deposit', 'contribution', 'gift', 'other'],
+    default: 'other',
+  },
   date: {
     type: Date,
     default: Date.now,
