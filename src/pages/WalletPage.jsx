@@ -429,25 +429,6 @@ export default function WalletPage() {
                                     </button>
                                 </div>
                             )}
-                            
-                            <div className="relative flex items-center gap-4">
-                                <div className="flex-1 h-[1px] bg-black/5"></div>
-                                <span className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase tracking-widest">Or simulate test deposit</span>
-                                <div className="flex-1 h-[1px] bg-black/5"></div>
-                            </div>
-
-                            <form onSubmit={handleDeposit} className="space-y-4">
-                                <div>
-                                    <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Amount (₦)</label>
-                                    <div className="relative">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 dark:text-white/20 text-base">₦</span>
-                                        <input required type="number" min="1" value={depositForm.amount} onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-12 pr-6 py-4 text-base font-black outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="0" />
-                                    </div>
-                                </div>
-                                <button type="submit" disabled={sending} className="w-full py-5 rounded-[2rem] bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 border border-emerald-100">
-                                    {sending ? 'Simulating...' : 'Simulate Deposit'}
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>
