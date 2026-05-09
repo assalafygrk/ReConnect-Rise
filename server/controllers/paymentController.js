@@ -86,13 +86,12 @@ const generateVirtualAccount = async (req, res) => {
 
 // ─── PaymentPoint Webhook ────────────────────────────────────────────────────
 const paymentpointWebhook = async (req, res) => {
-  // Respond immediately to acknowledge receipt
-  res.status(200).send('OK');
-
   const payload = req.body;
+  
   console.log('================ WEBHOOK RECEIVED ================');
   console.log('Payload:', JSON.stringify(payload, null, 2));
   console.log('==================================================');
+
   // Based on the webhook payload structure
   const reference = payload.reference || payload.trxRef || payload.transactionId;
   const amount = Number(payload.amount);
@@ -101,19 +100,19 @@ const paymentpointWebhook = async (req, res) => {
 
   // We only care about successful transactions
   if (!status || status.toLowerCase() !== 'success' && status.toLowerCase() !== 'successful') {
-    return;
+    return res.status(200).send('Ignored: Not successful');
   }
 
   try {
     // Prevent duplicate processing
     const existingRecord = await PaymentRecord.findOne({ reference });
-    if (existingRecord) return; // Already processed
+    if (existingRecord) return res.status(200).send('Already processed');
 
     // Find the user with this virtual account
     const user = await User.findOne({ paymentPointVirtualAccount: accountNumber });
     if (!user) {
       console.error(`Webhook error: User not found for account ${accountNumber}`);
-      return;
+      return res.status(200).send('User not found');
     }
 
     // Create payment record
@@ -139,9 +138,11 @@ const paymentpointWebhook = async (req, res) => {
     });
 
     console.log(`Successfully processed webhook for ${reference} - Credited ${amount} to ${user.name}`);
+    res.status(200).send('OK');
 
   } catch (error) {
     console.error('PaymentPoint Webhook Error:', error);
+    res.status(500).send('Internal Server Error');
   }
 };
 
