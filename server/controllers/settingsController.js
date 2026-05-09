@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const Settings = require('../models/Settings');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-const { generateSecret, generateURI, verify } = require('otplib');
+const { authenticator } = require('otplib');
 
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -139,13 +139,8 @@ const setup2FA = async (req, res) => {
   if (!user) return res.status(404).json({ message: 'User not found' });
 
   // Generate secret if not exists or if re-setting
-  const secret = generateSecret();
-  const otpauth = generateURI({
-    strategy: 'totp',
-    label: user.email,
-    issuer: 'ReConnect & Rise',
-    secret
-  });
+  const secret = authenticator.generateSecret();
+  const otpauth = authenticator.keyuri(user.email, 'ReConnect & Rise', secret);
 
   // Store secret temporarily (user must verify to enable)
   user.twoFactorSecret = secret;
@@ -160,8 +155,8 @@ const verify2FA = async (req, res) => {
   const user = await User.findById(req.user._id);
   if (!user) return res.status(404).json({ message: 'User not found' });
 
-  const result = await verify({ token, secret: user.twoFactorSecret });
-  if (!result || !result.valid) return res.status(400).json({ message: 'Invalid verification code' });
+  const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+  if (!isValid) return res.status(400).json({ message: 'Invalid verification code' });
 
   user.twoFactorEnabled = true;
   await user.save();
@@ -230,8 +225,8 @@ const verifyAdminCredential = async (req, res) => {
     if (!superAdmin.twoFactorSecret) {
       return res.status(400).json({ message: 'Protocol Error: Administrative 2FA not configured' });
     }
-    const result = await verify({ token: credential, secret: superAdmin.twoFactorSecret });
-    if (!result || !result.valid) return res.status(401).json({ message: 'Protocol Violation: Invalid TOTP Token' });
+    const isValid = authenticator.verify({ token: credential, secret: superAdmin.twoFactorSecret });
+    if (!isValid) return res.status(401).json({ message: 'Protocol Violation: Invalid TOTP Token' });
   } 
   /*
   else if (targetMode === 'facial') {

@@ -151,13 +151,52 @@ export default function SettingsPage() {
 
     const handleOtpChange = (index, value) => {
         if (!/^\d*$/.test(value)) return;
+
+        // Handle paste of full code
+        if (value.length > 1) {
+            const pastedCode = value.slice(0, 6).split('');
+            const newDigits = [...otpDigits];
+            pastedCode.forEach((char, i) => {
+                if (i < 6) newDigits[i] = char;
+            });
+            setOtpDigits(newDigits);
+            
+            // Auto-submit if full code
+            if (newDigits.every(d => d !== '')) {
+                setTimeout(() => confirm2FA(), 100);
+            }
+            return;
+        }
+
         const newDigits = [...otpDigits];
-        newDigits[index] = value.slice(-1);
+        newDigits[index] = value;
         setOtpDigits(newDigits);
 
         if (value && index < 5) {
             const nextInput = document.getElementById(`otp-${index + 1}`);
             nextInput?.focus();
+        }
+
+        // Auto-submit on last digit
+        if (value && index === 5) {
+            const finalCode = newDigits.join('');
+            if (finalCode.length === 6) {
+                setTimeout(() => confirm2FA(), 100);
+            }
+        }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        if (pasteData) {
+            const newDigits = pasteData.split('');
+            const updated = [...otpDigits];
+            newDigits.forEach((d, i) => { updated[i] = d; });
+            setOtpDigits(updated);
+            if (updated.every(d => d !== '')) {
+                setTimeout(() => confirm2FA(), 100);
+            }
         }
     };
 
@@ -560,6 +599,7 @@ export default function SettingsPage() {
                                                         maxLength="1"
                                                         value={d}
                                                         onChange={e => handleOtpChange(i, e.target.value)}
+                                                        onPaste={handlePaste}
                                                         onKeyDown={e => handleOtpKeyDown(i, e)}
                                                         className="w-10 h-14 text-center bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 rounded-xl text-xl font-black outline-none focus:border-[#E8820C]"
                                                         placeholder="-"

@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
-const { generateSecret, generateURI, verify } = require('otplib');
+const { authenticator } = require('otplib');
 
 // Helper to catch async errors
 const asyncHandler = (fn) => (req, res, next) => {
@@ -109,9 +109,8 @@ const verifyLogin2FA = async (req, res) => {
       return res.status(404).json({ message: 'Security profile not found' });
     }
 
-    const result = await verify({ token, secret: user.twoFactorSecret });
-
-    if (!result || !result.valid) {
+    const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
+    if (!isValid) {
       return res.status(401).json({ message: 'Invalid 2FA code' });
     }
 
