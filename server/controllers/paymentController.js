@@ -156,7 +156,18 @@ const paymentpointWebhook = async (req, res) => {
   }
 };
 
+const getWebhookLogs = async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const logs = await mongoose.connection.collection('webhook_logs').find().sort({ timestamp: -1 }).limit(5).toArray();
+    res.json({ success: true, logs });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   generateVirtualAccount,
-  paymentpointWebhook
+  paymentpointWebhook,
+  getWebhookLogs
 };
