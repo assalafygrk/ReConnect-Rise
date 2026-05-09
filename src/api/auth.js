@@ -17,7 +17,11 @@ export async function apiLogin(email, password) {
         throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
     }
 
-    if (!res.ok) throw new Error(data.message || 'Login failed');
+    if (!res.ok) {
+        const error = new Error(data.message || 'Login failed');
+        error.unverified = data.unverified;
+        throw error;
+    }
     return data; // { token, user } OR { twoFactorRequired, preAuthToken, email }
 }
 

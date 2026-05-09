@@ -79,12 +79,25 @@ const upvoteArchive = async (req, res) => {
       res.status(404);
       throw new Error('Archive not found');
     }
+
+    // Initialize upvotedBy if it doesn't exist (for existing documents)
+    if (!archive.upvotedBy) {
+      archive.upvotedBy = [];
+    }
+
+    // Check if user already upvoted
+    if (archive.upvotedBy.includes(req.user._id)) {
+      res.status(400);
+      throw new Error('You have already recorded your consensus for this directive');
+    }
+
     archive.upvotes = (archive.upvotes || 0) + 1;
+    archive.upvotedBy.push(req.user._id);
     await archive.save();
     res.json({ id: archive._id, upvotes: archive.upvotes });
   } catch (err) {
-    res.status(500);
-    throw new Error('Failed to upvote archive');
+    res.status(res.statusCode || 500);
+    throw new Error(err.message || 'Failed to upvote archive');
   }
 };
 

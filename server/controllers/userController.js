@@ -52,8 +52,40 @@ const authUser = async (req, res) => {
   if (user && (await user.matchPassword(password))) {
     // Check if email is verified
     if (!user.isEmailVerified) {
-      res.status(401);
-      throw new Error('Please verify your email to login');
+      // Automatically resend verification email
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+      user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+      await user.save();
+
+      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+          <h2 style="color: #3B82F6; text-align: center;">Verify Your Identity</h2>
+          <p>Hi ${user.name || 'Brother'},</p>
+          <p>It looks like you tried to log in but your email hasn't been verified yet. No worries! Please click the button below to activate your account:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="background-color: #3B82F6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Email Now</a>
+          </div>
+          <p style="font-size: 12px; color: #888888; text-align: center;">This link will expire in 24 hours.</p>
+        </div>
+      `;
+
+      try {
+        await sendEmail({
+          email: user.email,
+          subject: 'Action Required: Verify Your Email - ReConnect & Rise',
+          message: `Verify your email: ${verificationUrl}`,
+          html
+        });
+      } catch (err) {
+        console.error('Auto-resend failed:', err);
+      }
+
+      return res.status(403).json({ 
+        message: 'Account not verified. A fresh verification link has been sent to your email.',
+        unverified: true 
+      });
     }
     
     // If 2FA is enabled, don't issue the full token yet

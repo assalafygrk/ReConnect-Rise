@@ -29,7 +29,10 @@ export async function upvoteArchive(id) {
         method: 'PATCH',
         headers: authHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to upvote');
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to upvote');
+    }
     return await res.json();
 }
 

@@ -423,17 +423,19 @@ export default function RegistrationPage() {
                             <CheckCircle2 size={40} className="animate-in fade-in zoom-in duration-700 delay-150" />
                         </div>
                         <h2 className="text-3xl font-black text-white mb-2 text-center font-serif">
-                            Identity Secured
+                            Verify Your Email
                         </h2>
                         <p className="text-white/50 text-center text-sm mb-10 leading-relaxed">
-                            Your biometric data and profile have been successfully registered. We've sent a verification link to <span className="text-white font-bold">{formData.email}</span>. Please verify your email to activate your account.
+                            Registration complete! We've sent a secure activation link to <span className="text-white font-bold">{formData.email}</span>. 
+                            <br /><br />
+                            <span className="text-[#3B82F6] font-bold underline">You must verify your email</span> before you can access your dashboard.
                         </p>
 
                         <button
                             onClick={finishRegistration}
-                            className="w-full py-4 rounded-2xl font-bold text-white transition-all bg-[#3B82F6] hover:bg-[#2563EB] shadow-[0_8px_20px_rgba(59,130,246,0.3)] active:scale-95 flex items-center justify-center gap-2 border border-white/10"
+                            className="w-full py-4 rounded-2xl font-black text-white transition-all bg-[#3B82F6] hover:bg-[#2563EB] shadow-[0_8px_20px_rgba(59,130,246,0.3)] active:scale-95 flex items-center justify-center gap-2 border border-white/10 uppercase tracking-widest text-xs"
                         >
-                            Return to Login <ArrowRight size={18} />
+                            I've Verified My Email <ArrowRight size={18} />
                         </button>
                     </div>
                 </div>

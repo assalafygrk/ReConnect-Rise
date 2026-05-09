@@ -5,12 +5,12 @@ import {
     MessageSquare, User, Calendar, Plus, X, Search, ChevronRight,
     Volume2, CheckCircle2, History, TrendingUp, Sparkles, Filter,
     Lightbulb, Target, Users as UsersIcon, ShieldCheck, Zap, Info,
-    MoreVertical, Loader2, Fingerprint, Lock, Compass, HardDrive
+    MoreVertical, Loader2, Fingerprint, Lock, Compass, HardDrive, Share2
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
-import { fetchArchives, uploadArchive } from '../api/archives';
+import { fetchArchives, uploadArchive, upvoteArchive } from '../api/archives';
 import { fetchVisions, createVision, upvoteVision } from '../api/visions';
 
 
@@ -41,7 +41,8 @@ const AdviceRoomPage = () => {
     const [slideDistance, setSlideDistance] = useState(0);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [recordedAudio, setRecordedAudio] = useState(null);
-    const [isPlaying, setIsPlaying] = useState(null);
+    const [playingId, setPlayingId] = useState(null);
+    const audioRef = useRef(null); // Initialize as null and create in toggleAudio
     const [activeSubmissionCategory, setActiveSubmissionCategory] = useState('community');
     const [inputText, setInputText] = useState('');
 
@@ -64,7 +65,7 @@ const AdviceRoomPage = () => {
             
             setIdeas(adviceData.map(d => ({
                 id: d._id,
-                author: d.role === 'super_admin' ? 'System Architecture' : (d.uploaderName || 'Unknown'),
+                author: d.uploaderName || 'Unknown',
                 content: d.title,
                 type: d.fileType || 'text',
                 category: d.category || 'others',
@@ -187,23 +188,53 @@ const AdviceRoomPage = () => {
     const handleSendAdvice = async () => {
         setSubmitting(true);
         try {
+            let finalUrl = '';
+            
+            // If there's a voice recording, convert to base64 for persistence
+            if (recordedAudio?.blob) {
+                const reader = new FileReader();
+                const base64Promise = new Promise((resolve) => {
+                    reader.onloadend = () => resolve(reader.result);
+                });
+                reader.readAsDataURL(recordedAudio.blob);
+                finalUrl = await base64Promise;
+            }
+
             const formData = {
-                title: inputText || `Voice Advice ${dayjs().format('HH:mm')}`,
+                title: inputText || `Voice Directive ${dayjs().format('DD/MM HH:mm')}`,
                 type: 'advice',
                 fileType: recordedAudio ? 'voice' : 'text',
-                url: recordedAudio?.url || '', // In real app, upload blob first
+                url: finalUrl || `https://via.placeholder.com/600?text=${encodeURIComponent(inputText || 'Strategic Vision')}`,
                 category: activeSubmissionCategory
             };
+
             await uploadArchive(formData);
-            toast.success('Advice Synchronized with Registry');
+            toast.success('Directive Synchronized with Registry');
             setInputText('');
             setRecordedAudio(null);
             setShowProposalModal(false);
             loadVisions();
         } catch (err) {
-            toast.error('Transmission Failure');
+            console.error('Upload error:', err);
+            toast.error(err.message || 'Transmission Failure');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const toggleAudio = (id, url) => {
+        if (!audioRef.current) {
+            audioRef.current = new Audio();
+        }
+        
+        if (playingId === id) {
+            audioRef.current.pause();
+            setPlayingId(null);
+        } else {
+            audioRef.current.src = url;
+            audioRef.current.play().catch(e => console.error("Audio playback failed", e));
+            setPlayingId(id);
+            audioRef.current.onended = () => setPlayingId(null);
         }
     };
 
@@ -213,12 +244,12 @@ const AdviceRoomPage = () => {
             toast.success('Consensus Recorded');
             loadVisions();
         } catch (err) {
-            toast.error('Verification Failure');
+            toast.error(err.message || 'Verification Failure');
         }
     };
 
-    const filteredIdeas = ideas.filter(idea => 
-        (idea.content.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    const filteredIdeas = (ideas || []).filter(idea => 
+        ((idea.content || '').toLowerCase().includes((searchTerm || '').toLowerCase())) &&
         (selectedCategory === 'all' || idea.category === selectedCategory)
     );
 
@@ -228,7 +259,7 @@ const AdviceRoomPage = () => {
             <div className="relative bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[2.5rem] md:rounded-[4.5rem] p-8 md:p-20 overflow-hidden shadow-2xl border border-white/5">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#E8820C]/10 to-transparent"></div>
                 <div className="absolute -bottom-20 -left-20 text-white/[0.02] -rotate-12 select-none group-hover:text-white/[0.05] transition-colors duration-1000">
-                    <Fingerprint size={300} md:size={400} />
+                    <Fingerprint size={400} />
                 </div>
                 
                 <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10 text-center md:text-left">
@@ -276,6 +307,22 @@ const AdviceRoomPage = () => {
                                 </div>
                             </div>
 
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {MOCK_CATEGORIES.filter(c => c.id !== 'all').map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setActiveSubmissionCategory(cat.id)}
+                                        className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${
+                                            activeSubmissionCategory === cat.id 
+                                            ? 'bg-[#E8820C] text-white' 
+                                            : 'bg-gray-50 dark:bg-white/5 text-black/40 dark:text-white/40 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+
                             <div className="relative group/field">
                                 <textarea
                                     value={inputText}
@@ -285,13 +332,7 @@ const AdviceRoomPage = () => {
                                 />
                             </div>
 
-                            <div className="flex flex-col md:flex-row items-center gap-6">
-                                {/* Voice Capture Module */}
-                                <div 
-                                    placeholder="Type your strategic advice here..."
-                                    className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/30 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-8 text-sm md:text-base font-serif italic text-[#1A1A2E] dark:text-white outline-none transition-all min-h-[120px] md:min-h-[160px] shadow-inner"
-                                />
-                            </div>
+
 
                             <div className="flex flex-col md:flex-row items-center gap-4">
                                 <div className="flex-1 w-full bg-gray-50 dark:bg-white/5 rounded-2xl md:rounded-[2rem] p-3 md:p-4 border border-black/5 dark:border-white/10 flex items-center gap-4 relative min-h-[64px]"
@@ -384,13 +425,18 @@ const AdviceRoomPage = () => {
                                     <div className="mb-6">
                                         {idea.type === 'voice' ? (
                                             <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-[1.5rem] flex items-center gap-4 border border-black/5">
-                                                <button className="w-10 h-10 bg-[#1A1A2E] text-white rounded-xl flex items-center justify-center shadow-lg"><Play size={18} fill="currentColor" className="ml-1" /></button>
+                                                <button 
+                                                    onClick={() => toggleAudio(idea.id, idea.audioUrl)}
+                                                    className="w-10 h-10 bg-[#1A1A2E] dark:bg-[#F5A623] text-white rounded-xl flex items-center justify-center shadow-lg transition-transform active:scale-90"
+                                                >
+                                                    {playingId === idea.id ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                                                </button>
                                                 <div className="flex-1 space-y-1.5">
-                                                    <div className="h-1 bg-black/10 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-[#E8820C] w-0"></div>
+                                                    <div className="h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                                                        <div className={`h-full bg-[#E8820C] transition-all duration-300 ${playingId === idea.id ? 'w-full' : 'w-0'}`}></div>
                                                     </div>
-                                                    <div className="flex justify-between text-[7px] font-black text-black/30 uppercase">
-                                                        <span>0:00</span>
+                                                    <div className="flex justify-between text-[7px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest">
+                                                        <span>{playingId === idea.id ? 'Playing...' : 'Voice Directive'}</span>
                                                         <span>{idea.duration}</span>
                                                     </div>
                                                 </div>
@@ -410,7 +456,13 @@ const AdviceRoomPage = () => {
                                             <ThumbsUp size={16} fill={idea.upvotes > 0 ? "currentColor" : "none"} />
                                             <span className="text-[10px] font-black uppercase tracking-widest">{idea.upvotes || 0} Consensus</span>
                                         </button>
-                                        <button className="text-black/20 dark:text-white/20 hover:text-[#E8820C] transition-colors">
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(`${window.location.origin}/advice/${idea.id}`);
+                                                toast.success('Directive Link Copied');
+                                            }}
+                                            className="text-black/20 dark:text-white/20 hover:text-[#E8820C] transition-colors"
+                                        >
                                             <Share2 size={16} />
                                         </button>
                                     </div>
@@ -422,6 +474,30 @@ const AdviceRoomPage = () => {
 
                 {/* Sidebar */}
                 <div className="lg:col-span-4 space-y-10">
+                    {/* Category Filter */}
+                    <div className="bg-white dark:bg-[#111827] rounded-[3rem] p-8 shadow-xl border border-black/5 dark:border-white/10">
+                        <h3 className="text-lg font-black font-serif text-[#1A1A2E] dark:text-white mb-6 px-2 uppercase tracking-tighter">Filter by Domain</h3>
+                        <div className="space-y-2">
+                            {MOCK_CATEGORIES.map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setSelectedCategory(cat.id)}
+                                    className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${
+                                        selectedCategory === cat.id 
+                                        ? 'bg-[#E8820C] text-white shadow-lg shadow-[#E8820C]/20' 
+                                        : 'hover:bg-gray-50 dark:hover:bg-white/5 text-black/60 dark:text-white/60'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <cat.icon size={18} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{cat.label}</span>
+                                    </div>
+                                    <ChevronRight size={14} className={selectedCategory === cat.id ? 'opacity-100' : 'opacity-20'} />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-8 text-white/5 rotate-12"><TrendingUp size={150} /></div>
                         <div className="relative z-10 space-y-8">

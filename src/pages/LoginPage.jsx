@@ -55,9 +55,9 @@ export default function LoginPage() {
             toast.success('Welcome back, brother!');
             navigate('/dashboard');
         } catch (err) {
-            if (err.message.includes('verify your email')) {
+            if (err.unverified) {
                 setUnverifiedEmail(email);
-                toast.error('Email not verified. Check your inbox.');
+                toast.error('Account unverified. We just sent a fresh link!');
             } else {
                 toast.error(err.message || 'Login failed');
             }
