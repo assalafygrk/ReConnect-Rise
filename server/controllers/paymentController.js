@@ -90,6 +90,9 @@ const paymentpointWebhook = async (req, res) => {
   res.status(200).send('OK');
 
   const payload = req.body;
+  console.log('================ WEBHOOK RECEIVED ================');
+  console.log('Payload:', JSON.stringify(payload, null, 2));
+  console.log('==================================================');
   // Based on the webhook payload structure
   const reference = payload.reference || payload.trxRef || payload.transactionId;
   const amount = Number(payload.amount);
