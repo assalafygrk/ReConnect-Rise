@@ -102,15 +102,19 @@ const paymentpointWebhook = async (req, res) => {
     console.error('Failed to log webhook to DB:', e);
   }
 
-  // Based on the webhook payload structure
-  const reference = payload.reference || payload.trxRef || payload.transactionId;
-  const amount = Number(payload.amount);
-  const status = payload.status;
-  const accountNumber = payload.accountNumber || payload.virtualAccount;
+  // Extract data based on the actual PaymentPoint webhook payload structure
+  const reference = payload.transaction_id;
+  const amount = Number(payload.amount_paid);
+  const status = payload.transaction_status;
+  const accountNumber = payload.receiver ? payload.receiver.account_number : null;
 
   // We only care about successful transactions
-  if (!status || status.toLowerCase() !== 'success' && status.toLowerCase() !== 'successful') {
+  if (!status || status.toLowerCase() !== 'success') {
     return res.status(200).send('Ignored: Not successful');
+  }
+
+  if (!accountNumber) {
+    return res.status(200).send('Ignored: Missing account number');
   }
 
   try {
