@@ -139,19 +139,24 @@ const paymentpointWebhook = async (req, res) => {
       paymentResponse: payload
     });
 
-    // Credit user's wallet
-    user.walletBalance = (user.walletBalance || 0) + amount;
+    // Calculate the 1% charge capped at 100
+    const rawCharge = amount * 0.01;
+    const charge = rawCharge > 100 ? 100 : rawCharge;
+    const amountToCredit = amount - charge;
+
+    // Credit user's wallet with the adjusted amount
+    user.walletBalance = (user.walletBalance || 0) + amountToCredit;
     await user.save();
 
     // Create transaction history
     await Transaction.create({
       user: user._id,
       type: 'credit',
-      amount: amount,
-      note: `Bank Transfer Deposit (Ref: ${reference})`,
+      amount: amountToCredit,
+      note: `Bank Transfer Deposit (Ref: ${reference}). Charge applied: ₦${charge.toFixed(2)}`,
     });
 
-    console.log(`Successfully processed webhook for ${reference} - Credited ${amount} to ${user.name}`);
+    console.log(`Successfully processed webhook for ${reference} - Credited ${amountToCredit} (Charge: ${charge}) to ${user.name}`);
     res.status(200).send('OK');
 
   } catch (error) {
