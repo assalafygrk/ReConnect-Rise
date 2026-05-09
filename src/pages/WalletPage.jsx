@@ -176,7 +176,10 @@ export default function WalletPage() {
         e.preventDefault();
         setSending(true);
         try {
-            if (contributeForm.type === 'weekly') {
+            // Members can only do general contributions
+            const effectiveType = user?.role === 'member' ? 'general' : contributeForm.type;
+            
+            if (effectiveType === 'weekly') {
                 await payWeeklyContribution(contributeForm.pin);
                 toast.success('Weekly contribution paid successfully');
             } else {
@@ -556,21 +559,42 @@ export default function WalletPage() {
                         <div className="flex items-center justify-between mb-8">
                             <div>
                                 <h3 className="font-black text-2xl font-serif text-[#1A1A2E] dark:text-white/90">Contribution</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-1">Pay via Wallet</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-1">
+                                    {user?.role === 'member' ? 'General Pool — Via Wallet' : 'Pay via Wallet'}
+                                </p>
                             </div>
                             <button onClick={closeModal} className="p-3 bg-gray-50 dark:bg-white/5 rounded-2xl text-black/20 dark:text-white/20 hover:text-black/60"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleContribute} className="space-y-6">
-                            <div className="flex gap-3 bg-gray-50 dark:bg-white/5 p-1.5 rounded-2xl border border-black/5 dark:border-white/10">
-                                {['weekly', 'general'].map(t => (
-                                    <button key={t} type="button" onClick={() => setContributeForm({ ...contributeForm, type: t })}
-                                        className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${contributeForm.type === t ? 'bg-white dark:bg-[#111827] text-blue-600 shadow-sm' : 'text-black/40 dark:text-white/40'}`}>
-                                        {t} Pool
-                                    </button>
-                                ))}
-                            </div>
+                            {user?.role !== 'member' ? (
+                                <>
+                                    <div className="flex gap-3 bg-gray-50 dark:bg-white/5 p-1.5 rounded-2xl border border-black/5 dark:border-white/10">
+                                        {['weekly', 'general'].map(t => (
+                                            <button key={t} type="button" onClick={() => setContributeForm({ ...contributeForm, type: t })}
+                                                className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${contributeForm.type === t ? 'bg-white dark:bg-[#111827] text-blue-600 shadow-sm' : 'text-black/40 dark:text-white/40'}`}>
+                                                {t} Pool
+                                            </button>
+                                        ))}
+                                    </div>
 
-                            {contributeForm.type === 'general' ? (
+                                    {contributeForm.type === 'general' ? (
+                                        <div>
+                                            <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2">Amount (₦)</label>
+                                            <div className="relative">
+                                                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-black/20 dark:text-white/20 text-base">₦</span>
+                                                <input required type="number" min="1" value={contributeForm.amount} onChange={(e) => setContributeForm({ ...contributeForm, amount: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-12 pr-6 py-4 text-base font-black outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="0" />
+                                            </div>
+                                            <p className="text-[10px] text-black/40 dark:text-white/40 mt-2 text-right">Available: {formatNaira(data.balance)}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 text-center space-y-2">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-800 dark:text-blue-200">Fixed Weekly Amount</p>
+                                            <p className="text-3xl font-black text-blue-600 font-serif">{data?.weeklyContributionAmount || 100}</p>
+                                            <p className="text-[10px] font-bold text-blue-600/60 pt-2">Will be deducted automatically from wallet</p>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
                                 <div>
                                     <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2">Amount (₦)</label>
                                     <div className="relative">
@@ -578,12 +602,6 @@ export default function WalletPage() {
                                         <input required type="number" min="1" value={contributeForm.amount} onChange={(e) => setContributeForm({ ...contributeForm, amount: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-12 pr-6 py-4 text-base font-black outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="0" />
                                     </div>
                                     <p className="text-[10px] text-black/40 dark:text-white/40 mt-2 text-right">Available: {formatNaira(data.balance)}</p>
-                                </div>
-                            ) : (
-                                <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 text-center space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-800 dark:text-blue-200">Fixed Weekly Amount</p>
-                                    <p className="text-3xl font-black text-blue-600 font-serif">{data?.weeklyContributionAmount || 100}</p>
-                                    <p className="text-[10px] font-bold text-blue-600/60 pt-2">Will be deducted automatically from wallet</p>
                                 </div>
                             )}
 

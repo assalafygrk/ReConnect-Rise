@@ -257,8 +257,73 @@ export default function ContributionsPage() {
                 </div>
             </div>
 
-            {/* MEMBER self-service panel */}
-            {(!isTreasurer && !isAdmin) && (
+            {/* MEMBER (basic) self-service panel — General Contribution Only */}
+            {(user?.role === 'member') && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <div className="lg:col-span-8 bg-white dark:bg-[#111827] rounded-[2rem] md:rounded-[3rem] border border-black/5 dark:border-white/10 shadow-xl p-6 md:p-10 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-[#E8820C]/5 rounded-full -mr-24 -mt-24 blur-3xl" />
+                        <div className="relative z-10 space-y-6 md:space-y-10">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <h3 className="text-xl md:text-2xl font-serif font-black text-[#1A1A2E] dark:text-white uppercase tracking-tighter">General Contribution</h3>
+                                    <p className="text-[8px] md:text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest italic">Voluntary Pool Deposits</p>
+                                </div>
+                                <div className="px-4 py-1.5 rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                    Open
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-blue-50/50 dark:bg-blue-950/10 rounded-[2rem] border-2 border-blue-100 dark:border-blue-900/30 space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-xl bg-blue-500 text-white">
+                                        <ArrowDownCircle size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Contribution Type</p>
+                                        <p className="font-black text-sm text-blue-600">General Pool — Any Amount</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-1 pt-3 border-t border-black/5 dark:border-white/5">
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Your Role</p>
+                                    <p className="text-sm font-black dark:text-white">New Member — Weekly contributions unlock after promotion to Official Member</p>
+                                </div>
+                            </div>
+
+                            <button onClick={() => setShowGeneralForm(true)}
+                                className="w-full flex items-center justify-center gap-4 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all group">
+                                <Plus size={20} className="group-hover:rotate-90 transition-transform" />
+                                Make General Contribution
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-4 space-y-8">
+                        <div className="bg-[#1A1A2E] dark:bg-[#0F172A] rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group border border-white/5">
+                            <div className="absolute top-0 right-0 p-8 text-white/5 rotate-12"><Info size={150} /></div>
+                            <div className="relative z-10 space-y-8">
+                                <h3 className="text-xl font-black font-serif uppercase tracking-tighter italic">Member Info</h3>
+                                <div className="space-y-6">
+                                    {[
+                                        "As a new member, you can contribute to the General Pool.",
+                                        "Weekly contributions are available to Official Members only.",
+                                        "You will be eligible for promotion after 3 days.",
+                                        "All contributions are non-refundable once confirmed."
+                                    ].map((rule, i) => (
+                                        <div key={i} className="flex gap-4">
+                                            <div className="w-6 h-6 rounded-lg bg-[#E8820C] flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 text-black">0{i+1}</div>
+                                            <p className="text-sm font-serif italic text-white/60 leading-relaxed">{rule}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* OFFICIAL MEMBER self-service panel — Weekly Contribution */}
+            {(!isTreasurer && !isAdmin && user?.role !== 'member') && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="lg:col-span-8 bg-white dark:bg-[#111827] rounded-[2rem] md:rounded-[3rem] border border-black/5 dark:border-white/10 shadow-xl p-6 md:p-10 overflow-hidden relative">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-[#E8820C]/5 rounded-full -mr-24 -mt-24 blur-3xl" />
@@ -368,7 +433,7 @@ export default function ContributionsPage() {
                                 <h3 className="text-xl font-black font-serif uppercase tracking-tighter italic">Protocols</h3>
                                 <div className="space-y-6">
                                     {[
-                                        "Deadlines are absolute. Thursday 23:59 is the cutoff.",
+                                        "Contribution window closes Sunday 23:49.",
                                         "Wallet contributions require valid transaction PIN.",
                                         "All payments are non-refundable once confirmed.",
                                         "Consolidated funds are allocated by executive vote."
@@ -389,8 +454,8 @@ export default function ContributionsPage() {
                 </div>
             )}
 
-            {/* TREASURER / ADMIN — weekly ledger table */}
-            {(isTreasurer || isAdmin) && (
+            {/* OFFICIAL MEMBERS / ADMINS — weekly ledger table */}
+            {(user?.role !== 'member') && (
                 <div className="space-y-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="space-y-1">

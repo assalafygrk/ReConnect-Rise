@@ -107,14 +107,14 @@ const updateMemberRole = async (req, res) => {
 
   if (role === member.role) return res.json(member);
 
-  // Tenure check: 1 week to become official
-  const oneWeek = 7 * 24 * 60 * 60 * 1000;
+  // Tenure check: 3 days to become official
+  const threeDays = 3 * 24 * 60 * 60 * 1000;
   const tenure = Date.now() - member.becameMemberAt.getTime();
   
   const OFFICIAL_ROLES = ['group_leader', 'treasurer', 'welfare', 'special_advicer', 'official_member'];
-  if (OFFICIAL_ROLES.includes(role) && tenure < oneWeek) {
+  if (OFFICIAL_ROLES.includes(role) && tenure < threeDays) {
     res.status(400);
-    throw new Error('Member must have at least 1 week tenure to become an official member');
+    throw new Error('Member must have at least 3 days tenure to become an official member');
   }
 
   // Validate role limits
