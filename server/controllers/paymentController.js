@@ -92,6 +92,16 @@ const paymentpointWebhook = async (req, res) => {
   console.log('Payload:', JSON.stringify(payload, null, 2));
   console.log('==================================================');
 
+  try {
+    const mongoose = require('mongoose');
+    await mongoose.connection.collection('webhook_logs').insertOne({
+      timestamp: new Date(),
+      payload: payload
+    });
+  } catch (e) {
+    console.error('Failed to log webhook to DB:', e);
+  }
+
   // Based on the webhook payload structure
   const reference = payload.reference || payload.trxRef || payload.transactionId;
   const amount = Number(payload.amount);
