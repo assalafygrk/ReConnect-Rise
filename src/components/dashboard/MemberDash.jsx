@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Wallet, Gem, CheckCircle2, Layers, ShieldCheck, Fingerprint, Calendar, Award, Trophy, Star, Heart, HeartHandshake, HandHelping, Lightbulb, Scale, CalendarRange, Mic2, MapPin, Activity } from 'lucide-react';
 import StatCard from './StatCard';
 import FlowChart from './FlowChart';
@@ -7,6 +8,7 @@ import ActivityFeed from './ActivityFeed';
 function fmt(n) { return `₦${Number(n || 0).toLocaleString('en-NG')}`; }
 
 export default function MemberDash({ data: d, user, config, role }) {
+  const nav = useNavigate();
   const stats = d.stats || {};
   const my = d.myStats || {};
   const goalPct = Math.min(100, Math.round(((d.poolBalance || 0) / (config.savingsGoal || d.savingsGoal || 1000000)) * 100));
@@ -42,15 +44,15 @@ export default function MemberDash({ data: d, user, config, role }) {
             <p className="text-base md:text-lg font-medium text-black/50 dark:text-white/60 leading-relaxed font-serif">{h.quote}</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-            <div className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1 backdrop-blur-md">
+            <div onClick={() => nav('/contributions')} className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1 backdrop-blur-md cursor-pointer hover:-translate-y-0.5 transition-all">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40 dark:text-white/50">My Total</p>
               <p className="text-xl font-serif font-black">{fmt(my.totalContributions)}</p>
             </div>
-            <div className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1 backdrop-blur-md">
+            <div onClick={() => nav('/loans')} className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1 backdrop-blur-md cursor-pointer hover:-translate-y-0.5 transition-all">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40 dark:text-white/50">Active Loan</p>
               <p className="text-xl font-serif font-black" style={{ color: accentColor }}>{my.activeLoan > 0 ? fmt(my.activeLoan) : 'None'}</p>
             </div>
-            <div className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1 backdrop-blur-md col-span-2 sm:col-span-1">
+            <div onClick={() => nav('/contributions')} className="bg-gray-50 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/10 space-y-1 backdrop-blur-md col-span-2 sm:col-span-1 cursor-pointer hover:-translate-y-0.5 transition-all">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40 dark:text-white/50">Status</p>
               <p className="text-lg font-bold flex items-center gap-2" style={{ color: my.paidThisMonth ? '#10B981' : '#F43F5E' }}>
                 {my.paidThisMonth ? <><CheckCircle2 size={16} /> Paid</> : <><Layers size={16} /> Unpaid</>}
@@ -63,46 +65,46 @@ export default function MemberDash({ data: d, user, config, role }) {
       {/* Role-specific stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {isWelfare ? (<>
-          <StatCard icon={HeartHandshake} label="Welfare Pool" value={fmt(stats.welfareBalance)} color="#F43F5E" />
-          <StatCard icon={HandHelping} label="Pending Requests" value={stats.pendingRequests || 0} color="#FB7185" sub="Awaiting Review" />
-          <StatCard icon={Heart} label="Grants Disbursed" value={fmt(stats.totalWelfareGrants)} color="#EC4899" />
-          <StatCard icon={CheckCircle2} label="Approved" value={stats.totalApprovedRequests || 0} color="#10B981" />
+          <StatCard icon={HeartHandshake} label="Welfare Pool" value={fmt(stats.welfareBalance)} color="#F43F5E" onClick={() => nav('/welfare')} />
+          <StatCard icon={HandHelping} label="Pending Requests" value={stats.pendingRequests || 0} color="#FB7185" sub="Awaiting Review" onClick={() => nav('/welfare')} />
+          <StatCard icon={Heart} label="Grants Disbursed" value={fmt(stats.totalWelfareGrants)} color="#EC4899" onClick={() => nav('/disbursements')} />
+          <StatCard icon={CheckCircle2} label="Approved" value={stats.totalApprovedRequests || 0} color="#10B981" onClick={() => nav('/welfare')} />
         </>) : isAdvisor ? (<>
-          <StatCard icon={Lightbulb} label="Advice Rooms" value={stats.visionCount || 0} color="#F5A623" />
-          <StatCard icon={Scale} label="Sentiment" value={`${Math.round(stats.avgSentiment || 0)}%`} color="#D97706" />
-          <StatCard icon={Gem} label="My Contributions" value={fmt(my.totalContributions)} color="#3B82F6" />
-          <StatCard icon={Activity} label="Participation" value="Active" color="#10B981" />
+          <StatCard icon={Lightbulb} label="Advice Rooms" value={stats.visionCount || 0} color="#F5A623" onClick={() => nav('/advice')} />
+          <StatCard icon={Scale} label="Sentiment" value={`${Math.round(stats.avgSentiment || 0)}%`} color="#D97706" onClick={() => nav('/advice')} />
+          <StatCard icon={Gem} label="My Contributions" value={fmt(my.totalContributions)} color="#3B82F6" onClick={() => nav('/contributions')} />
+          <StatCard icon={Activity} label="Participation" value="Active" color="#10B981" onClick={() => nav('/profile')} />
         </>) : isOrganizer ? (<>
-          <StatCard icon={Mic2} label="Upcoming Majlis" value={stats.upcomingMeetings || 0} color="#14B8A6" />
-          <StatCard icon={MapPin} label="Total Meetings" value={stats.totalMeetings || 0} color="#0D9488" />
-          <StatCard icon={Gem} label="Avg Attendance" value={stats.avgAttendance || 0} color="#2DD4BF" />
-          <StatCard icon={Activity} label="Status" value="Active" color="#F5A623" />
+          <StatCard icon={Mic2} label="Upcoming Majlis" value={stats.upcomingMeetings || 0} color="#14B8A6" onClick={() => nav('/meetings')} />
+          <StatCard icon={MapPin} label="Total Meetings" value={stats.totalMeetings || 0} color="#0D9488" onClick={() => nav('/meetings')} />
+          <StatCard icon={Gem} label="Avg Attendance" value={stats.avgAttendance || 0} color="#2DD4BF" onClick={() => nav('/meetings')} />
+          <StatCard icon={Activity} label="Status" value="Active" color="#F5A623" onClick={() => nav('/profile')} />
         </>) : isOfficial ? (<>
-          <StatCard icon={Trophy} label="Seniority" value={`${my.seniorityDays || 0} days`} color="#64748B" />
-          <StatCard icon={Star} label="Trust Score" value={`${my.trustScore || 0}%`} color="#3B82F6" />
-          <StatCard icon={Gem} label="Contributions" value={fmt(my.totalContributions)} color="#F5A623" trend={+15} />
-          <StatCard icon={Activity} label="Participation" value="High" color="#10B981" />
+          <StatCard icon={Trophy} label="Seniority" value={`${my.seniorityDays || 0} days`} color="#64748B" onClick={() => nav('/profile')} />
+          <StatCard icon={Star} label="Trust Score" value={`${my.trustScore || 0}%`} color="#3B82F6" onClick={() => nav('/profile')} />
+          <StatCard icon={Gem} label="Contributions" value={fmt(my.totalContributions)} color="#F5A623" trend={+15} onClick={() => nav('/contributions')} />
+          <StatCard icon={Activity} label="Participation" value="High" color="#10B981" onClick={() => nav('/contributions')} />
         </>) : (<>
-          <StatCard icon={Wallet} label="Treasury" value={fmt(d.poolBalance)} color="#3B82F6" />
-          <StatCard icon={Gem} label="Goal" value={`${goalPct}%`} color="#F5A623" sub={fmt(config.savingsGoal || d.savingsGoal)} trend={goalPct > 50 ? +12 : null} />
-          <StatCard icon={CheckCircle2} label="Payers" value={`${d.totalPaid || 0} / ${d.totalMembers || 0}`} color="#10B981" />
-          <StatCard icon={Layers} label="Unpaid" value={d.totalUnpaid || 0} color="#F43F5E" />
+          <StatCard icon={Wallet} label="Treasury" value={fmt(d.poolBalance)} color="#3B82F6" onClick={() => nav('/wallet')} />
+          <StatCard icon={Gem} label="Goal" value={`${goalPct}%`} color="#F5A623" sub={fmt(config.savingsGoal || d.savingsGoal)} trend={goalPct > 50 ? +12 : null} onClick={() => nav('/contributions')} />
+          <StatCard icon={CheckCircle2} label="Payers" value={`${d.totalPaid || 0} / ${d.totalMembers || 0}`} color="#10B981" onClick={() => nav('/contributions')} />
+          <StatCard icon={Layers} label="Unpaid" value={d.totalUnpaid || 0} color="#F43F5E" onClick={() => nav('/contributions')} />
         </>)}
       </div>
 
       {/* Chart + Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 cursor-pointer" onClick={() => nav('/contributions')}>
           <FlowChart data={d.monthlyChart || []} title={isWelfare ? 'Welfare Distribution' : 'Fiscal Trajectory'} subtitle="Annual Growth Analysis" inflowColor={accentColor} gradientId={`${role}Flow`} showOutflow={!isAdvisor && !isOrganizer} />
         </div>
         <div className="lg:col-span-2">
-          <ActivityFeed transactions={d.recentTransactions || []} title="Recent Activity" accentColor={accentColor} />
+          <ActivityFeed transactions={d.recentTransactions || []} title="Recent Activity" accentColor={accentColor} onSelect={() => nav('/wallet')} />
         </div>
       </div>
 
-      {/* Goal Progress (for member/official_member) */}
+      {/* Goal Progress */}
       {!isWelfare && !isAdvisor && !isOrganizer && (
-        <div className="bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[1.5rem] p-6 shadow-sm space-y-4">
+        <div onClick={() => nav('/contributions')} className="bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[1.5rem] p-6 shadow-sm space-y-4 cursor-pointer hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <h3 className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.3em]">Community Goal Engine</h3>
             <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accentColor }}>{goalPct}% Complete</span>
@@ -117,7 +119,7 @@ export default function MemberDash({ data: d, user, config, role }) {
         </div>
       )}
 
-      {/* Treasury Toll - on EVERY role */}
+      {/* Treasury Toll */}
       <TreasuryToll toll={d.treasuryToll} accentColor={accentColor} />
     </div>
   );
