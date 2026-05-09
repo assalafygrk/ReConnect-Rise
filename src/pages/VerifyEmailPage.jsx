@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { CheckCircle2, XCircle, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -11,9 +11,15 @@ export default function VerifyEmailPage() {
     const { login } = useAuth();
     const [status, setStatus] = useState('verifying'); // verifying, success, error
     const [message, setMessage] = useState('Validating your credentials...');
+    
+    // Prevent double-invocation in React StrictMode
+    const hasAttempted = useRef(false);
 
     useEffect(() => {
         const verify = async () => {
+            if (hasAttempted.current) return;
+            hasAttempted.current = true;
+            
             try {
                 const data = await apiVerifyEmail(token);
                 setStatus('success');
