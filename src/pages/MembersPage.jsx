@@ -174,11 +174,11 @@ export default function MembersPage() {
                         <select
                             value={roleFilter}
                             onChange={(e) => setRoleFilter(e.target.value)}
-                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl pl-12 pr-8 py-4 text-[9px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white outline-none appearance-none cursor-pointer"
+                            className="w-full bg-gray-50 dark:bg-[#1A1A2E] border-2 border-transparent focus:border-[#E8820C]/30 rounded-2xl pl-12 pr-8 py-4 text-[9px] font-black uppercase tracking-widest text-[#1A1A2E] dark:text-white outline-none appearance-none cursor-pointer"
                         >
-                            <option value="all">ALL NODES</option>
+                            <option value="all" className="bg-white dark:bg-[#1A1A2E] text-black dark:text-white">ALL NODES</option>
                             {Object.entries(ROLE_CLASSES).map(([role, { label }]) => (
-                                <option key={role} value={role}>{label.toUpperCase()}</option>
+                                <option key={role} value={role} className="bg-white dark:bg-[#1A1A2E] text-black dark:text-white">{label.toUpperCase()}</option>
                             ))}
                         </select>
                     </div>
@@ -186,7 +186,7 @@ export default function MembersPage() {
                     {canManage && (
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="px-6 py-4 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-2xl hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3 group/btn"
+                            className="px-6 py-4 bg-[#1A1A2E] dark:bg-[#E8820C] text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-2xl hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3 group/btn"
                         >
                             <UserPlus size={16} className="group-hover/btn:rotate-12 transition-transform" /> Induct
                         </button>
@@ -445,10 +445,10 @@ export default function MembersPage() {
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest ml-1">Role</label>
                                 <select value={newMember.role} onChange={e => setNewMember({ ...newMember, role: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold text-[#1A1A2E] dark:text-white focus:ring-4 focus:ring-[#E8820C]/10 outline-none transition-all appearance-none cursor-pointer"
+                                    className="w-full bg-gray-50 dark:bg-[#1A1A2E] text-black dark:text-white border border-black/5 dark:border-white/10 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-[#E8820C]/10 outline-none transition-all appearance-none cursor-pointer"
                                 >
                                     {Object.entries(ROLES).map(([key, value]) => (
-                                        <option key={value} value={value}>
+                                        <option key={value} value={value} className="bg-white dark:bg-[#1A1A2E] text-black dark:text-white">
                                             {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                         </option>
                                     ))}

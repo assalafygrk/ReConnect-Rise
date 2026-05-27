@@ -156,8 +156,8 @@ export default function LoansPage() {
               <p className="text-[9px] font-black uppercase tracking-widest text-black/30 dark:text-white/30 mt-1">Available Vault</p>
             </div>
             <button onClick={() => setShowForm(true)}
-              className="bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] px-8 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl dark:shadow-none">
-              <Plus size={18} strokeWidth={3} className="text-[#E8820C]" /> Apply for Loan
+              className="bg-[#1A1A2E] dark:bg-[#E8820C] text-white px-8 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl dark:shadow-none">
+              <Plus size={18} strokeWidth={3} className={hasRole(ROLES.GROUP_LEADER) ? "text-[#E8820C] dark:text-white" : "text-[#E8820C] dark:text-white"} /> Apply for Loan
             </button>
           </div>
         </div>

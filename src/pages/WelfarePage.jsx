@@ -132,8 +132,8 @@ export default function WelfarePage() {
                         </div>
                     </div>
                     <button onClick={() => setShowForm(true)}
-                        className="w-full lg:w-auto bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] px-8 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl dark:shadow-none">
-                        <Plus size={18} strokeWidth={3} className="text-[#E8820C]" /> Apply for Support
+                        className="w-full lg:w-auto bg-[#1A1A2E] dark:bg-[#E8820C] text-white px-8 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl dark:shadow-none">
+                        <Plus size={18} strokeWidth={3} className="text-[#E8820C] dark:text-white" /> Apply for Support
                     </button>
                 </div>
             </div>
@@ -225,13 +225,13 @@ export default function WelfarePage() {
                                 className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none dark:text-white" />
                         </div>
                         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                            className="w-full sm:w-auto bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-2.5 text-xs font-bold outline-none dark:text-white">
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="welfare_approved">At Leader</option>
-                            <option value="leader_approved">At Treasurer</option>
-                            <option value="approved">Approved</option>
-                            <option value="declined">Declined</option>
+                            className="w-full sm:w-auto bg-gray-50 dark:bg-[#1A1A2E] text-black dark:text-white border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-2.5 text-xs font-bold outline-none">
+                            <option value="all" className="bg-white dark:bg-[#1A1A2E]">All Status</option>
+                            <option value="pending" className="bg-white dark:bg-[#1A1A2E]">Pending</option>
+                            <option value="welfare_approved" className="bg-white dark:bg-[#1A1A2E]">At Leader</option>
+                            <option value="leader_approved" className="bg-white dark:bg-[#1A1A2E]">At Treasurer</option>
+                            <option value="approved" className="bg-white dark:bg-[#1A1A2E]">Approved</option>
+                            <option value="declined" className="bg-white dark:bg-[#1A1A2E]">Declined</option>
                         </select>
                     </div>
                 </div>
@@ -274,8 +274,8 @@ export default function WelfarePage() {
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">Category</label>
                                     <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
-                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 text-sm font-bold outline-none dark:text-white">
-                                        {categories.map(t => <option key={t}>{t}</option>)}
+                                        className="w-full bg-gray-50 dark:bg-[#1A1A2E] text-black dark:text-white border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-4 text-sm font-bold outline-none">
+                                        {categories.map(t => <option key={t} className="bg-white dark:bg-[#1A1A2E] text-black dark:text-white">{t}</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-2">
@@ -292,7 +292,7 @@ export default function WelfarePage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {['wallet','cash'].map(m => (
                                         <button type="button" key={m} onClick={() => setForm({ ...form, paymentMethod: m })}
-                                            className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${form.paymentMethod === m ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E]' : 'bg-gray-50 dark:bg-white/5 text-black/40 dark:text-white/40 hover:bg-gray-100 dark:hover:bg-white/10'}`}>
+                                            className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${form.paymentMethod === m ? 'bg-[#1A1A2E] dark:bg-[#E8820C] text-white' : 'bg-gray-50 dark:bg-white/5 text-black/40 dark:text-white/40 hover:bg-gray-100 dark:hover:bg-white/10'}`}>
                                             {m}
                                         </button>
                                     ))}
