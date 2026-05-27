@@ -306,6 +306,7 @@ const treasurerAction = async (req, res) => {
       user: loan.user,
       type: 'credit',
       amount: loan.amount,
+      category: 'other',
       note: `Loan Disbursed (Cash): ${loan.purpose}`,
       relatedUser: req.user._id,
     });

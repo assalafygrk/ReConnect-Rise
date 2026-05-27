@@ -472,17 +472,11 @@ const recordHistory = async (req, res) => {
       // 2. Create Verifiable Audit Transaction
       await Transaction.create({
         user: memberId,
-        type: 'contribution',
+        type: 'debit',
         amount: paidAmount,
         status: 'completed',
-        description: `Institutional Record: Week ${weekId} Reconstruction`,
-        reference: `HIST-${weekId}-${memberId.substring(19)}-${Date.now().toString().slice(-4)}`,
-        metadata: { 
-          weekId, 
-          recordedBy: req.user._id, 
-          channel: paymentChannel,
-          originalNote: note 
-        }
+        category: 'contribution',
+        note: `Historical Contribution — ${weekId} (${paymentChannel || 'cash'})${note ? ': ' + note : ''}`,
       });
 
       // 3. Dispatch System Notification

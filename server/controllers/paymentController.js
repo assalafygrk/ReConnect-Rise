@@ -154,6 +154,7 @@ const paymentpointWebhook = async (req, res) => {
       user: user._id,
       type: 'credit',
       amount: amountToCredit,
+      category: 'deposit',
       note: `Bank Transfer Deposit (Ref: ${reference}). Charge applied: ₦${charge.toFixed(2)}`,
     });
 
