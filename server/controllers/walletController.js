@@ -115,7 +115,7 @@ const depositFunds = async (req, res) => {
  * @route POST /api/wallet/withdraw
  */
 const withdrawFunds = async (req, res) => {
-  const { amount, note, bankName, accountNumber, pin } = req.body;
+  const { amount, note, bankName, accountNumber, bankAccountName, pin } = req.body;
   if (!amount || Number(amount) <= 0) { res.status(400); throw new Error('Valid amount required'); }
   if (!bankName || !accountNumber) { res.status(400); throw new Error('Bank details are required for withdrawal'); }
   if (!pin || pin.length !== 4) { res.status(400); throw new Error('Valid 4-digit transaction PIN is required'); }
@@ -164,6 +164,7 @@ const withdrawFunds = async (req, res) => {
     method: 'bank_transfer',
     bankName,
     bankAccountNumber: accountNumber,
+    bankAccountName,
     status: 'pending',
   });
 
@@ -197,7 +198,7 @@ const withdrawFunds = async (req, res) => {
         await sendEmail({
           email: treasurer.email,
           subject: 'Action Required: New Withdrawal Request',
-          message: `Dear Treasurer,\n\nA new withdrawal request of ₦${Number(amount).toLocaleString('en-NG')} has been requested by ${user.name}.\n\nBank: ${bankName}\nAccount Number: ${accountNumber}\n\nPlease review and approve or decline this request on the ReConnect & Rise admin portal.`,
+          message: `Dear Treasurer,\n\nA new withdrawal request of ₦${Number(amount).toLocaleString('en-NG')} has been requested by ${user.name}.\n\nBank: ${bankName}\nAccount Number: ${accountNumber}\nAccount Name: ${bankAccountName || 'N/A'}\n\nPlease review and approve or decline this request on the ReConnect & Rise admin portal.`,
           html: `
             <div style="font-family: sans-serif; padding: 20px;">
               <h2>New Withdrawal Request</h2>
@@ -208,6 +209,7 @@ const withdrawFunds = async (req, res) => {
                 <li><strong>Amount:</strong> ₦${Number(amount).toLocaleString('en-NG')}</li>
                 <li><strong>Bank:</strong> ${bankName}</li>
                 <li><strong>Account Number:</strong> ${accountNumber}</li>
+                <li><strong>Account Name:</strong> ${bankAccountName || 'N/A'}</li>
               </ul>
               <p>Please log in to the ReConnect & Rise portal to review and process this transaction.</p>
             </div>

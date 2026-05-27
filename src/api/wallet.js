@@ -37,11 +37,11 @@ export async function depositFunds(amount, note) {
 }
 
 // ─── Withdraw Funds ───────────────────────────────────────────────────────────
-export async function withdrawFunds(amount, bankName, accountNumber, note, pin) {
+export async function withdrawFunds(amount, bankName, accountNumber, bankAccountName, note, pin) {
     const res = await fetch(`${BASE_URL}/wallet/withdraw`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ amount, bankName, accountNumber, note, pin }),
+        body: JSON.stringify({ amount, bankName, accountNumber, bankAccountName, note, pin }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Withdrawal failed');

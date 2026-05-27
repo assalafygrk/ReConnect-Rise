@@ -215,7 +215,9 @@ export default function DisbursementsPage() {
                   <div className="p-4 bg-blue-50 dark:bg-blue-500/5 rounded-2xl border border-blue-100 dark:border-blue-500/10 flex items-center gap-3">
                     <Building2 size={16} className="text-blue-600" />
                     <div>
-                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">{d.bankName}</p>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">
+                        {d.bankName} {d.bankAccountName ? `• ${d.bankAccountName}` : ''}
+                      </p>
                       <p className="text-[11px] font-mono font-bold text-black/60 dark:text-white/60 mt-1">{d.bankAccountNumber}</p>
                     </div>
                   </div>
@@ -483,6 +485,24 @@ export default function DisbursementsPage() {
                   <span className="text-[11px] font-black text-[#1A1A2E] dark:text-white uppercase">{v}</span>
                 </div>
               ))}
+              {selected.method === 'bank_transfer' && (
+                <>
+                  <div className="flex justify-between items-center py-3 border-b border-black/5 dark:border-white/5 animate-in fade-in">
+                    <span className="text-[9px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Bank</span>
+                    <span className="text-[11px] font-black text-[#1A1A2E] dark:text-white uppercase">{selected.bankName}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-black/5 dark:border-white/5 animate-in fade-in">
+                    <span className="text-[9px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Account Number</span>
+                    <span className="text-[11px] font-black font-mono text-[#1A1A2E] dark:text-white">{selected.bankAccountNumber}</span>
+                  </div>
+                  {selected.bankAccountName && (
+                    <div className="flex justify-between items-center py-3 border-b border-black/5 dark:border-white/5 animate-in fade-in">
+                      <span className="text-[9px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em]">Account Name</span>
+                      <span className="text-[11px] font-black text-[#1A1A2E] dark:text-white uppercase">{selected.bankAccountName}</span>
+                    </div>
+                  )}
+                </>
+              )}
               <div className="bg-gray-50 dark:bg-white/5 rounded-2xl p-5 mt-4">
                 <p className="text-[9px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest mb-2">Justification Artifact</p>
                 <p className="text-xs text-black/60 dark:text-white/60 leading-relaxed italic">"{selected.reason}"</p>

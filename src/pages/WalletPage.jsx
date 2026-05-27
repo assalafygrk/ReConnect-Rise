@@ -164,7 +164,14 @@ export default function WalletPage() {
         if (Number(withdrawForm.amount) > data.balance) return toast.error('Insufficient wallet balance');
         setSending(true);
         try {
-            await withdrawFunds(Number(withdrawForm.amount), withdrawForm.bankName, withdrawForm.accountNumber, withdrawForm.note, withdrawForm.pin);
+            await withdrawFunds(
+                Number(withdrawForm.amount), 
+                withdrawForm.bankName, 
+                withdrawForm.accountNumber, 
+                withdrawForm.accountName,
+                withdrawForm.note, 
+                withdrawForm.pin
+            );
             toast.success(`Withdrawal request of ₦${withdrawForm.amount} is pending Treasurer approval.`);
             closeModal();
             loadData();
