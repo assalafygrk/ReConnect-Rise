@@ -484,9 +484,9 @@ export default function WalletPage() {
                                     <select required value={withdrawForm.bankCode} onChange={(e) => {
                                         const bank = NIGERIAN_BANKS.find(b => b.code === e.target.value);
                                         setWithdrawForm({ ...withdrawForm, bankCode: bank?.code || '', bankName: bank?.name || '' });
-                                    }} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500/20 appearance-none cursor-pointer">
-                                        <option value="" disabled>Select Bank...</option>
-                                        {NIGERIAN_BANKS.map(b => <option key={b.code} value={b.code}>{b.name}</option>)}
+                                    }} className="w-full bg-gray-50 dark:bg-[#1A1A2E] text-black dark:text-white rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500/20 appearance-none cursor-pointer border border-transparent dark:border-white/10">
+                                        <option value="" disabled className="text-black/50 dark:text-white/50 bg-white dark:bg-[#1A1A2E]">Select Bank...</option>
+                                        {NIGERIAN_BANKS.map(b => <option key={b.code} value={b.code} className="bg-white dark:bg-[#1A1A2E] text-black dark:text-white">{b.name}</option>)}
                                     </select>
                                 </div>
                                 <div>
