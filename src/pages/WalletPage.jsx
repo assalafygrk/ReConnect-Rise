@@ -45,7 +45,6 @@ export default function WalletPage() {
     const [transferForm, setTransferForm] = useState({ toId: '', toName: '', amount: '', note: '', pin: '' });
     const [depositForm, setDepositForm] = useState({ amount: '', note: '' });
     const [withdrawForm, setWithdrawForm] = useState({ amount: '', note: '', bankCode: '', bankName: '', accountNumber: '', pin: '', accountName: '' });
-    const [resolvingAccount, setResolvingAccount] = useState(false);
     const [contributeForm, setContributeForm] = useState({ type: 'weekly', amount: '', note: '', pin: '' });
     
     const [sending, setSending] = useState(false);
@@ -96,28 +95,6 @@ export default function WalletPage() {
         setContributeForm({ type: 'weekly', amount: '', note: '', pin: '' });
     };
 
-    useEffect(() => {
-        const verifyAccount = async () => {
-            if (withdrawForm.bankCode && withdrawForm.accountNumber.length === 10) {
-                setResolvingAccount(true);
-                setWithdrawForm(prev => ({ ...prev, accountName: '' }));
-                try {
-                    const res = await resolveAccount(withdrawForm.bankCode, withdrawForm.accountNumber);
-                    if (res.success && res.accountName) {
-                        setWithdrawForm(prev => ({ ...prev, accountName: res.accountName }));
-                    }
-                } catch (err) {
-                    toast.error('Could not verify account name');
-                } finally {
-                    setResolvingAccount(false);
-                }
-            } else {
-                setWithdrawForm(prev => ({ ...prev, accountName: '' }));
-            }
-        };
-        const timer = setTimeout(verifyAccount, 500);
-        return () => clearTimeout(timer);
-    }, [withdrawForm.bankCode, withdrawForm.accountNumber]);
 
     const handleGenerateVirtualAccount = async () => {
         setGeneratingVA(true);
@@ -516,30 +493,17 @@ export default function WalletPage() {
                                     <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Account Number</label>
                                     <input required type="text" maxLength="10" value={withdrawForm.accountNumber} onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-black font-mono outline-none focus:ring-2 focus:ring-red-500/20" placeholder="0123456789" />
                                 </div>
-                                {(resolvingAccount || withdrawForm.accountName) && (
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Verified Account Name</label>
-                                        <div className="relative">
-                                            <input 
-                                                required
-                                                type="text"
-                                                disabled={resolvingAccount}
-                                                value={withdrawForm.accountName}
-                                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
-                                                className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-6 pr-20 py-4 text-xs font-black uppercase outline-none focus:ring-2 focus:ring-red-500/20 border border-black/5 dark:border-white/10 text-emerald-600 dark:text-emerald-400"
-                                                placeholder={resolvingAccount ? "Verifying..." : "ACCOUNT HOLDER NAME"}
-                                            />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full uppercase tracking-wider">
-                                                {resolvingAccount ? (
-                                                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-emerald-500/30 border-t-emerald-500"></div>
-                                                ) : (
-                                                    <ShieldCheck size={12} />
-                                                )}
-                                                {resolvingAccount ? 'Verifying' : 'Verified'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Account Holder Name</label>
+                                    <input 
+                                        required
+                                        type="text"
+                                        value={withdrawForm.accountName}
+                                        onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                                        className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-xs font-black uppercase outline-none focus:ring-2 focus:ring-red-500/20 text-emerald-600 dark:text-emerald-400"
+                                        placeholder="ENTER ACCOUNT NAME"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Amount (₦)</label>
@@ -564,7 +528,7 @@ export default function WalletPage() {
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Transaction PIN</label>
                                 <input required type="password" maxLength="4" value={withdrawForm.pin} onChange={(e) => setWithdrawForm({ ...withdrawForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-red-500/20" placeholder="••••" />
                             </div>
-                            <button type="submit" disabled={sending || Number(withdrawForm.amount) > data.balance || withdrawForm.pin.length !== 4 || (!resolvingAccount && !withdrawForm.accountName)} className="w-full py-5 rounded-[2rem] bg-rose-500 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                            <button type="submit" disabled={sending || Number(withdrawForm.amount) > data.balance || withdrawForm.pin.length !== 4 || !withdrawForm.accountName} className="w-full py-5 rounded-[2rem] bg-rose-500 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                 {sending ? 'Processing...' : 'Request Withdrawal'}
                             </button>
                         </form>
