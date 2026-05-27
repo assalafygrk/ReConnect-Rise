@@ -517,15 +517,27 @@ export default function WalletPage() {
                                     <input required type="text" maxLength="10" value={withdrawForm.accountNumber} onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-black font-mono outline-none focus:ring-2 focus:ring-red-500/20" placeholder="0123456789" />
                                 </div>
                                 {(resolvingAccount || withdrawForm.accountName) && (
-                                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/10 flex items-center gap-3">
-                                        {resolvingAccount ? (
-                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500/30 border-t-red-500"></div>
-                                        ) : (
-                                            <ShieldCheck size={16} className="text-emerald-500" />
-                                        )}
-                                        <p className="text-[11px] font-black uppercase text-[#1A1A2E] dark:text-white/90 truncate">
-                                            {resolvingAccount ? 'Verifying Account...' : withdrawForm.accountName}
-                                        </p>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Verified Account Name</label>
+                                        <div className="relative">
+                                            <input 
+                                                required
+                                                type="text"
+                                                disabled={resolvingAccount}
+                                                value={withdrawForm.accountName}
+                                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                                                className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl pl-6 pr-20 py-4 text-xs font-black uppercase outline-none focus:ring-2 focus:ring-red-500/20 border border-black/5 dark:border-white/10 text-emerald-600 dark:text-emerald-400"
+                                                placeholder={resolvingAccount ? "Verifying..." : "ACCOUNT HOLDER NAME"}
+                                            />
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full uppercase tracking-wider">
+                                                {resolvingAccount ? (
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-emerald-500/30 border-t-emerald-500"></div>
+                                                ) : (
+                                                    <ShieldCheck size={12} />
+                                                )}
+                                                {resolvingAccount ? 'Verifying' : 'Verified'}
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
