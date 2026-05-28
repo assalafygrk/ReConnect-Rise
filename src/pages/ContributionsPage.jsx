@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { fetchWeeklyStatus, markMemberPaid, payViaWallet, recordGeneralContribution, recordBatchContributions, fetchWeeks, recordHistoricalData } from '../api/contributions';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
+import { apiSetTransactionPin, apiGetProfile } from '../api/auth';
 
 const fmt = (v) => `₦${Number(v || 0).toLocaleString('en-NG')}`;
 
@@ -41,7 +42,7 @@ function DeadlineCountdown({ deadline }) {
 }
 
 export default function ContributionsPage() {
-    const { hasRole, user, ROLES } = useAuth();
+    const { hasRole, user, ROLES, userProfile, setUserProfile } = useAuth();
     const { config } = usePageConfig('contributions');
     const isTreasurer = hasRole(ROLES.TREASURER);
     const isAdmin = hasRole(ROLES.ADMIN) || hasRole(ROLES.SUPER_ADMIN);
@@ -59,6 +60,28 @@ export default function ContributionsPage() {
     const [showPinInput, setShowPinInput] = useState(false);
     const [showHistoryForm, setShowHistoryForm] = useState(false);
     const [historyForm, setHistoryForm] = useState({ memberIds: [], weekId: '', amount: '', paymentChannel: 'cash', date: dayjs().format('YYYY-MM-DD'), note: '' });
+
+    // PIN Setup State
+    const [contribSetupPin, setContribSetupPin] = useState('');
+    const [contribSetupConfirm, setContribSetupConfirm] = useState('');
+    const [settingContribPin, setSettingContribPin] = useState(false);
+
+    const handleContribPinSetup = async (targetField) => {
+        if (contribSetupPin !== contribSetupConfirm) return toast.error('PINs do not match');
+        if (contribSetupPin.length !== 4) return toast.error('PIN must be 4 digits');
+        setSettingContribPin(true);
+        try {
+            await apiSetTransactionPin(contribSetupPin);
+            toast.success('Transaction PIN configured successfully');
+            const updatedProfile = await apiGetProfile();
+            setUserProfile(updatedProfile);
+            if (targetField === 'weekly') setPayPin(contribSetupPin);
+            if (targetField === 'general') setGenForm(prev => ({ ...prev, pin: contribSetupPin }));
+            setContribSetupPin('');
+            setContribSetupConfirm('');
+        } catch (err) { toast.error(err.message); }
+        finally { setSettingContribPin(false); }
+    };
 
     const loadData = async (weekId) => {
         setLoading(true);
@@ -361,35 +384,63 @@ export default function ContributionsPage() {
                                         <div className="bg-gray-50 dark:bg-white/5 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-black/5 dark:border-white/10 flex flex-col justify-center h-full">
                                             {showPinInput ? (
                                                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                                                    <div className="text-center space-y-2">
-                                                        <Fingerprint size={32} className="mx-auto text-[#E8820C] mb-2" />
-                                                        <h4 className="text-sm font-black uppercase tracking-widest dark:text-white">Secure Authorization</h4>
-                                                        <p className="text-[10px] text-black/40 dark:text-white/40 italic">Enter your 4-digit Transaction PIN</p>
-                                                    </div>
-                                                    <input 
-                                                        type="password" 
-                                                        maxLength="4" 
-                                                        value={payPin} 
-                                                        onChange={(e) => setPayPin(e.target.value.replace(/\D/g, ''))}
-                                                        className="w-full bg-white dark:bg-black/20 border-2 border-black/5 dark:border-white/10 rounded-2xl px-4 py-5 text-center text-3xl font-black tracking-[0.6em] outline-none focus:border-[#E8820C] transition-all"
-                                                        placeholder="••••"
-                                                        autoFocus
-                                                    />
-                                                    <div className="flex gap-3">
-                                                        <button 
-                                                            onClick={handleWalletPay} 
-                                                            disabled={payingWallet || payPin.length !== 4}
-                                                            className="flex-1 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-50 hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-[#1A1A2E]/20 dark:shadow-white/5"
-                                                        >
-                                                            {payingWallet ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Confirm Payment'}
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => { setShowPinInput(false); setPayPin(''); }}
-                                                            className="px-6 bg-red-500/10 text-red-500 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-500/10 hover:bg-red-500/20 transition-all"
-                                                        >
-                                                            <X size={18} />
-                                                        </button>
-                                                    </div>
+                                                    {!userProfile?.hasTransactionPin ? (
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 bg-[#E8820C]/10 rounded-xl flex items-center justify-center text-[#E8820C]"><ShieldCheck size={20} /></div>
+                                                                <div>
+                                                                    <p className="text-xs font-black text-[#1A1A2E] dark:text-white">Security Initialization</p>
+                                                                    <p className="text-[9px] text-black/40 dark:text-white/40">Set a 4-digit PIN before your first payment</p>
+                                                                </div>
+                                                            </div>
+                                                            <input type="password" maxLength={4} value={contribSetupPin} onChange={e => setContribSetupPin(e.target.value.replace(/\D/g, ''))}
+                                                                className="w-full bg-white dark:bg-black/20 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-5 text-center text-3xl font-black tracking-[0.6em] outline-none transition-all" placeholder="New PIN" autoFocus />
+                                                            <input type="password" maxLength={4} value={contribSetupConfirm} onChange={e => setContribSetupConfirm(e.target.value.replace(/\D/g, ''))}
+                                                                className="w-full bg-white dark:bg-black/20 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-4 py-5 text-center text-3xl font-black tracking-[0.6em] outline-none transition-all" placeholder="Confirm PIN" />
+                                                            <div className="flex gap-3">
+                                                                <button type="button" disabled={settingContribPin || contribSetupPin.length !== 4 || contribSetupConfirm.length !== 4} onClick={() => handleContribPinSetup('weekly')}
+                                                                    className="flex-1 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-50 hover:opacity-90 active:scale-95 transition-all shadow-xl">
+                                                                    {settingContribPin ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Configure PIN'}
+                                                                </button>
+                                                                <button onClick={() => { setShowPinInput(false); setContribSetupPin(''); setContribSetupConfirm(''); }}
+                                                                    className="px-6 bg-red-500/10 text-red-500 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-500/10 hover:bg-red-500/20 transition-all">
+                                                                    <X size={18} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="text-center space-y-2">
+                                                                <Fingerprint size={32} className="mx-auto text-[#E8820C] mb-2" />
+                                                                <h4 className="text-sm font-black uppercase tracking-widest dark:text-white">Secure Authorization</h4>
+                                                                <p className="text-[10px] text-black/40 dark:text-white/40 italic">Enter your 4-digit Transaction PIN</p>
+                                                            </div>
+                                                            <input 
+                                                                type="password" 
+                                                                maxLength="4" 
+                                                                value={payPin} 
+                                                                onChange={(e) => setPayPin(e.target.value.replace(/\D/g, ''))}
+                                                                className="w-full bg-white dark:bg-black/20 border-2 border-black/5 dark:border-white/10 rounded-2xl px-4 py-5 text-center text-3xl font-black tracking-[0.6em] outline-none focus:border-[#E8820C] transition-all"
+                                                                placeholder="••••"
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex gap-3">
+                                                                <button 
+                                                                    onClick={handleWalletPay} 
+                                                                    disabled={payingWallet || payPin.length !== 4}
+                                                                    className="flex-1 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest disabled:opacity-50 hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-[#1A1A2E]/20 dark:shadow-white/5"
+                                                                >
+                                                                    {payingWallet ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Confirm Payment'}
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => { setShowPinInput(false); setPayPin(''); }}
+                                                                    className="px-6 bg-red-500/10 text-red-500 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-500/10 hover:bg-red-500/20 transition-all"
+                                                                >
+                                                                    <X size={18} />
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <div className="space-y-8">
@@ -690,22 +741,42 @@ export default function ContributionsPage() {
                                 </div>
                             </div>
                             
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.3em] ml-2 italic">Security Authorization</label>
-                                <div className="relative group">
-                                    <Fingerprint className="absolute left-6 top-1/2 -translate-y-1/2 text-[#E8820C]" size={24} />
-                                    <input 
-                                        required 
-                                        type="password" 
-                                        maxLength="4" 
-                                        value={genForm.pin} 
-                                        onChange={e => setGenForm({ ...genForm, pin: e.target.value.replace(/\D/g, '') })}
-                                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-3xl pl-16 pr-8 py-6 text-2xl font-black tracking-[0.5em] outline-none dark:text-white transition-all" 
-                                        placeholder="••••" 
-                                    />
+                            {!userProfile?.hasTransactionPin ? (
+                                <div className="rounded-3xl border-2 border-dashed border-[#E8820C]/30 bg-[#E8820C]/5 p-6 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-[#E8820C]/10 rounded-xl flex items-center justify-center text-[#E8820C]"><ShieldCheck size={20} /></div>
+                                        <div>
+                                            <p className="text-xs font-black text-[#1A1A2E] dark:text-white">Security Initialization Required</p>
+                                            <p className="text-[9px] text-black/40 dark:text-white/40">Configure a 4-digit PIN before your first contribution</p>
+                                        </div>
+                                    </div>
+                                    <input type="password" maxLength={4} value={contribSetupPin} onChange={e => setContribSetupPin(e.target.value.replace(/\D/g, ''))}
+                                        className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-6 py-5 text-center text-2xl tracking-[0.8em] font-black outline-none" placeholder="New PIN" />
+                                    <input type="password" maxLength={4} value={contribSetupConfirm} onChange={e => setContribSetupConfirm(e.target.value.replace(/\D/g, ''))}
+                                        className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-2xl px-6 py-5 text-center text-2xl tracking-[0.8em] font-black outline-none" placeholder="Confirm PIN" />
+                                    <button type="button" disabled={settingContribPin || contribSetupPin.length !== 4 || contribSetupConfirm.length !== 4} onClick={() => handleContribPinSetup('general')}
+                                        className="w-full py-4 bg-[#1A1A2E] dark:bg-[#E8820C] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {settingContribPin ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Configure Security PIN
+                                    </button>
                                 </div>
-                                <p className="text-[9px] font-bold text-black/20 dark:text-white/20 uppercase tracking-widest text-center">Funds will be deduced from your institutional vault balance</p>
-                            </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.3em] ml-2 italic">Security Authorization</label>
+                                    <div className="relative group">
+                                        <Fingerprint className="absolute left-6 top-1/2 -translate-y-1/2 text-[#E8820C]" size={24} />
+                                        <input 
+                                            required 
+                                            type="password" 
+                                            maxLength="4" 
+                                            value={genForm.pin} 
+                                            onChange={e => setGenForm({ ...genForm, pin: e.target.value.replace(/\D/g, '') })}
+                                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-3xl pl-16 pr-8 py-6 text-2xl font-black tracking-[0.5em] outline-none dark:text-white transition-all" 
+                                            placeholder="••••" 
+                                        />
+                                    </div>
+                                    <p className="text-[9px] font-bold text-black/20 dark:text-white/20 uppercase tracking-widest text-center">Funds will be deduced from your institutional vault balance</p>
+                                </div>
+                            )}
 
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.3em] ml-2 italic">Annotations</label>
@@ -718,7 +789,7 @@ export default function ContributionsPage() {
                                 />
                             </div>
 
-                            <button type="submit" disabled={payingWallet || genForm.pin.length !== 4}
+                            <button type="submit" disabled={payingWallet || genForm.pin.length !== 4 || !userProfile?.hasTransactionPin}
                                 className="w-full py-6 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
                                 {payingWallet ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />} 
                                 Commit To Vault

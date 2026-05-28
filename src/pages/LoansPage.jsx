@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Plus, X, Loader2, Clock, CheckCircle2, XCircle, ShieldCheck, AlertTriangle, CreditCard, MessageSquare } from 'lucide-react';
+import { Plus, X, Loader2, Clock, CheckCircle2, XCircle, ShieldCheck, AlertTriangle, CreditCard, MessageSquare, Save } from 'lucide-react';
 import dayjs from 'dayjs';
 import { fetchLoans, addLoan, leaderLoanAction, treasurerLoanAction, recordRepayment, memberNegotiateLoan, memberRepayWalletLoan } from '../api/loans';
 import { useAuth } from '../context/AuthContext';
+import { apiSetTransactionPin, apiGetProfile } from '../api/auth';
 
 const fmt = v => `₦${Number(v||0).toLocaleString('en-NG')}`;
 
@@ -18,7 +19,7 @@ const STATUS_STYLE = {
 };
 
 export default function LoansPage() {
-  const { hasRole, user, ROLES } = useAuth();
+  const { hasRole, user, ROLES, userProfile, setUserProfile } = useAuth();
   const isLeader    = hasRole(ROLES.GROUP_LEADER);
   const isTreasurer = hasRole(ROLES.TREASURER);
   const isAdmin     = hasRole(ROLES.ADMIN, ROLES.SUPER_ADMIN);
@@ -36,6 +37,27 @@ export default function LoansPage() {
   const [negotiationNotes, setNegotiationNotes] = useState('');
   const [replyNotes, setReplyNotes] = useState('');
   const [declineReason, setDeclineReason] = useState('');
+
+  // PIN Setup State
+  const [loanSetupPin, setLoanSetupPin] = useState('');
+  const [loanSetupConfirm, setLoanSetupConfirm] = useState('');
+  const [settingLoanPin, setSettingLoanPin] = useState(false);
+
+  const handleLoanPinSetup = async () => {
+    if (loanSetupPin !== loanSetupConfirm) return toast.error('PINs do not match');
+    if (loanSetupPin.length !== 4) return toast.error('PIN must be 4 digits');
+    setSettingLoanPin(true);
+    try {
+      await apiSetTransactionPin(loanSetupPin);
+      toast.success('Transaction PIN configured successfully');
+      const updatedProfile = await apiGetProfile();
+      setUserProfile(updatedProfile);
+      setRepayPin(loanSetupPin);
+      setLoanSetupPin('');
+      setLoanSetupConfirm('');
+    } catch (err) { toast.error(err.message); }
+    finally { setSettingLoanPin(false); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -383,11 +405,31 @@ export default function LoansPage() {
                     <input required type="number" min="1" max={selected.balance} autoFocus value={repayAmt} onChange={e=>setRepayAmt(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-2xl pl-9 pr-4 py-4 font-bold outline-none dark:text-white" placeholder={`Amount (max: ${selected.balance})`}/>
                   </div>
-                  <div className="relative">
-                    <input required type="password" maxLength="4" value={repayPin} onChange={e=>setRepayPin(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-2xl px-4 py-4 text-center text-xl font-black tracking-[0.5em] outline-none dark:text-white" placeholder="••••"/>
-                  </div>
-                  <button type="submit" disabled={busy || repayPin.length !== 4} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+                  {!userProfile?.hasTransactionPin ? (
+                    <div className="rounded-2xl border-2 border-dashed border-blue-400/30 bg-blue-50 dark:bg-blue-950/10 p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-500"><ShieldCheck size={16} /></div>
+                        <div>
+                          <p className="text-[10px] font-black text-[#1A1A2E] dark:text-white">Set PIN First</p>
+                          <p className="text-[8px] text-black/40 dark:text-white/40">Configure a 4-digit PIN to authorize transactions</p>
+                        </div>
+                      </div>
+                      <input type="password" maxLength={4} value={loanSetupPin} onChange={e=>setLoanSetupPin(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none dark:text-white" placeholder="New PIN" />
+                      <input type="password" maxLength={4} value={loanSetupConfirm} onChange={e=>setLoanSetupConfirm(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none dark:text-white" placeholder="Confirm PIN" />
+                      <button type="button" disabled={settingLoanPin || loanSetupPin.length !== 4 || loanSetupConfirm.length !== 4} onClick={handleLoanPinSetup}
+                        className="w-full py-3 bg-[#1A1A2E] dark:bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 disabled:opacity-50">
+                        {settingLoanPin ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Configure Security PIN
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input required type="password" maxLength="4" value={repayPin} onChange={e=>setRepayPin(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-2xl px-4 py-4 text-center text-xl font-black tracking-[0.5em] outline-none dark:text-white" placeholder="••••"/>
+                    </div>
+                  )}
+                  <button type="submit" disabled={busy || repayPin.length !== 4 || !userProfile?.hasTransactionPin} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
                     {busy?<Loader2 size={14} className="animate-spin"/>:null} Repay via Wallet
                   </button>
                 </form>

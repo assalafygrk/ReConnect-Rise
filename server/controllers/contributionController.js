@@ -160,6 +160,20 @@ const markPaid = async (req, res) => {
   const paidAmount = Number(amount) || baseAmount;
   const bonus = paidAmount > baseAmount ? paidAmount - baseAmount : 0;
 
+  let member;
+  // If paid via wallet, check member's wallet balance first!
+  if (paymentChannel === 'wallet') {
+    member = await User.findById(memberId);
+    if (!member) {
+      res.status(404);
+      throw new Error('Member not found');
+    }
+    if (member.walletBalance < paidAmount) {
+      res.status(400);
+      throw new Error('Member wallet balance is insufficient for this contribution');
+    }
+  }
+
   // Upsert: create or update contribution for this user+week
   const existing = await Contribution.findOne({ user: memberId, weekId, type: 'weekly' });
 
@@ -189,25 +203,18 @@ const markPaid = async (req, res) => {
     });
   }
 
-  // If paid via wallet, deduct from member's wallet balance
-  if (paymentChannel === 'wallet') {
-    const member = await User.findById(memberId);
-    if (member) {
-      if (member.walletBalance < paidAmount) {
-        res.status(400);
-        throw new Error('Member wallet balance is insufficient for this contribution');
-      }
-      member.walletBalance -= paidAmount;
-      await member.save();
+  // Deduct from wallet if paid via wallet
+  if (paymentChannel === 'wallet' && member) {
+    member.walletBalance -= paidAmount;
+    await member.save();
 
-      await Transaction.create({
-        user: memberId,
-        type: 'debit',
-        amount: paidAmount,
-        note: `Weekly Contribution — ${weekId} (via wallet)`,
-        relatedUser: req.user._id,
-      });
-    }
+    await Transaction.create({
+      user: memberId,
+      type: 'debit',
+      amount: paidAmount,
+      note: `Weekly Contribution — ${weekId} (via wallet)`,
+      relatedUser: req.user._id,
+    });
   }
 
   const populated = await Contribution.findById(contribution._id)

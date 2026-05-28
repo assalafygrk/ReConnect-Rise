@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
-import { Wallet, ArrowUpRight, ArrowDownLeft, Send, History, Heart, X, Search, Filter, Download, PieChart, TrendingUp, Zap, ShieldCheck, Plus, Minus, CreditCard } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownLeft, Send, History, Heart, X, Search, Filter, Download, PieChart, TrendingUp, Zap, ShieldCheck, Plus, Minus, CreditCard, Loader2, Save } from 'lucide-react';
 import dayjs from 'dayjs';
 import { fetchWallet, transferFunds, depositFunds, withdrawFunds, payWeeklyContribution, payGeneralContribution } from '../api/wallet';
 import { fetchMembers } from '../api/members';
 import { generateVirtualAccount, resolveAccount } from '../api/payment';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
+import { apiSetTransactionPin, apiGetProfile } from '../api/auth';
 
 function formatNaira(v) {
     return `₦${Number(v || 0).toLocaleString('en-NG')}`;
@@ -32,7 +33,7 @@ const NIGERIAN_BANKS = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function WalletPage() {
-    const { user } = useAuth();
+    const { user, userProfile, setUserProfile } = useAuth();
     const { config } = usePageConfig('wallet');
     const [data, setData] = useState(null);
     const [members, setMembers] = useState([]);
@@ -51,6 +52,40 @@ export default function WalletPage() {
     const [autoSavings, setAutoSavings] = useState(true);
     const [virtualAccount, setVirtualAccount] = useState(null);
     const [generatingVA, setGeneratingVA] = useState(false);
+
+    // PIN Setup State
+    const [setupPin, setSetupPin] = useState('');
+    const [setupConfirm, setSetupConfirm] = useState('');
+    const [settingPin, setSettingPin] = useState(false);
+
+    const handleSetupPin = async (formType) => {
+        if (setupPin !== setupConfirm) return toast.error('PINs do not match');
+        if (setupPin.length !== 4) return toast.error('PIN must be 4 digits');
+        
+        setSettingPin(true);
+        try {
+            await apiSetTransactionPin(setupPin);
+            toast.success('Transaction PIN configured successfully');
+            const updatedProfile = await apiGetProfile();
+            setUserProfile(updatedProfile);
+            
+            // Auto-populate the form's pin
+            if (formType === 'transfer') {
+                setTransferForm(prev => ({ ...prev, pin: setupPin }));
+            } else if (formType === 'withdraw') {
+                setWithdrawForm(prev => ({ ...prev, pin: setupPin }));
+            } else if (formType === 'contribute') {
+                setContributeForm(prev => ({ ...prev, pin: setupPin }));
+            }
+            
+            setSetupPin('');
+            setSetupConfirm('');
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setSettingPin(false);
+        }
+    };
 
     const loadData = () => {
         setLoading(true);
@@ -411,11 +446,33 @@ export default function WalletPage() {
                                 <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2">Note</label>
                                 <textarea value={transferForm.note} onChange={(e) => setTransferForm({ ...transferForm, note: e.target.value })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-2 focus:ring-[#E8820C]/20 resize-none" rows={2} placeholder="Optional note..." />
                             </div>
-                            <div>
-                                <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2">Transaction PIN</label>
-                                <input required type="password" maxLength="4" value={transferForm.pin} onChange={(e) => setTransferForm({ ...transferForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-[#E8820C]/20" placeholder="••••" />
-                            </div>
-                            <button type="submit" disabled={sending || !transferForm.toId || transferForm.pin.length !== 4} className="w-full py-5 rounded-[2rem] bg-[#E8820C] text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                            {!userProfile?.hasTransactionPin ? (
+                                <div className="rounded-2xl border-2 border-dashed border-[#E8820C]/30 bg-[#E8820C]/5 p-5 space-y-4">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="w-10 h-10 bg-[#E8820C]/10 rounded-xl flex items-center justify-center text-[#E8820C]"><ShieldCheck size={20} /></div>
+                                        <div>
+                                            <p className="text-xs font-black text-[#1A1A2E] dark:text-white">Security Initialization Required</p>
+                                            <p className="text-[9px] text-black/40 dark:text-white/40">Configure a 4-digit PIN before your first transaction</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <input type="password" maxLength={4} pattern="\d{4}" value={setupPin} onChange={e => setSetupPin(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none" placeholder="New PIN" />
+                                        <input type="password" maxLength={4} pattern="\d{4}" value={setupConfirm} onChange={e => setSetupConfirm(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none" placeholder="Confirm PIN" />
+                                    </div>
+                                    <button type="button" disabled={settingPin || setupPin.length !== 4 || setupConfirm.length !== 4} onClick={() => handleSetupPin('transfer')}
+                                        className="w-full py-3 bg-[#1A1A2E] dark:bg-[#E8820C] text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {settingPin ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Configure Security PIN
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2">Transaction PIN</label>
+                                    <input required type="password" maxLength="4" value={transferForm.pin} onChange={(e) => setTransferForm({ ...transferForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-[#E8820C]/20" placeholder="••••" />
+                                </div>
+                            )}
+                            <button type="submit" disabled={sending || !transferForm.toId || transferForm.pin.length !== 4 || !userProfile?.hasTransactionPin} className="w-full py-5 rounded-[2rem] bg-[#E8820C] text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                 {sending ? 'Processing...' : 'Send Gift'}
                             </button>
                         </form>
@@ -524,11 +581,33 @@ export default function WalletPage() {
                                     <p className="text-[10px] text-black/40 dark:text-white/40">Available: {formatNaira(data.balance)}</p>
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Transaction PIN</label>
-                                <input required type="password" maxLength="4" value={withdrawForm.pin} onChange={(e) => setWithdrawForm({ ...withdrawForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-red-500/20" placeholder="••••" />
-                            </div>
-                            <button type="submit" disabled={sending || Number(withdrawForm.amount) > data.balance || withdrawForm.pin.length !== 4 || !withdrawForm.accountName} className="w-full py-5 rounded-[2rem] bg-rose-500 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                            {!userProfile?.hasTransactionPin ? (
+                                <div className="rounded-2xl border-2 border-dashed border-rose-400/30 bg-rose-50 dark:bg-rose-950/10 p-5 space-y-4">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/20 rounded-xl flex items-center justify-center text-rose-500"><ShieldCheck size={20} /></div>
+                                        <div>
+                                            <p className="text-xs font-black text-[#1A1A2E] dark:text-white">Security Initialization Required</p>
+                                            <p className="text-[9px] text-black/40 dark:text-white/40">Configure a 4-digit PIN before your first withdrawal</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <input type="password" maxLength={4} pattern="\d{4}" value={setupPin} onChange={e => setSetupPin(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-rose-500 rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none" placeholder="New PIN" />
+                                        <input type="password" maxLength={4} pattern="\d{4}" value={setupConfirm} onChange={e => setSetupConfirm(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-rose-500 rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none" placeholder="Confirm PIN" />
+                                    </div>
+                                    <button type="button" disabled={settingPin || setupPin.length !== 4 || setupConfirm.length !== 4} onClick={() => handleSetupPin('withdraw')}
+                                        className="w-full py-3 bg-[#1A1A2E] dark:bg-rose-500 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {settingPin ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Configure Security PIN
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Transaction PIN</label>
+                                    <input required type="password" maxLength="4" value={withdrawForm.pin} onChange={(e) => setWithdrawForm({ ...withdrawForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-red-500/20" placeholder="••••" />
+                                </div>
+                            )}
+                            <button type="submit" disabled={sending || Number(withdrawForm.amount) > data.balance || withdrawForm.pin.length !== 4 || !withdrawForm.accountName || !userProfile?.hasTransactionPin} className="w-full py-5 rounded-[2rem] bg-rose-500 text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                 {sending ? 'Processing...' : 'Request Withdrawal'}
                             </button>
                         </form>
@@ -588,12 +667,34 @@ export default function WalletPage() {
                                 </div>
                             )}
 
-                            <div>
-                                <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Transaction PIN</label>
-                                <input required type="password" maxLength="4" value={contributeForm.pin} onChange={(e) => setContributeForm({ ...contributeForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="••••" />
-                            </div>
+                            {!userProfile?.hasTransactionPin ? (
+                                <div className="rounded-2xl border-2 border-dashed border-blue-400/30 bg-blue-50 dark:bg-blue-950/10 p-5 space-y-4">
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-500"><ShieldCheck size={20} /></div>
+                                        <div>
+                                            <p className="text-xs font-black text-[#1A1A2E] dark:text-white">Security Initialization Required</p>
+                                            <p className="text-[9px] text-black/40 dark:text-white/40">Configure a 4-digit PIN before your first contribution</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <input type="password" maxLength={4} pattern="\d{4}" value={setupPin} onChange={e => setSetupPin(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none" placeholder="New PIN" />
+                                        <input type="password" maxLength={4} pattern="\d{4}" value={setupConfirm} onChange={e => setSetupConfirm(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-white dark:bg-white/5 border-2 border-transparent focus:border-blue-500 rounded-xl px-4 py-3 text-center text-xl tracking-[0.8em] font-black outline-none" placeholder="Confirm PIN" />
+                                    </div>
+                                    <button type="button" disabled={settingPin || setupPin.length !== 4 || setupConfirm.length !== 4} onClick={() => handleSetupPin('contribute')}
+                                        className="w-full py-3 bg-[#1A1A2E] dark:bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {settingPin ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Configure Security PIN
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.2em] block mb-2 ml-2">Transaction PIN</label>
+                                    <input required type="password" maxLength="4" value={contributeForm.pin} onChange={(e) => setContributeForm({ ...contributeForm, pin: e.target.value.replace(/\D/g, '') })} className="w-full bg-gray-50 dark:bg-white/5 rounded-2xl px-6 py-4 text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="••••" />
+                                </div>
+                            )}
 
-                            <button type="submit" disabled={sending || contributeForm.pin.length !== 4} className="w-full py-5 rounded-[2rem] bg-[#1A1A2E] text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                            <button type="submit" disabled={sending || contributeForm.pin.length !== 4 || !userProfile?.hasTransactionPin} className="w-full py-5 rounded-[2rem] bg-[#1A1A2E] text-white font-black text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                 {sending ? 'Processing...' : 'Pay Contribution'}
                             </button>
                         </form>
