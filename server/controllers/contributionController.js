@@ -195,7 +195,7 @@ const markPaid = async (req, res) => {
       res.status(404);
       throw new Error('Member not found');
     }
-    if (member.walletBalance < paidAmount) {
+    if ((member.walletBalance || 0) < paidAmount) {
       res.status(400);
       throw new Error('Member wallet balance is insufficient for this contribution');
     }
@@ -304,9 +304,9 @@ const payViaWallet = async (req, res) => {
   if (!member.transactionPin || !(await bcrypt.compare(pin, member.transactionPin))) {
     res.status(401); throw new Error('Invalid transaction PIN');
   }
-  if (member.walletBalance < baseAmount) {
+  if ((member.walletBalance || 0) < baseAmount) {
     res.status(400);
-    throw new Error(`Insufficient wallet balance. You need ₦${baseAmount} but have ₦${member.walletBalance}`);
+    throw new Error(`Insufficient wallet balance. You need ₦${baseAmount} but have ₦${member.walletBalance || 0}`);
   }
 
   // Deduct from wallet
@@ -407,7 +407,7 @@ const recordGeneralContribution = async (req, res) => {
   if (paymentChannel === 'wallet') {
     const member = await User.findById(targetUserId);
     if (member) {
-      if (member.walletBalance < Number(amount)) {
+      if ((member.walletBalance || 0) < Number(amount)) {
         // Rollback contribution creation
         await Contribution.findByIdAndDelete(contribution._id);
         res.status(400);

@@ -2,6 +2,7 @@ const Disbursement = require('../models/Disbursement');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const { createNotification } = require('./notificationController');
+const AuditLog = require('../models/AuditLog');
 
 function populateDisbursement(query) {
   return query
@@ -79,6 +80,13 @@ const addDisbursement = async (req, res) => {
     message: `A new disbursement request for ${amount.toLocaleString()} has been submitted for ${member || 'a member'}.`,
     type: 'warning',
     link: '/disbursements'
+  });
+
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'DISBURSEMENT_REQUEST',
+    detail: `Created disbursement request of ₦${parseFloat(amount).toLocaleString()} for ${populated.memberId?.name || 'member'}. Reason: ${reason}`,
+    category: 'admin'
   });
 
   res.status(201).json(transformDisbursement(populated));
@@ -188,6 +196,13 @@ const treasurerAction = async (req, res) => {
       link: disbursement.type === 'withdrawal' ? '/wallet' : '/disbursements'
     });
   }
+
+  await AuditLog.create({
+    user: req.user.name,
+    action: `DISBURSEMENT_${action.toUpperCase()}`,
+    detail: `${action === 'approve' ? 'Approved' : 'Declined'} ${disbursement.type || 'general'} disbursement of ₦${disbursement.amount.toLocaleString()} for ${populated.memberId?.name || 'member'}${declineReason ? '. Reason: ' + declineReason : ''}`,
+    category: 'admin'
+  });
 
   res.json(transformDisbursement(populated));
 };

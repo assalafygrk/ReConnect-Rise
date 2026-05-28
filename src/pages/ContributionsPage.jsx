@@ -690,7 +690,7 @@ export default function ContributionsPage() {
                                                                 {actionLoading === m.memberId ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} Cash Verify
                                                             </button>
                                                             <button onClick={() => handleMarkPaid(m.memberId, m.memberName, 'wallet')} disabled={actionLoading === m.memberId}
-                                                                className="px-4 py-2.5 bg-[#1A1A2E] dark:bg-white/10 text-white dark:text-white border border-transparent dark:border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-90 dark:hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-black/20 disabled:opacity-50">
+                                                                className="px-4 py-2.5 bg-[#1A1A2E] dark:bg-slate-800 text-white dark:text-slate-200 border border-transparent dark:border-slate-700 rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-90 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-black/20 disabled:opacity-50">
                                                                 {actionLoading === m.memberId ? <Loader2 size={12} className="animate-spin" /> : <Wallet size={12} />} Vault Force
                                                             </button>
                                                         </div>
@@ -749,7 +749,7 @@ export default function ContributionsPage() {
                                                 {actionLoading === m.memberId ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Cash Verify
                                             </button>
                                             <button onClick={() => handleMarkPaid(m.memberId, m.memberName, 'wallet')} disabled={actionLoading === m.memberId}
-                                                className="w-full py-4 bg-[#1A1A2E] dark:bg-white/10 text-white dark:text-white border border-transparent dark:border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-2">
+                                                className="w-full py-4 bg-[#1A1A2E] dark:bg-slate-800 text-white dark:text-slate-200 border border-transparent dark:border-slate-700 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-2">
                                                 {actionLoading === m.memberId ? <Loader2 size={14} className="animate-spin" /> : <Wallet size={14} />} Vault
                                             </button>
                                         </div>

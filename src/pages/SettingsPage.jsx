@@ -70,19 +70,17 @@ export default function SettingsPage() {
 
     // Audit Ledger
     const [auditLogs, setAuditLogs] = useState([]);
+    const [auditTotal, setAuditTotal] = useState(0);
+    const [auditPage, setAuditPage] = useState(1);
+    const [auditPages, setAuditPages] = useState(1);
     const [showFullLedger, setShowFullLedger] = useState(false);
     const [ledgerSearch, setLedgerSearch] = useState('');
     const [ledgerCategory, setLedgerCategory] = useState('all');
+    const [ledgerDateFrom, setLedgerDateFrom] = useState('');
+    const [ledgerDateTo, setLedgerDateTo] = useState('');
+    const [ledgerLoading, setLedgerLoading] = useState(false);
 
-    const filteredLedger = auditLogs.filter(log => {
-        const matchesCat = ledgerCategory === 'all' || log.category === ledgerCategory;
-        const search = ledgerSearch.toLowerCase();
-        const matchesSearch = 
-            (log.user || '').toLowerCase().includes(search) || 
-            (log.action || '').toLowerCase().includes(search) || 
-            (log.detail || '').toLowerCase().includes(search);
-        return matchesCat && matchesSearch;
-    });
+    const filteredLedger = auditLogs; // Server-side filtering now
 
     // Form states
     const [pwForm, setPwForm] = useState({ current: '', next: '' });
@@ -95,10 +93,34 @@ export default function SettingsPage() {
     const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
     const [otpSaving, setOtpSaving] = useState(false);
 
-    const refreshLogs = useCallback(async () => {
-        const logs = await getLogs();
-        setAuditLogs(logs);
-    }, []);
+    const refreshLogs = useCallback(async (page = 1) => {
+        setLedgerLoading(true);
+        try {
+            const data = await getLogs({
+                page,
+                limit: 15,
+                category: ledgerCategory,
+                search: ledgerSearch,
+                from: ledgerDateFrom,
+                to: ledgerDateTo
+            });
+            if (Array.isArray(data)) {
+                setAuditLogs(data);
+                setAuditTotal(data.length);
+                setAuditPage(1);
+                setAuditPages(1);
+            } else {
+                setAuditLogs(data.logs || []);
+                setAuditTotal(data.total || 0);
+                setAuditPage(data.page || 1);
+                setAuditPages(data.pages || 1);
+            }
+        } catch (err) {
+            console.error('Failed to sync logs:', err);
+        } finally {
+            setLedgerLoading(false);
+        }
+    }, [ledgerCategory, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -111,7 +133,6 @@ export default function SettingsPage() {
 
                 setSettings(prev => ({ ...prev, ...(s || {}) }));
                 setMembers(m || []);
-                refreshLogs();
             } catch (err) {
                 toast.error("Protocol synchronization failure");
             } finally {
@@ -119,6 +140,10 @@ export default function SettingsPage() {
             }
         };
         loadInitialData();
+    }, []);
+
+    useEffect(() => {
+        refreshLogs(1);
     }, [refreshLogs]);
     
     useEffect(() => {
@@ -159,6 +184,23 @@ export default function SettingsPage() {
         } catch (err) {
             toast.error(err.message || 'Role update failed');
         }
+    };
+
+    const handleStatusUpdate = async (id, newStatus) => {
+        try {
+            await updateUserStatus(id, newStatus);
+            setMembers(prev => prev.map(m => (m._id === id || m.id === id) ? { ...m, status: newStatus } : m));
+            addLog(currentUser?.role === 'super_admin' ? SYSTEM_NAME : (currentUser?.name || 'Admin'), 'Status Updated', `User ${id} status changed to ${newStatus}`, 'admin');
+            refreshLogs();
+            toast.success(`Member Status Updated to ${newStatus}`);
+        } catch (err) {
+            toast.error(err.message || 'Status update failed');
+        }
+    };
+
+    const findMemberByName = (name) => {
+        if (!name) return null;
+        return members.find(m => m.name && m.name.toLowerCase() === name.toLowerCase());
     };
 
     // 2FA Handlers
@@ -535,16 +577,16 @@ export default function SettingsPage() {
                 {/* Modals */}
                 {selectedMember && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                        <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
+                        <div className="absolute inset-0 bg-[#1A1A2E]/80 dark:bg-[#0F172A]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
                         <div className="relative bg-white dark:bg-[#0c101b] w-full max-w-lg rounded-[3rem] shadow-2xl border border-black/10 dark:border-white/5 overflow-hidden animate-in zoom-in-95 duration-500">
                             <div className="bg-[#1A1A2E] dark:bg-[#0c101b] p-10 relative overflow-hidden border-b border-black/5 dark:border-white/5">
-                                <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white dark:text-white/40 dark:hover:text-white transition-all"><X size={24}</button>
+                                <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white dark:text-white/40 dark:hover:text-white transition-all"><X size={24} /></button>
                                 <div className="flex items-center gap-6">
                                     <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-[#151b2d] flex items-center justify-center text-2xl font-black text-[#1A1A2E] dark:text-white/90 shadow-inner">
                                         {(selectedMember.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-black text-[#1A1A2E] dark:text-white font-serif">{selectedMember.name}</h3>
+                                        <h3 className="text-2xl font-black text-white dark:text-white font-serif">{selectedMember.name}</h3>
                                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Council Member Records</p>
                                     </div>
                                 </div>
@@ -558,7 +600,7 @@ export default function SettingsPage() {
                                         className="w-full bg-white dark:bg-[#151b2d] text-black dark:text-white border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
                                     >
                                         {Object.entries(ROLES).filter(([key, value]) => value !== ROLES.SUPER_ADMIN).map(([key, value]) => (
-                                            <option key={value} value={value} className="bg-white dark:bg-[#151b2d] text-black dark:text-white">
+                                            <option key={value} value={value} className="text-slate-900 bg-white">
                                                 {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                             </option>
                                         ))}
@@ -717,7 +759,7 @@ export default function SettingsPage() {
                 {showFullLedger && (
                     <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
                         <div className="absolute inset-0 bg-[#1A1A2E]/95 dark:bg-[#0F172A]/95 backdrop-blur-md" onClick={() => setShowFullLedger(false)}></div>
-                        <div className="relative bg-white dark:bg-[#111827] w-full max-w-5xl rounded-[3rem] shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col max-h-[85vh]">
+                        <div className="relative bg-white dark:bg-[#111827] w-full max-w-5xl rounded-[3rem] shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col max-h-[90vh]">
                             {/* Modal Header */}
                             <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 flex items-center justify-between relative overflow-hidden">
                                 <div className="flex items-center gap-6">
@@ -746,7 +788,7 @@ export default function SettingsPage() {
                                                 try {
                                                     await clearLogs();
                                                     toast.success("Audit ledger purged");
-                                                    refreshLogs();
+                                                    refreshLogs(1);
                                                     setShowFullLedger(false);
                                                 } catch (err) {
                                                     toast.error(err.message || "Failed to purge ledger");
@@ -762,31 +804,66 @@ export default function SettingsPage() {
                             </div>
 
                             {/* Filters & Search */}
-                            <div className="p-8 border-b border-black/5 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800 flex flex-col md:flex-row gap-4 items-center">
-                                <div className="relative flex-1 w-full">
-                                    <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Filter by user, action, or details..."
-                                        value={ledgerSearch}
-                                        onChange={e => setLedgerSearch(e.target.value)}
-                                        className="w-full pl-14 pr-6 py-4 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-2xl text-xs font-black outline-none focus:border-[#E8820C] dark:text-white"
-                                    />
+                            <div className="p-8 border-b border-black/5 dark:border-white/10 bg-gray-50/50 dark:bg-gray-850 flex flex-col gap-4">
+                                <div className="flex flex-col md:flex-row gap-4 items-center">
+                                    <div className="relative flex-1 w-full">
+                                        <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filter by user, action, or details..."
+                                            value={ledgerSearch}
+                                            onChange={e => setLedgerSearch(e.target.value)}
+                                            className="w-full pl-14 pr-6 py-4 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-2xl text-xs font-black outline-none focus:border-[#E8820C] dark:text-white"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
+                                        {['all', 'admin', 'security', 'system', 'member'].map(cat => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setLedgerCategory(cat)}
+                                                className={`px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border cursor-pointer whitespace-nowrap ${
+                                                    ledgerCategory === cat 
+                                                        ? 'bg-black text-white dark:bg-white dark:text-[#0F172A] border-transparent' 
+                                                        : 'bg-white dark:bg-[#111827] text-black/50 dark:text-white/50 border-black/5 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
+                                                }`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="flex gap-2 w-full md:w-auto">
-                                    {['all', 'admin', 'security', 'system', 'member'].map(cat => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => setLedgerCategory(cat)}
-                                            className={`px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border cursor-pointer ${
-                                                ledgerCategory === cat 
-                                                    ? 'bg-black text-white dark:bg-white dark:text-[#0F172A] border-transparent' 
-                                                    : 'bg-white dark:bg-[#111827] text-black/50 dark:text-white/50 border-black/5 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
-                                            }`}
+                                <div className="flex flex-wrap items-center gap-6 text-xs font-black">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-black/40 dark:text-white/40 uppercase tracking-widest">From:</span>
+                                        <input 
+                                            type="date" 
+                                            value={ledgerDateFrom} 
+                                            onChange={e => setLedgerDateFrom(e.target.value)}
+                                            className="px-4 py-2 rounded-xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 text-xs text-black dark:text-white outline-none focus:border-[#E8820C]"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-black/40 dark:text-white/40 uppercase tracking-widest">To:</span>
+                                        <input 
+                                            type="date" 
+                                            value={ledgerDateTo} 
+                                            onChange={e => setLedgerDateTo(e.target.value)}
+                                            className="px-4 py-2 rounded-xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 text-xs text-black dark:text-white outline-none focus:border-[#E8820C]"
+                                        />
+                                    </div>
+                                    {(ledgerDateFrom || ledgerDateTo) && (
+                                        <button 
+                                            onClick={() => { setLedgerDateFrom(''); setLedgerDateTo(''); }}
+                                            className="text-[9px] uppercase tracking-widest text-[#E8820C] hover:underline cursor-pointer"
                                         >
-                                            {cat}
+                                            Clear Dates
                                         </button>
-                                    ))}
+                                    )}
+                                    {ledgerLoading && (
+                                        <span className="ml-auto text-[10px] text-[#E8820C] flex items-center gap-2 animate-pulse">
+                                            <Loader2 size={12} className="animate-spin" /> Fetching manifest...
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
@@ -801,39 +878,104 @@ export default function SettingsPage() {
                                                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Initiator</th>
                                                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Action Protocols</th>
                                                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Specifications / Payload</th>
+                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40 text-right">Containment / Control</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs text-[#1A1A2E] dark:text-white/90">
                                             {filteredLedger.length > 0 ? (
-                                                filteredLedger.map(log => (
-                                                    <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
-                                                        <td className="px-6 py-4 font-mono text-[10px] text-black/40 dark:text-white/40 whitespace-nowrap">
-                                                            {new Date(log.timestamp || log.createdAt).toLocaleString('en-NG')}
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${
-                                                                log.category === 'security' ? 'bg-red-500/10 text-red-500 border border-red-500/15' :
-                                                                log.category === 'admin' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/15' :
-                                                                log.category === 'member' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/15' :
-                                                                'bg-emerald-500/10 text-emerald-500 border border-emerald-500/15'
-                                                            }`}>
-                                                                {log.category}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 font-black">{log.user}</td>
-                                                        <td className="px-6 py-4 font-black text-black dark:text-white">{log.action}</td>
-                                                        <td className="px-6 py-4 text-black/60 dark:text-white/60 font-medium break-all">{log.detail}</td>
-                                                    </tr>
-                                                ))
+                                                filteredLedger.map(log => {
+                                                    const targetMember = findMemberByName(log.user);
+                                                    return (
+                                                        <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+                                                            <td className="px-6 py-4 font-mono text-[10px] text-black/40 dark:text-white/40 whitespace-nowrap">
+                                                                {new Date(log.timestamp || log.createdAt).toLocaleString('en-NG')}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                                                    log.category === 'security' ? 'bg-red-500/10 text-red-500 border border-red-500/15' :
+                                                                    log.category === 'admin' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/15' :
+                                                                    log.category === 'member' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/15' :
+                                                                    'bg-emerald-500/10 text-emerald-500 border border-emerald-500/15'
+                                                                }`}>
+                                                                    {log.category}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 font-black">{log.user}</td>
+                                                            <td className="px-6 py-4 font-black text-black dark:text-white">{log.action}</td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-black/60 dark:text-white/60 font-medium">{log.detail}</span>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            navigator.clipboard.writeText(log.detail);
+                                                                            toast.success("Payload copied to clipboard");
+                                                                        }}
+                                                                        className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-black/35 dark:text-white/35 hover:text-black dark:hover:text-white transition-all cursor-pointer"
+                                                                        title="Copy Details"
+                                                                    >
+                                                                        <Copy size={12} />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                {targetMember && targetMember.role !== 'super_admin' && (
+                                                                    <div className="flex justify-end gap-2">
+                                                                        {targetMember.status === 'suspended' ? (
+                                                                            <button 
+                                                                                onClick={() => handleStatusUpdate(targetMember._id || targetMember.id, 'active')}
+                                                                                className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                                                                            >
+                                                                                Reactivate
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button 
+                                                                                onClick={() => handleStatusUpdate(targetMember._id || targetMember.id, 'suspended')}
+                                                                                className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                                                                            >
+                                                                                Suspend
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
                                             ) : (
                                                 <tr>
-                                                    <td colSpan="5" className="py-16 text-center text-black/30 dark:text-white/30 font-black uppercase tracking-widest">
+                                                    <td colSpan="6" className="py-16 text-center text-black/30 dark:text-white/30 font-black uppercase tracking-widest">
                                                         No Audit Protocols Match Your Query
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                            {/* Pagination Controls */}
+                            <div className="p-6 border-t border-black/5 dark:border-white/10 bg-gray-50/50 dark:bg-[#0F172A]/30 flex items-center justify-between text-xs">
+                                <span className="text-black/50 dark:text-white/50 font-black uppercase tracking-wider">
+                                    Total Logs: <span className="text-black dark:text-white font-serif">{auditTotal}</span>
+                                </span>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        disabled={auditPage <= 1 || ledgerLoading}
+                                        onClick={() => refreshLogs(auditPage - 1)}
+                                        className="px-4 py-2 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="text-black/60 dark:text-white/60 font-black uppercase tracking-widest">
+                                        Page {auditPage} of {auditPages}
+                                    </span>
+                                    <button 
+                                        disabled={auditPage >= auditPages || ledgerLoading}
+                                        onClick={() => refreshLogs(auditPage + 1)}
+                                        className="px-4 py-2 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </div>
                         </div>

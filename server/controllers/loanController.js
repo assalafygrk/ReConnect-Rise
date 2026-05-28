@@ -385,7 +385,7 @@ const recordRepayment = async (req, res) => {
   if (paymentChannel === 'wallet') {
     const member = await User.findById(loan.user);
     if (member) {
-      if (member.walletBalance < Number(amount)) {
+      if ((member.walletBalance || 0) < Number(amount)) {
         res.status(400);
         throw new Error('Member wallet balance insufficient for repayment');
       }
@@ -404,6 +404,14 @@ const recordRepayment = async (req, res) => {
 
   await loan.save();
   const populated = await populateLoan(Loan.findById(loan._id));
+
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'LOAN_REPAYMENT',
+    detail: `Recorded repayment of ₦${Number(amount).toLocaleString()} (${paymentChannel || 'cash'}) for ${populated.user.name}. Remaining: ₦${loan.balance.toLocaleString()}`,
+    category: 'admin'
+  });
+
   res.json(transformLoan(populated));
 };
 
@@ -445,7 +453,7 @@ const memberRepayWallet = async (req, res) => {
   if (!member.transactionPin || !(await bcrypt.compare(pin, member.transactionPin))) {
     res.status(401); throw new Error('Invalid transaction PIN');
   }
-  if (member.walletBalance < Number(amount)) { res.status(400); throw new Error('Insufficient wallet balance for repayment'); }
+  if ((member.walletBalance || 0) < Number(amount)) { res.status(400); throw new Error('Insufficient wallet balance for repayment'); }
 
   member.walletBalance -= Number(amount);
   await member.save();

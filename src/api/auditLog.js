@@ -18,19 +18,46 @@ function formatRelative(isoString) {
     return `${d}d ago`;
 }
 
-export async function getLogs() {
+/**
+ * Fetch audit logs with pagination & filtering support.
+ * @param {Object} opts - { page, limit, category, search, from, to }
+ * @returns {{ logs: Array, total: number, page: number, pages: number }}
+ */
+export async function getLogs(opts = {}) {
     try {
-        const res = await fetch(`${BASE_URL}/audit`, { headers: authHeaders() });
+        const params = new URLSearchParams();
+        if (opts.page) params.set('page', opts.page);
+        if (opts.limit) params.set('limit', opts.limit);
+        if (opts.category && opts.category !== 'all') params.set('category', opts.category);
+        if (opts.search) params.set('search', opts.search);
+        if (opts.from) params.set('from', opts.from);
+        if (opts.to) params.set('to', opts.to);
+
+        const res = await fetch(`${BASE_URL}/audit?${params.toString()}`, { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to fetch audit logs');
-        const logs = await res.json();
-        return logs.map(l => ({
+        const data = await res.json();
+
+        // Handle both old (array) and new (paginated) response formats
+        const logs = Array.isArray(data) ? data : (data.logs || []);
+        const mapped = logs.map(l => ({
             ...l,
             id: l._id || l.id,
             timeDisplay: formatRelative(l.timestamp || l.createdAt || new Date())
         }));
+
+        if (Array.isArray(data)) {
+            return mapped; // Legacy: return plain array for backward compat
+        }
+
+        return {
+            logs: mapped,
+            total: data.total || mapped.length,
+            page: data.page || 1,
+            pages: data.pages || 1,
+        };
     } catch (err) {
         console.error('Audit get logs failed:', err);
-        return [];
+        return { logs: [], total: 0, page: 1, pages: 1 };
     }
 }
 
@@ -54,16 +81,19 @@ export async function clearLogs() {
 
 export async function exportLogsCSV() {
     try {
-        const res = await fetch(`${BASE_URL}/audit`, { headers: authHeaders() });
+        // Fetch ALL logs (large limit) for CSV export
+        const params = new URLSearchParams({ limit: '10000' });
+        const res = await fetch(`${BASE_URL}/audit?${params.toString()}`, { headers: authHeaders() });
         if (!res.ok) return null;
-        const logs = await res.json();
+        const data = await res.json();
+        const logs = Array.isArray(data) ? data : (data.logs || []);
         if (!logs.length) return null;
         const headers = ['ID', 'User', 'Action', 'Detail', 'Category', 'Timestamp'];
         const rows = logs.map(l => [
             l._id || l.id,
-            `"${l.user}"`,
-            `"${l.action}"`,
-            `"${l.detail}"`,
+            `"${(l.user || '').replace(/"/g, '""')}"`,
+            `"${(l.action || '').replace(/"/g, '""')}"`,
+            `"${(l.detail || '').replace(/"/g, '""')}"`,
             l.category,
             l.timestamp || l.createdAt,
         ]);
