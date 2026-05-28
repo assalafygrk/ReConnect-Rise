@@ -29,11 +29,11 @@ export async function fetchWeeks() {
 }
 
 // Treasurer marks a member as paid manually
-export async function markMemberPaid({ memberId, weekId, amount, paymentChannel, note }) {
+export async function markMemberPaid({ memberId, weekId, amount, paymentChannel, note, adminPassword, facialImage }) {
     return handleResponse(await fetch(`${BASE_URL}/contributions/mark-paid`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ memberId, weekId, amount, paymentChannel, note }),
+        body: JSON.stringify({ memberId, weekId, amount, paymentChannel, note, adminPassword, facialImage }),
     }));
 }
 
@@ -47,11 +47,11 @@ export async function payViaWallet(pin) {
 }
 
 // Record a general/pool contribution (cash or wallet)
-export async function recordGeneralContribution({ memberId, amount, paymentChannel, note, reference }) {
+export async function recordGeneralContribution({ memberId, amount, paymentChannel, note, reference, adminPassword, facialImage }) {
     return handleResponse(await fetch(`${BASE_URL}/contributions/general`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ memberId, amount, paymentChannel, note, reference }),
+        body: JSON.stringify({ memberId, amount, paymentChannel, note, reference, adminPassword, facialImage }),
     }));
 }
 

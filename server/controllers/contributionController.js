@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Settings = require('../models/Settings');
 const bcrypt = require('bcryptjs');
 const { createNotification } = require('./notificationController');
+const AuditLog = require('../models/AuditLog');
 
 // ─── Week Utilities ────────────────────────────────────────────────────────
 
@@ -144,11 +145,37 @@ const getWeeklyStatus = async (req, res) => {
  * @access  Private/Treasurer/Admin
  */
 const markPaid = async (req, res) => {
-  const { memberId, weekId: requestedWeekId, amount, paymentChannel, note } = req.body;
+  const { memberId, weekId: requestedWeekId, amount, paymentChannel, note, adminPassword } = req.body;
 
   if (!memberId) {
     res.status(400);
     throw new Error('Member ID is required');
+  }
+
+  if (paymentChannel === 'cash') {
+    if (!adminPassword) {
+      res.status(401);
+      throw new Error('Administrative password verification required for cash operations');
+    }
+    const adminUser = await User.findById(req.user._id).select('+password +facialUpload');
+    if (!adminUser) {
+      res.status(404);
+      throw new Error('Authorized user record not found');
+    }
+    const isMatch = await adminUser.matchPassword(adminPassword);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error('Protocol Violation: Invalid Administrative Master Key');
+    }
+    if (!adminUser.facialUpload) {
+      res.status(400);
+      throw new Error('Biometric authentication failed: No enrolled face template found. Please enroll your face first.');
+    }
+    const { facialImage } = req.body;
+    if (!facialImage || !facialImage.startsWith('data:image/')) {
+      res.status(400);
+      throw new Error('Biometric authentication failed: Valid live facial scan signature is required');
+    }
   }
 
   const weekId = requestedWeekId || getWeekId();
@@ -228,6 +255,14 @@ const markPaid = async (req, res) => {
     message: `Your contribution for ${weekId} of ₦${paidAmount.toLocaleString()} has been confirmed.`,
     type: 'success',
     link: '/contributions'
+  });
+
+  // Create audit log
+  await AuditLog.create({
+    user: req.user.name,
+    action: `MANUAL_MARK_PAID_${paymentChannel.toUpperCase()}`,
+    detail: `Manual override contribution for ${populated.user.name} for week ${weekId}. Amount: ₦${paidAmount.toLocaleString()}. Channel: ${paymentChannel}`,
+    category: 'admin'
   });
 
   res.status(201).json(populated);
@@ -320,8 +355,34 @@ const payViaWallet = async (req, res) => {
  * @access  Private (any member) — Treasurer can record on behalf
  */
 const recordGeneralContribution = async (req, res) => {
-  const { memberId, amount, paymentChannel, note, reference } = req.body;
+  const { memberId, amount, paymentChannel, note, reference, adminPassword } = req.body;
   const targetUserId = memberId || req.user._id;
+
+  if (memberId && paymentChannel === 'cash') {
+    if (!adminPassword) {
+      res.status(401);
+      throw new Error('Administrative password verification required for cash operations');
+    }
+    const adminUser = await User.findById(req.user._id).select('+password +facialUpload');
+    if (!adminUser) {
+      res.status(404);
+      throw new Error('Authorized user record not found');
+    }
+    const isMatch = await adminUser.matchPassword(adminPassword);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error('Protocol Violation: Invalid Administrative Master Key');
+    }
+    if (!adminUser.facialUpload) {
+      res.status(400);
+      throw new Error('Biometric authentication failed: No enrolled face template found. Please enroll your face first.');
+    }
+    const { facialImage } = req.body;
+    if (!facialImage || !facialImage.startsWith('data:image/')) {
+      res.status(400);
+      throw new Error('Biometric authentication failed: Valid live facial scan signature is required');
+    }
+  }
 
   if (!amount || Number(amount) <= 0) {
     res.status(400);
@@ -365,6 +426,15 @@ const recordGeneralContribution = async (req, res) => {
   }
 
   const populated = await Contribution.findById(contribution._id).populate('user', 'name email');
+
+  // Create audit log
+  await AuditLog.create({
+    user: req.user.name,
+    action: `RECORD_GENERAL_CONTRIBUTION_${paymentChannel.toUpperCase()}`,
+    detail: `General pool contribution for ${populated.user.name}. Amount: ₦${Number(amount).toLocaleString()}. Channel: ${paymentChannel}`,
+    category: 'admin'
+  });
+
   res.status(201).json(populated);
 };
 

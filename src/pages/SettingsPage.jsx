@@ -71,6 +71,18 @@ export default function SettingsPage() {
     // Audit Ledger
     const [auditLogs, setAuditLogs] = useState([]);
     const [showFullLedger, setShowFullLedger] = useState(false);
+    const [ledgerSearch, setLedgerSearch] = useState('');
+    const [ledgerCategory, setLedgerCategory] = useState('all');
+
+    const filteredLedger = auditLogs.filter(log => {
+        const matchesCat = ledgerCategory === 'all' || log.category === ledgerCategory;
+        const search = ledgerSearch.toLowerCase();
+        const matchesSearch = 
+            (log.user || '').toLowerCase().includes(search) || 
+            (log.action || '').toLowerCase().includes(search) || 
+            (log.detail || '').toLowerCase().includes(search);
+        return matchesCat && matchesSearch;
+    });
 
     // Form states
     const [pwForm, setPwForm] = useState({ current: '', next: '' });
@@ -83,7 +95,10 @@ export default function SettingsPage() {
     const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
     const [otpSaving, setOtpSaving] = useState(false);
 
-    const refreshLogs = useCallback(() => setAuditLogs(getLogs()), []);
+    const refreshLogs = useCallback(async () => {
+        const logs = await getLogs();
+        setAuditLogs(logs);
+    }, []);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -347,9 +362,9 @@ export default function SettingsPage() {
                                         <button
                                             key={member._id || member.id}
                                             onClick={() => setSelectedMember(member)}
-                                            className="aspect-square bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-black/5 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center gap-4 hover:bg-white dark:bg-[#111827] hover:shadow-2xl hover:-translate-y-1 transition-all group"
+                                            className="aspect-square bg-gray-50 dark:bg-white/5 rounded-[2rem] border border-black/5 dark:border-white/10 p-6 flex flex-col items-center justify-center text-center gap-4 hover:bg-white dark:hover:bg-white/10 hover:shadow-2xl hover:-translate-y-1 transition-all group"
                                         >
-                                            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 flex items-center justify-center text-lg font-black text-[#1A1A2E] dark:text-white/90 group-hover:bg-[#E8820C] dark:bg-[#F5A623] group-hover:text-white transition-all shadow-sm">
+                                            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 flex items-center justify-center text-lg font-black text-[#1A1A2E] dark:text-white/90 group-hover:bg-[#E8820C] group-hover:text-white transition-all shadow-sm">
                                                 {(member.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                             </div>
                                             <div>
@@ -521,35 +536,35 @@ export default function SettingsPage() {
                 {selectedMember && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
                         <div className="absolute inset-0 bg-[#1A1A2E] dark:bg-[#0F172A]/90 backdrop-blur-md" onClick={() => setSelectedMember(null)}></div>
-                        <div className="relative bg-white dark:bg-[#111827] w-full max-w-lg rounded-[3rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-500">
-                            <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 relative overflow-hidden">
-                                <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white transition-all"><X size={24} /></button>
+                        <div className="relative bg-white dark:bg-[#0c101b] w-full max-w-lg rounded-[3rem] shadow-2xl border border-black/10 dark:border-white/5 overflow-hidden animate-in zoom-in-95 duration-500">
+                            <div className="bg-[#1A1A2E] dark:bg-[#0c101b] p-10 relative overflow-hidden border-b border-black/5 dark:border-white/5">
+                                <button onClick={() => setSelectedMember(null)} className="absolute top-8 right-8 text-white/20 hover:text-white dark:text-white/40 dark:hover:text-white transition-all"><X size={24}</button>
                                 <div className="flex items-center gap-6">
-                                    <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-[#111827] flex items-center justify-center text-2xl font-black text-[#1A1A2E] dark:text-white/90">
+                                    <div className="w-20 h-20 rounded-[2rem] bg-white dark:bg-[#151b2d] flex items-center justify-center text-2xl font-black text-[#1A1A2E] dark:text-white/90 shadow-inner">
                                         {(selectedMember.name || 'M').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-black text-white font-serif">{selectedMember.name}</h3>
+                                        <h3 className="text-2xl font-black text-[#1A1A2E] dark:text-white font-serif">{selectedMember.name}</h3>
                                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Council Member Records</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-10 space-y-8 bg-gray-50 dark:bg-white/5/50">
+                            <div className="p-10 space-y-8 bg-gray-50 dark:bg-[#070b12]">
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30 ml-4">Access Level (Role)</label>
                                     <select
                                         value={selectedMember.role || 'member'}
                                         onChange={(e) => handleRoleUpdate(selectedMember._id || selectedMember.id, e.target.value)}
-                                        className="w-full bg-white dark:bg-[#111827] border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
+                                        className="w-full bg-white dark:bg-[#151b2d] text-black dark:text-white border-2 border-black/5 dark:border-white/10 focus:border-[#E8820C]/30 rounded-[2rem] px-8 py-5 text-sm font-black outline-none shadow-sm appearance-none cursor-pointer"
                                     >
                                         {Object.entries(ROLES).filter(([key, value]) => value !== ROLES.SUPER_ADMIN).map(([key, value]) => (
-                                            <option key={value} value={value}>
+                                            <option key={value} value={value} className="bg-white dark:bg-[#151b2d] text-black dark:text-white">
                                                 {ROLE_CLASSES[value]?.label || value.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="p-8 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-[2.5rem] space-y-4">
+                                <div className="p-8 bg-white dark:bg-[#151b2d] border border-black/5 dark:border-white/10 rounded-[2.5rem] space-y-4">
                                     <div className="flex items-center gap-3"><Mail size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90">{selectedMember.email}</p></div>
                                     <div className="flex items-center gap-3"><UserCheck size={14} className="text-[#E8820C] dark:text-[#F5A623]" /><p className="text-sm font-black text-[#1A1A2E] dark:text-white/90 uppercase tracking-widest">{selectedMember.status || 'Active'}</p></div>
                                 </div>
@@ -576,7 +591,7 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
-                            <div className="p-10 bg-gray-50 dark:bg-white/5/50">
+                            <div className="p-10 bg-gray-50 dark:bg-gray-800">
                                 {activeModal === '2fa' && (
                                     <div className="space-y-10">
                                         <div className="space-y-4">
@@ -694,6 +709,132 @@ export default function SettingsPage() {
                                         </button>
                                     </form>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showFullLedger && (
+                    <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                        <div className="absolute inset-0 bg-[#1A1A2E]/95 dark:bg-[#0F172A]/95 backdrop-blur-md" onClick={() => setShowFullLedger(false)}></div>
+                        <div className="relative bg-white dark:bg-[#111827] w-full max-w-5xl rounded-[3rem] shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-500 flex flex-col max-h-[85vh]">
+                            {/* Modal Header */}
+                            <div className="bg-[#1A1A2E] dark:bg-[#0F172A] p-10 flex items-center justify-between relative overflow-hidden">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-[#E8820C] dark:text-[#F5A623]">
+                                        <Fingerprint size={28} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white font-serif">Security Audit Ledger</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] dark:text-[#F5A623] mt-1">Universal System Manifest & Actions</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={async () => {
+                                            const csv = await exportLogsCSV();
+                                            if (csv) toast.success("Ledger exported successfully");
+                                            else toast.error("Nothing to export");
+                                        }} 
+                                        className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <Download size={14} /> Export CSV
+                                    </button>
+                                    <button 
+                                        onClick={async () => {
+                                            if (window.confirm("Warning: This action will permanently erase the system security audit trail. Are you sure you want to proceed?")) {
+                                                try {
+                                                    await clearLogs();
+                                                    toast.success("Audit ledger purged");
+                                                    refreshLogs();
+                                                    setShowFullLedger(false);
+                                                } catch (err) {
+                                                    toast.error(err.message || "Failed to purge ledger");
+                                                }
+                                            }
+                                        }}
+                                        className="px-6 py-3 bg-red-600/85 hover:bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-red-600/20 cursor-pointer"
+                                    >
+                                        <Trash2 size={14} /> Purge Ledger
+                                    </button>
+                                    <button onClick={() => setShowFullLedger(false)} className="text-white/25 hover:text-white transition-all ml-4 cursor-pointer"><X size={24} /></button>
+                                </div>
+                            </div>
+
+                            {/* Filters & Search */}
+                            <div className="p-8 border-b border-black/5 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800 flex flex-col md:flex-row gap-4 items-center">
+                                <div className="relative flex-1 w-full">
+                                    <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Filter by user, action, or details..."
+                                        value={ledgerSearch}
+                                        onChange={e => setLedgerSearch(e.target.value)}
+                                        className="w-full pl-14 pr-6 py-4 bg-white dark:bg-[#111827] border border-black/5 dark:border-white/10 rounded-2xl text-xs font-black outline-none focus:border-[#E8820C] dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    {['all', 'admin', 'security', 'system', 'member'].map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setLedgerCategory(cat)}
+                                            className={`px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border cursor-pointer ${
+                                                ledgerCategory === cat 
+                                                    ? 'bg-black text-white dark:bg-white dark:text-[#0F172A] border-transparent' 
+                                                    : 'bg-white dark:bg-[#111827] text-black/50 dark:text-white/50 border-black/5 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5'
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Logs Table */}
+                            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                <div className="border border-black/5 dark:border-white/10 rounded-3xl overflow-hidden bg-white dark:bg-[#111827]">
+                                    <table className="w-full border-collapse text-left">
+                                        <thead>
+                                            <tr className="bg-gray-50 dark:bg-white/5 border-b border-black/5 dark:border-white/10">
+                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Timestamp</th>
+                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Category</th>
+                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Initiator</th>
+                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Action Protocols</th>
+                                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black/40 dark:text-white/40">Specifications / Payload</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs text-[#1A1A2E] dark:text-white/90">
+                                            {filteredLedger.length > 0 ? (
+                                                filteredLedger.map(log => (
+                                                    <tr key={log.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+                                                        <td className="px-6 py-4 font-mono text-[10px] text-black/40 dark:text-white/40 whitespace-nowrap">
+                                                            {new Date(log.timestamp || log.createdAt).toLocaleString('en-NG')}
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                                                log.category === 'security' ? 'bg-red-500/10 text-red-500 border border-red-500/15' :
+                                                                log.category === 'admin' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/15' :
+                                                                log.category === 'member' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/15' :
+                                                                'bg-emerald-500/10 text-emerald-500 border border-emerald-500/15'
+                                                            }`}>
+                                                                {log.category}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 font-black">{log.user}</td>
+                                                        <td className="px-6 py-4 font-black text-black dark:text-white">{log.action}</td>
+                                                        <td className="px-6 py-4 text-black/60 dark:text-white/60 font-medium break-all">{log.detail}</td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="5" className="py-16 text-center text-black/30 dark:text-white/30 font-black uppercase tracking-widest">
+                                                        No Audit Protocols Match Your Query
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>

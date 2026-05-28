@@ -3,6 +3,7 @@ const Settings = require('../models/Settings');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { authenticator } = require('otplib');
+const AuditLog = require('../models/AuditLog');
 
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -47,10 +48,22 @@ const updateSettings = async (req, res) => {
     'loanFundTarget', 'maxLoanAmount', 'allowProfilePhotoChange',
     'enabledPages'
   ];
+  const changedFields = [];
   allowed.forEach(key => {
-    if (req.body[key] !== undefined) s[key] = req.body[key];
+    if (req.body[key] !== undefined && String(s[key]) !== String(req.body[key])) {
+      changedFields.push(`${key}: ${s[key]} -> ${req.body[key]}`);
+      s[key] = req.body[key];
+    }
   });
   await s.save();
+  if (changedFields.length > 0) {
+    await AuditLog.create({
+      user: req.user.name,
+      action: 'SETTINGS_UPDATE',
+      detail: `Modified system protocols: ${changedFields.join(', ')}`,
+      category: 'admin'
+    });
+  }
   res.json(s);
 };
 
@@ -113,8 +126,15 @@ const updateAdminSecurity = async (req, res) => {
   */
 
   const s = await getOrCreate();
+  const oldMode = s.adminSecurityMode;
   s.adminSecurityMode = adminSecurityMode || 'password';
   await s.save();
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'ADMIN_SECURITY_MODE_UPDATE',
+    detail: `Changed admin panel unlock protocol from ${oldMode} to ${s.adminSecurityMode}`,
+    category: 'security'
+  });
   res.json({ adminSecurityMode: s.adminSecurityMode });
 };
 
@@ -130,6 +150,12 @@ const updateTransactionPin = async (req, res) => {
 
   user.transactionPin = await bcrypt.hash(pin, 10);
   await user.save();
+  await AuditLog.create({
+    user: user.name,
+    action: 'TRANSACTION_PIN_UPDATE',
+    detail: `Configured/updated personal transaction security PIN`,
+    category: 'security'
+  });
   res.json({ message: 'Transaction PIN updated successfully' });
 };
 
@@ -161,6 +187,13 @@ const verify2FA = async (req, res) => {
   user.twoFactorEnabled = true;
   await user.save();
 
+  await AuditLog.create({
+    user: user.name,
+    action: '2FA_ENABLED',
+    detail: `Successfully configured and enabled Two-Factor Authentication`,
+    category: 'security'
+  });
+
   res.json({
     message: 'Two-Factor Authentication enabled successfully',
     enabled: true,
@@ -176,6 +209,13 @@ const disable2FA = async (req, res) => {
   user.twoFactorEnabled = false;
   user.twoFactorSecret = undefined;
   await user.save();
+
+  await AuditLog.create({
+    user: user.name,
+    action: '2FA_DISABLED',
+    detail: `Deactivated Two-Factor Authentication security level`,
+    category: 'security'
+  });
 
   res.json({
     message: 'Two-Factor Authentication disabled',

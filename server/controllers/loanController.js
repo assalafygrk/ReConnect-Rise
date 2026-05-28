@@ -5,6 +5,7 @@ const Settings = require('../models/Settings');
 const Disbursement = require('../models/Disbursement');
 const bcrypt = require('bcryptjs');
 const { createNotification } = require('./notificationController');
+const AuditLog = require('../models/AuditLog');
 
 // ─── Helper ───────────────────────────────────────────────────────────────
 
@@ -127,6 +128,13 @@ const requestLoan = async (req, res) => {
     link: '/requests'
   });
 
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'LOAN_REQUEST',
+    detail: `Requested loan of ₦${Number(amount).toLocaleString()} for: ${purpose}`,
+    category: 'system'
+  });
+
   res.status(201).json(transformLoan(populated));
 };
 
@@ -196,6 +204,13 @@ const leaderAction = async (req, res) => {
       link: '/requests'
     });
   }
+
+  await AuditLog.create({
+    user: req.user.name,
+    action: `LOAN_LEADER_${action.toUpperCase()}`,
+    detail: `Leader ${action} loan for ${populated.user.name} (₦${populated.amount.toLocaleString()})${declineReason ? ': ' + declineReason : ''}`,
+    category: 'admin'
+  });
 
   res.json(transformLoan(populated));
 };
@@ -322,6 +337,13 @@ const treasurerAction = async (req, res) => {
     message: `Your loan of ₦${populated.amount.toLocaleString()} has been disbursed via ${populated.disbursementMethod}.`,
     type: 'success',
     link: '/loans'
+  });
+
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'LOAN_DISBURSED',
+    detail: `Disbursed loan of ₦${populated.amount.toLocaleString()} to ${populated.user.name} via ${populated.disbursementMethod}`,
+    category: 'admin'
   });
 
   res.json(transformLoan(populated));

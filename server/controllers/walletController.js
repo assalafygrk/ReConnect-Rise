@@ -3,6 +3,7 @@ const Transaction = require('../models/Transaction');
 const Contribution = require('../models/Contribution');
 const Settings = require('../models/Settings');
 const bcrypt = require('bcryptjs');
+const AuditLog = require('../models/AuditLog');
 
 // ─── System Pool ──────────────────────────────────────────────────────────
 // The treasury pool is tracked via a special system user or just via
@@ -81,6 +82,13 @@ const transferFunds = async (req, res) => {
   await Transaction.create({ user: fromUser._id, type: 'debit',  amount: Number(amount), note: note || `Gift to ${toUser.name}`,   relatedUser: toUser._id, category: 'gift' });
   await Transaction.create({ user: toUser._id,   type: 'credit', amount: Number(amount), note: note || `Gift from ${fromUser.name}`, relatedUser: fromUser._id, category: 'gift' });
 
+  await AuditLog.create({
+    user: fromUser.name,
+    action: 'WALLET_TRANSFER',
+    detail: `Transferred ₦${Number(amount).toLocaleString()} to ${toUser.name} (${toUser.email})`,
+    category: 'system'
+  });
+
   res.json({ success: true, message: 'Transfer successful', newBalance: fromUser.walletBalance });
 };
 
@@ -105,6 +113,13 @@ const depositFunds = async (req, res) => {
     note: note || 'Wallet Top-up / Deposit',
     relatedUser: req.user._id,
     category: 'deposit',
+  });
+
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'WALLET_DEPOSIT',
+    detail: `Deposited ₦${Number(amount).toLocaleString()} into ${targetUser.name}'s wallet`,
+    category: 'admin'
   });
 
   res.json({ success: true, newBalance: targetUser.walletBalance });
@@ -221,6 +236,13 @@ const withdrawFunds = async (req, res) => {
     console.error('Failed to send treasurer withdrawal email:', emailErr);
   }
 
+  await AuditLog.create({
+    user: user.name,
+    action: 'WALLET_WITHDRAWAL_REQUEST',
+    detail: `Withdrawal request of ₦${Number(amount).toLocaleString()} to ${bankName} (${accountNumber}). Fee: ₦${fee}`,
+    category: 'system'
+  });
+
   res.json({ success: true, newBalance: user.walletBalance, feeApplied: fee, status: 'pending' });
 };
 
@@ -273,6 +295,13 @@ const payGeneralContribution = async (req, res) => {
     user: user._id, type: 'credit', amount: 0, // zero amount — just a pool receipt marker
     note: `Pool Receipt: ₦${Number(amount).toLocaleString()} from ${user.name}`,
     relatedUser: user._id,
+  });
+
+  await AuditLog.create({
+    user: user.name,
+    action: 'GENERAL_CONTRIBUTION',
+    detail: `General pool contribution of ₦${Number(amount).toLocaleString()} via wallet`,
+    category: 'system'
   });
 
   res.json({ success: true, newBalance: user.walletBalance });

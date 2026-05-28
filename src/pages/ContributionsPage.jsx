@@ -12,6 +12,7 @@ import { fetchWeeklyStatus, markMemberPaid, payViaWallet, recordGeneralContribut
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 import { apiSetTransactionPin, apiGetProfile } from '../api/auth';
+import LiveFacialCapture from '../components/LiveFacialCapture';
 
 const fmt = (v) => `₦${Number(v || 0).toLocaleString('en-NG')}`;
 
@@ -66,6 +67,13 @@ export default function ContributionsPage() {
     const [contribSetupConfirm, setContribSetupConfirm] = useState('');
     const [settingContribPin, setSettingContribPin] = useState(false);
 
+    // Administrative Verification States
+    const [verificationTarget, setVerificationTarget] = useState(null);
+    const [verificationPassword, setVerificationPassword] = useState('');
+    const [verificationFaceImage, setVerificationFaceImage] = useState(null);
+    const [verificationStep, setVerificationStep] = useState(1);
+    const [showVerificationModal, setShowVerificationModal] = useState(false);
+
     const handleContribPinSetup = async (targetField) => {
         if (contribSetupPin !== contribSetupConfirm) return toast.error('PINs do not match');
         if (contribSetupPin.length !== 4) return toast.error('PIN must be 4 digits');
@@ -102,6 +110,20 @@ export default function ContributionsPage() {
     useEffect(() => { loadData(); }, [selectedWeek]);
 
     const handleMarkPaid = async (memberId, memberName, paymentChannel = 'cash') => {
+        if (paymentChannel === 'cash') {
+            setVerificationTarget({
+                memberId,
+                memberName,
+                paymentChannel,
+                type: 'weekly',
+                amount: weekData?.baseAmount
+            });
+            setVerificationPassword('');
+            setVerificationFaceImage(null);
+            setVerificationStep(1);
+            setShowVerificationModal(true);
+            return;
+        }
         setActionLoading(memberId);
         try {
             await markMemberPaid({ memberId, weekId: selectedWeek, paymentChannel, amount: weekData?.baseAmount });
@@ -111,6 +133,42 @@ export default function ContributionsPage() {
             toast.error(err.message);
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const handleVerifyAndSubmit = async (faceDataUrl) => {
+        if (!verificationPassword) {
+            toast.error('Administrative password required');
+            return;
+        }
+        if (!faceDataUrl) {
+            toast.error('Facial scan required');
+            return;
+        }
+
+        setPayingWallet(true);
+        try {
+            if (verificationTarget.type === 'weekly') {
+                await markMemberPaid({
+                    memberId: verificationTarget.memberId,
+                    weekId: selectedWeek,
+                    paymentChannel: 'cash',
+                    amount: verificationTarget.amount,
+                    adminPassword: verificationPassword,
+                    facialImage: faceDataUrl
+                });
+                toast.success(`${verificationTarget.memberName} marked as paid (cash)`);
+            }
+            setShowVerificationModal(false);
+            setVerificationTarget(null);
+            setVerificationPassword('');
+            setVerificationFaceImage(null);
+            setVerificationStep(1);
+            loadData(selectedWeek);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setPayingWallet(false);
         }
     };
 
@@ -632,7 +690,7 @@ export default function ContributionsPage() {
                                                                 {actionLoading === m.memberId ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} Cash Verify
                                                             </button>
                                                             <button onClick={() => handleMarkPaid(m.memberId, m.memberName, 'wallet')} disabled={actionLoading === m.memberId}
-                                                                className="px-4 py-2.5 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-black/20 disabled:opacity-50">
+                                                                className="px-4 py-2.5 bg-[#1A1A2E] dark:bg-white/10 text-white dark:text-white border border-transparent dark:border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest hover:opacity-90 dark:hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-black/20 disabled:opacity-50">
                                                                 {actionLoading === m.memberId ? <Loader2 size={12} className="animate-spin" /> : <Wallet size={12} />} Vault Force
                                                             </button>
                                                         </div>
@@ -691,7 +749,7 @@ export default function ContributionsPage() {
                                                 {actionLoading === m.memberId ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Cash Verify
                                             </button>
                                             <button onClick={() => handleMarkPaid(m.memberId, m.memberName, 'wallet')} disabled={actionLoading === m.memberId}
-                                                className="w-full py-4 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-2">
+                                                className="w-full py-4 bg-[#1A1A2E] dark:bg-white/10 text-white dark:text-white border border-transparent dark:border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-black/20 flex items-center justify-center gap-2">
                                                 {actionLoading === m.memberId ? <Loader2 size={14} className="animate-spin" /> : <Wallet size={14} />} Vault
                                             </button>
                                         </div>
@@ -934,6 +992,108 @@ export default function ContributionsPage() {
                                     </button>
                                 </form>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cash Verification Modal with Password + Live Facial Capture */}
+            {showVerificationModal && verificationTarget && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-[#1A1A2E]/90 backdrop-blur-xl" onClick={() => {
+                        if (verificationStep !== 3) {
+                            setShowVerificationModal(false);
+                            setVerificationTarget(null);
+                        }
+                    }} />
+                    <div className="bg-white dark:bg-[#0F172A] w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-black/5 dark:border-white/10 animate-in zoom-in-95 duration-300">
+                        <div className="p-8 space-y-6">
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <span className="text-[9px] font-black text-[#E8820C] uppercase tracking-[0.2em] italic">Cash Security Protocol</span>
+                                    <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white uppercase tracking-tight leading-tight">Biometric Handshake</h3>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        setShowVerificationModal(false);
+                                        setVerificationTarget(null);
+                                    }} 
+                                    className="w-10 h-10 bg-gray-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-black/20 dark:text-white/20 hover:text-red-500 transition-all"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="rounded-2xl bg-amber-500/5 border border-amber-500/10 p-4 flex gap-3 text-amber-600 dark:text-amber-500">
+                                <Shield className="shrink-0 mt-0.5" size={16} />
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-black uppercase tracking-wider">Manual Override Authorization</p>
+                                    <p className="text-[9px] opacity-80 leading-relaxed font-bold">
+                                        Marking contribution for <strong className="text-black dark:text-white">{verificationTarget.memberName}</strong> as paid via cash. Administrative password and facial verification are required.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {verificationStep === 1 && (
+                                <form onSubmit={(e) => { e.preventDefault(); if (verificationPassword) setVerificationStep(2); }} className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2 italic">Administrative Password</label>
+                                        <div className="relative group">
+                                            <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-colors" size={20} />
+                                            <input 
+                                                required 
+                                                type="password" 
+                                                value={verificationPassword} 
+                                                onChange={e => setVerificationPassword(e.target.value)}
+                                                className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-3xl pl-14 pr-8 py-5 text-sm font-black outline-none dark:text-white transition-all" 
+                                                placeholder="Enter Master Password"
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="submit" 
+                                        disabled={!verificationPassword}
+                                        className="w-full py-5 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
+                                    >
+                                        Proceed to Biometrics <ChevronRight size={14} />
+                                    </button>
+                                </form>
+                            )}
+
+                            {verificationStep === 2 && (
+                                <div className="space-y-4">
+                                    <div className="text-center space-y-1">
+                                        <p className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em]">Step 2: Biometric Liveness Check</p>
+                                        <p className="text-[9px] text-[#E8820C] font-bold uppercase tracking-wider italic">Follow the voice and text instructions</p>
+                                    </div>
+                                    <div className="overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 aspect-video relative bg-black">
+                                        <LiveFacialCapture 
+                                            onCapture={(dataUrl) => {
+                                                setVerificationFaceImage(dataUrl);
+                                                setVerificationStep(3);
+                                                handleVerifyAndSubmit(dataUrl);
+                                            }}
+                                            onCancel={() => {
+                                                setVerificationStep(1);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {verificationStep === 3 && (
+                                <div className="py-12 flex flex-col items-center justify-center gap-4">
+                                    <div className="relative">
+                                        <Loader2 className="animate-spin text-[#E8820C]" size={48} />
+                                        <div className="absolute inset-0 blur-xl bg-[#E8820C]/20 rounded-full animate-pulse" />
+                                    </div>
+                                    <div className="text-center space-y-1">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] animate-pulse">Syncing Ledger</p>
+                                        <p className="text-[9px] font-bold text-black/40 dark:text-white/40">Verifying secure administrative signature...</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

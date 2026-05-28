@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const AuditLog = require('../models/AuditLog');
 
 // @desc    Get all members
 // @route   GET /api/members
@@ -61,6 +62,12 @@ const createMember = async (req, res) => {
   });
 
   if (user) {
+    await AuditLog.create({
+      user: req.user.name,
+      action: 'MEMBER_CREATED',
+      detail: `Created member account: ${user.name} (${user.email}) as ${user.role}`,
+      category: 'member',
+    });
     res.status(201).json({ ...user.toObject(), password: undefined });
   } else {
     res.status(400);
@@ -84,8 +91,15 @@ const updateMemberStatus = async (req, res) => {
 
   const member = await User.findById(req.params.id);
   if (member) {
+    const oldStatus = member.status;
     member.status = status || member.status;
     const updatedMember = await member.save();
+    await AuditLog.create({
+      user: req.user.name,
+      action: 'MEMBER_STATUS_UPDATE',
+      detail: `Updated status of ${member.name} (${member.email}) from ${oldStatus} to ${status}`,
+      category: 'member',
+    });
     res.json(updatedMember);
   } else {
     res.status(404);
@@ -120,8 +134,15 @@ const updateMemberRole = async (req, res) => {
   // Validate role limits
   await validateRoleLimit(role);
 
+  const oldRole = member.role;
   member.role = role;
   const updatedMember = await member.save();
+  await AuditLog.create({
+    user: req.user.name,
+    action: 'MEMBER_ROLE_UPDATE',
+    detail: `Promoted/demoted ${member.name} (${member.email}) from ${oldRole} to ${role}`,
+    category: 'member',
+  });
   res.json(updatedMember);
 };
 
@@ -146,6 +167,12 @@ const deleteMember = async (req, res) => {
       throw new Error('Cannot delete super admin');
     }
     await User.findByIdAndDelete(req.params.id);
+    await AuditLog.create({
+      user: req.user.name,
+      action: 'MEMBER_DELETED',
+      detail: `Deleted member account: ${member.name} (${member.email})`,
+      category: 'member',
+    });
     res.json({ message: 'Member permanently removed from the registry' });
   } else {
     res.status(404);

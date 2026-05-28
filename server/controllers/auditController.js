@@ -16,4 +16,9 @@ const addLog = async (req, res) => {
   res.status(201).json(log);
 };
 
-module.exports = { getLogs, addLog };
+const clearLogs = async (req, res) => {
+  await AuditLog.deleteMany({});
+  res.json({ message: 'Audit Ledger purged successfully' });
+};
+
+module.exports = { getLogs, addLog, clearLogs };

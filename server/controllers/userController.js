@@ -3,6 +3,7 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 const { authenticator } = require('otplib');
+const AuditLog = require('../models/AuditLog');
 
 // Helper to catch async errors
 const asyncHandler = (fn) => (req, res, next) => {
@@ -104,6 +105,13 @@ const authUser = async (req, res) => {
       });
     }
 
+    await AuditLog.create({
+      user: user.name,
+      action: 'USER_LOGIN',
+      detail: `User logged in successfully (${user.email})`,
+      category: 'system'
+    });
+
     res.json({
       token: generateToken(user),
       user: {
@@ -115,6 +123,13 @@ const authUser = async (req, res) => {
       }
     });
   } else {
+    const attemptUser = await User.findOne({ email });
+    await AuditLog.create({
+      user: attemptUser ? attemptUser.name : 'Unknown User',
+      action: 'LOGIN_FAILURE',
+      detail: `Failed login attempt for email: ${email}`,
+      category: 'security'
+    });
     res.status(401);
     throw new Error('Invalid email or password');
   }
@@ -143,8 +158,21 @@ const verifyLogin2FA = async (req, res) => {
 
     const isValid = authenticator.verify({ token, secret: user.twoFactorSecret });
     if (!isValid) {
+      await AuditLog.create({
+        user: user.name,
+        action: 'LOGIN_2FA_FAILURE',
+        detail: `Failed 2FA verification attempt for user: ${user.email}`,
+        category: 'security'
+      });
       return res.status(401).json({ message: 'Invalid 2FA code' });
     }
+
+    await AuditLog.create({
+      user: user.name,
+      action: 'USER_LOGIN_2FA',
+      detail: `User logged in successfully via 2FA (${user.email})`,
+      category: 'system'
+    });
 
     res.json({
       token: generateToken(user),
@@ -197,6 +225,13 @@ const registerUser = async (req, res) => {
   });
 
   if (user) {
+    await AuditLog.create({
+      user: user.name,
+      action: 'USER_REGISTER',
+      detail: `New user account registered: ${user.name} (${user.email})`,
+      category: 'member',
+    });
+
     // Create verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
     user.emailVerificationToken = crypto
