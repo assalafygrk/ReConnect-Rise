@@ -145,7 +145,7 @@ const getWeeklyStatus = async (req, res) => {
  * @access  Private/Treasurer/Admin
  */
 const markPaid = async (req, res) => {
-  const { memberId, weekId: requestedWeekId, amount, paymentChannel, note, adminPassword } = req.body;
+  const { memberId, weekId: requestedWeekId, amount, paymentChannel, note, adminPassword, adminPin } = req.body;
 
   if (!memberId) {
     res.status(400);
@@ -157,7 +157,11 @@ const markPaid = async (req, res) => {
       res.status(401);
       throw new Error('Administrative password verification required for cash operations');
     }
-    const adminUser = await User.findById(req.user._id).select('+password +facialUpload');
+    if (!adminPin) {
+      res.status(400);
+      throw new Error('Administrative transaction PIN required for cash operations');
+    }
+    const adminUser = await User.findById(req.user._id).select('+password +transactionPin');
     if (!adminUser) {
       res.status(404);
       throw new Error('Authorized user record not found');
@@ -167,14 +171,10 @@ const markPaid = async (req, res) => {
       res.status(401);
       throw new Error('Protocol Violation: Invalid Administrative Master Key');
     }
-    if (!adminUser.facialUpload) {
-      res.status(400);
-      throw new Error('Biometric authentication failed: No enrolled face template found. Please enroll your face first.');
-    }
-    const { facialImage } = req.body;
-    if (!facialImage || !facialImage.startsWith('data:image/')) {
-      res.status(400);
-      throw new Error('Biometric authentication failed: Valid live facial scan signature is required');
+    const isPinMatch = await adminUser.matchTransactionPin(adminPin);
+    if (!isPinMatch) {
+      res.status(401);
+      throw new Error('Protocol Violation: Invalid Administrative Transaction PIN');
     }
   }
 
@@ -355,7 +355,7 @@ const payViaWallet = async (req, res) => {
  * @access  Private (any member) — Treasurer can record on behalf
  */
 const recordGeneralContribution = async (req, res) => {
-  const { memberId, amount, paymentChannel, note, reference, adminPassword } = req.body;
+  const { memberId, amount, paymentChannel, note, reference, adminPassword, adminPin } = req.body;
   const targetUserId = memberId || req.user._id;
 
   if (memberId && paymentChannel === 'cash') {
@@ -363,7 +363,11 @@ const recordGeneralContribution = async (req, res) => {
       res.status(401);
       throw new Error('Administrative password verification required for cash operations');
     }
-    const adminUser = await User.findById(req.user._id).select('+password +facialUpload');
+    if (!adminPin) {
+      res.status(400);
+      throw new Error('Administrative transaction PIN required for cash operations');
+    }
+    const adminUser = await User.findById(req.user._id).select('+password +transactionPin');
     if (!adminUser) {
       res.status(404);
       throw new Error('Authorized user record not found');
@@ -373,14 +377,10 @@ const recordGeneralContribution = async (req, res) => {
       res.status(401);
       throw new Error('Protocol Violation: Invalid Administrative Master Key');
     }
-    if (!adminUser.facialUpload) {
-      res.status(400);
-      throw new Error('Biometric authentication failed: No enrolled face template found. Please enroll your face first.');
-    }
-    const { facialImage } = req.body;
-    if (!facialImage || !facialImage.startsWith('data:image/')) {
-      res.status(400);
-      throw new Error('Biometric authentication failed: Valid live facial scan signature is required');
+    const isPinMatch = await adminUser.matchTransactionPin(adminPin);
+    if (!isPinMatch) {
+      res.status(401);
+      throw new Error('Protocol Violation: Invalid Administrative Transaction PIN');
     }
   }
 

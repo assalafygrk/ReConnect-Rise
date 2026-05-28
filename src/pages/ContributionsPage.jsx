@@ -5,14 +5,13 @@ import {
     Loader2, AlertCircle, TrendingUp, ShieldCheck, Plus, X,
     ArrowDownCircle, CreditCard, Users, Fingerprint, Lock,
     ChevronRight, Info, Filter, MoreHorizontal, Download,
-    Shield
+    Shield, Key
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { fetchWeeklyStatus, markMemberPaid, payViaWallet, recordGeneralContribution, recordBatchContributions, fetchWeeks, recordHistoricalData } from '../api/contributions';
 import { useAuth } from '../context/AuthContext';
 import { usePageConfig } from '../context/PageConfigContext';
 import { apiSetTransactionPin, apiGetProfile } from '../api/auth';
-import LiveFacialCapture from '../components/LiveFacialCapture';
 
 const fmt = (v) => `₦${Number(v || 0).toLocaleString('en-NG')}`;
 
@@ -70,7 +69,7 @@ export default function ContributionsPage() {
     // Administrative Verification States
     const [verificationTarget, setVerificationTarget] = useState(null);
     const [verificationPassword, setVerificationPassword] = useState('');
-    const [verificationFaceImage, setVerificationFaceImage] = useState(null);
+    const [verificationPin, setVerificationPin] = useState('');
     const [verificationStep, setVerificationStep] = useState(1);
     const [showVerificationModal, setShowVerificationModal] = useState(false);
 
@@ -119,7 +118,7 @@ export default function ContributionsPage() {
                 amount: weekData?.baseAmount
             });
             setVerificationPassword('');
-            setVerificationFaceImage(null);
+            setVerificationPin('');
             setVerificationStep(1);
             setShowVerificationModal(true);
             return;
@@ -136,13 +135,14 @@ export default function ContributionsPage() {
         }
     };
 
-    const handleVerifyAndSubmit = async (faceDataUrl) => {
+    const handleVerifyAndSubmit = async (e) => {
+        if (e) e.preventDefault();
         if (!verificationPassword) {
             toast.error('Administrative password required');
             return;
         }
-        if (!faceDataUrl) {
-            toast.error('Facial scan required');
+        if (!verificationPin || verificationPin.length !== 4) {
+            toast.error('Administrative 4-digit transaction PIN required');
             return;
         }
 
@@ -155,14 +155,14 @@ export default function ContributionsPage() {
                     paymentChannel: 'cash',
                     amount: verificationTarget.amount,
                     adminPassword: verificationPassword,
-                    facialImage: faceDataUrl
+                    adminPin: verificationPin
                 });
                 toast.success(`${verificationTarget.memberName} marked as paid (cash)`);
             }
             setShowVerificationModal(false);
             setVerificationTarget(null);
             setVerificationPassword('');
-            setVerificationFaceImage(null);
+            setVerificationPin('');
             setVerificationStep(1);
             loadData(selectedWeek);
         } catch (err) {
@@ -997,11 +997,11 @@ export default function ContributionsPage() {
                 </div>
             )}
 
-            {/* Cash Verification Modal with Password + Live Facial Capture */}
+            {/* Cash Verification Modal with Password + Transaction PIN */}
             {showVerificationModal && verificationTarget && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
                     <div className="absolute inset-0 bg-[#1A1A2E]/90 backdrop-blur-xl" onClick={() => {
-                        if (verificationStep !== 3) {
+                        if (!payingWallet) {
                             setShowVerificationModal(false);
                             setVerificationTarget(null);
                         }
@@ -1011,14 +1011,15 @@ export default function ContributionsPage() {
                             <div className="flex justify-between items-start">
                                 <div className="space-y-1">
                                     <span className="text-[9px] font-black text-[#E8820C] uppercase tracking-[0.2em] italic">Cash Security Protocol</span>
-                                    <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white uppercase tracking-tight leading-tight">Biometric Handshake</h3>
+                                    <h3 className="text-2xl font-serif font-black text-[#1A1A2E] dark:text-white uppercase tracking-tight leading-tight">Administrative Auth</h3>
                                 </div>
                                 <button 
                                     onClick={() => {
                                         setShowVerificationModal(false);
                                         setVerificationTarget(null);
                                     }} 
-                                    className="w-10 h-10 bg-gray-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-black/20 dark:text-white/20 hover:text-red-500 transition-all"
+                                    disabled={payingWallet}
+                                    className="w-10 h-10 bg-gray-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-black/20 dark:text-white/20 hover:text-red-500 transition-all disabled:opacity-50"
                                 >
                                     <X size={20} />
                                 </button>
@@ -1029,71 +1030,64 @@ export default function ContributionsPage() {
                                 <div className="space-y-0.5">
                                     <p className="text-[10px] font-black uppercase tracking-wider">Manual Override Authorization</p>
                                     <p className="text-[9px] opacity-80 leading-relaxed font-bold">
-                                        Marking contribution for <strong className="text-black dark:text-white">{verificationTarget.memberName}</strong> as paid via cash. Administrative password and facial verification are required.
+                                        Marking contribution for <strong className="text-black dark:text-white">{verificationTarget.memberName}</strong> as paid via cash. Administrative password and transaction PIN are required.
                                     </p>
                                 </div>
                             </div>
 
-                            {verificationStep === 1 && (
-                                <form onSubmit={(e) => { e.preventDefault(); if (verificationPassword) setVerificationStep(2); }} className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2 italic">Administrative Password</label>
-                                        <div className="relative group">
-                                            <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-colors" size={20} />
-                                            <input 
-                                                required 
-                                                type="password" 
-                                                value={verificationPassword} 
-                                                onChange={e => setVerificationPassword(e.target.value)}
-                                                className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-3xl pl-14 pr-8 py-5 text-sm font-black outline-none dark:text-white transition-all" 
-                                                placeholder="Enter Master Password"
-                                                autoFocus
-                                            />
-                                        </div>
-                                    </div>
-                                    <button 
-                                        type="submit" 
-                                        disabled={!verificationPassword}
-                                        className="w-full py-5 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
-                                    >
-                                        Proceed to Biometrics <ChevronRight size={14} />
-                                    </button>
-                                </form>
-                            )}
-
-                            {verificationStep === 2 && (
-                                <div className="space-y-4">
-                                    <div className="text-center space-y-1">
-                                        <p className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em]">Step 2: Biometric Liveness Check</p>
-                                        <p className="text-[9px] text-[#E8820C] font-bold uppercase tracking-wider italic">Follow the voice and text instructions</p>
-                                    </div>
-                                    <div className="overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 aspect-video relative bg-black">
-                                        <LiveFacialCapture 
-                                            onCapture={(dataUrl) => {
-                                                setVerificationFaceImage(dataUrl);
-                                                setVerificationStep(3);
-                                                handleVerifyAndSubmit(dataUrl);
-                                            }}
-                                            onCancel={() => {
-                                                setVerificationStep(1);
-                                            }}
+                            <form onSubmit={handleVerifyAndSubmit} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2 italic">Administrative Password</label>
+                                    <div className="relative group">
+                                        <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-colors" size={20} />
+                                        <input 
+                                            required 
+                                            type="password" 
+                                            value={verificationPassword} 
+                                            onChange={e => setVerificationPassword(e.target.value)}
+                                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-3xl pl-14 pr-8 py-5 text-sm font-black outline-none dark:text-white transition-all" 
+                                            placeholder="Enter Master Password"
+                                            autoFocus
+                                            disabled={payingWallet}
                                         />
                                     </div>
                                 </div>
-                            )}
 
-                            {verificationStep === 3 && (
-                                <div className="py-12 flex flex-col items-center justify-center gap-4">
-                                    <div className="relative">
-                                        <Loader2 className="animate-spin text-[#E8820C]" size={48} />
-                                        <div className="absolute inset-0 blur-xl bg-[#E8820C]/20 rounded-full animate-pulse" />
-                                    </div>
-                                    <div className="text-center space-y-1">
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E8820C] animate-pulse">Syncing Ledger</p>
-                                        <p className="text-[9px] font-bold text-black/40 dark:text-white/40">Verifying secure administrative signature...</p>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] ml-2 italic">Administrative Transaction PIN</label>
+                                    <div className="relative group">
+                                        <Key className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 dark:text-white/20 group-focus-within:text-[#E8820C] transition-colors" size={20} />
+                                        <input 
+                                            required 
+                                            type="password" 
+                                            maxLength={4}
+                                            pattern="[0-9]{4}"
+                                            inputMode="numeric"
+                                            value={verificationPin} 
+                                            onChange={e => setVerificationPin(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-[#E8820C] rounded-3xl pl-14 pr-8 py-5 text-sm font-black outline-none dark:text-white tracking-[0.5em] transition-all" 
+                                            placeholder="••••"
+                                            disabled={payingWallet}
+                                        />
                                     </div>
                                 </div>
-                            )}
+
+                                <button 
+                                    type="submit" 
+                                    disabled={payingWallet || !verificationPassword || verificationPin.length !== 4}
+                                    className="w-full py-5 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {payingWallet ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" /> Authorizing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Authorize Transaction <ChevronRight size={14} />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
