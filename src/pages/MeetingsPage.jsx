@@ -178,7 +178,7 @@ export default function MeetingsPage() {
                         <button
                             key={f}
                             onClick={() => setActiveFilter(f)}
-                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${activeFilter === f ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] shadow-lg' : 'text-black/30 dark:text-white/40 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
+                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${activeFilter === f ? 'bg-[#1A1A2E] dark:bg-[#E8820C] text-white shadow-lg' : 'text-black/30 dark:text-white/40 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
                                 }`}
                         >
                             {f}
@@ -259,7 +259,7 @@ export default function MeetingsPage() {
                                         {m.minutes ? (
                                             <button
                                                 onClick={() => setExpandedMinutes(expandedMinutes === m.id ? null : m.id)}
-                                                className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-[#1A1A2E]/5 dark:bg-white/5 text-[#1A1A2E] dark:text-white text-[9px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] dark:hover:bg-white hover:text-white dark:hover:text-[#1A1A2E] transition-all flex items-center gap-2">
+                                                className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-[#1A1A2E]/5 dark:bg-white/5 text-[#1A1A2E] dark:text-white text-[9px] font-black uppercase tracking-widest hover:bg-[#1A1A2E] dark:hover:bg-[#E8820C] hover:text-white transition-all flex items-center gap-2">
                                                 <FileText size={14} /> {expandedMinutes === m.id ? 'Close Minutes' : 'View Minutes'}
                                             </button>
                                         ) : (
@@ -370,7 +370,7 @@ export default function MeetingsPage() {
                                 <button
                                     disabled={!minutesText.trim()}
                                     onClick={() => handleCommitMinutes(showMinutesModal)}
-                                    className="flex-[2] py-5 bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-30"
+                                    className="flex-[2] py-5 bg-[#1A1A2E] dark:bg-[#E8820C] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-30"
                                 >
                                     Commit to Archive
                                 </button>

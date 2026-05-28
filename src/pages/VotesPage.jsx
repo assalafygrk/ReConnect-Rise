@@ -180,7 +180,7 @@ export default function VotesPage() {
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${filter === f ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] shadow-lg' : 'text-black/30 dark:text-white/40 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
+                            className={`px-8 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${filter === f ? 'bg-[#1A1A2E] dark:bg-[#E8820C] text-white shadow-lg' : 'text-black/30 dark:text-white/40 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
                                 }`}
                         >
                             {f}

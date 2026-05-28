@@ -234,7 +234,7 @@ export default function ChatPage() {
                                             className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all relative group ${activeTab === id ? 'bg-white dark:bg-[#1A1A2E] shadow-xl border border-black/5 dark:border-white/10' : 'hover:bg-white/5 opacity-50'}`}
                                         >
                                             <div className="relative">
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-[10px] transition-all overflow-hidden ${activeTab === id ? 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] shadow-lg ring-1 ring-[#E8820C]/20' : 'bg-white/5 text-white/20 border border-white/10'}`}>
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-[10px] transition-all overflow-hidden ${activeTab === id ? 'bg-[#1A1A2E] dark:bg-[#E8820C] text-white shadow-lg ring-1 ring-[#E8820C]/20' : 'bg-white/5 text-white/20 border border-white/10'}`}>
                                                     {isPublic ? <Signal size={18} className="text-[#E8820C]" /> : (b?.facialUpload ? <img src={b.facialUpload} alt={b.name} className="w-full h-full object-cover" /> : b?.name.split(' ').map(n => n[0]).join(''))}
                                                 </div>
                                                 <div className={`absolute -top-1 -right-1 w-3 h-3 border-2 border-gray-50 dark:border-[#0B1221] rounded-full transition-colors ${online ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></div>
@@ -293,7 +293,7 @@ export default function ChatPage() {
                         </button>
 
                         <div className="relative group">
-                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#1A1A2E] dark:bg-white flex items-center justify-center text-white dark:text-[#1A1A2E] shadow-2xl relative z-10 transition-transform overflow-hidden group-hover:scale-105 duration-700">
+                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#1A1A2E] dark:bg-[#E8820C] flex items-center justify-center text-white shadow-2xl relative z-10 transition-transform overflow-hidden group-hover:scale-105 duration-700">
                                 {activeTab === 'public' ? <Signal size={20} className="text-[#E8820C]" /> : (currentBrother?.facialUpload ? <img src={currentBrother.facialUpload} alt={currentBrother.name} className="w-full h-full object-cover" /> : <User size={20} />)}
                             </div>
                             <div className="absolute -inset-1.5 bg-[#E8820C] dark:bg-[#E8820C]/30 rounded-2xl blur-md opacity-20 group-hover:opacity-60 transition-opacity duration-1000"></div>
@@ -374,7 +374,7 @@ export default function ChatPage() {
                                 return (
                                     <div key={msg.id} className={`flex items-end gap-4 md:gap-8 ${msg.isMe ? 'justify-end' : 'justify-start'} ${!showAvatar && !msg.isMe ? 'ml-16 md:ml-24' : ''} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
                                         {showAvatar && (
-                                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.5rem] md:rounded-[2rem] bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] flex items-center justify-center text-xs font-black shadow-2xl mb-8 shrink-0 ring-4 ring-black/5 dark:ring-white/5 overflow-hidden">
+                                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.5rem] md:rounded-[2rem] bg-[#1A1A2E] dark:bg-[#E8820C] text-white flex items-center justify-center text-xs font-black shadow-2xl mb-8 shrink-0 ring-4 ring-black/5 dark:ring-white/5 overflow-hidden">
                                                 {msg.senderAvatar ? <img src={msg.senderAvatar} alt={msg.senderName} className="w-full h-full object-cover" /> : (msg.role === 'super_admin' ? 'SA' : msg.senderName?.split(' ').map(n => n[0]).join(''))}
                                             </div>
                                         )}
@@ -482,7 +482,7 @@ export default function ChatPage() {
                             })
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-center space-y-12 max-w-md mx-auto opacity-40 scale-110">
-                                <div className="w-32 h-32 rounded-[3.5rem] bg-[#1A1A2E] dark:bg-white flex items-center justify-center text-[#E8820C] shadow-2xl relative group">
+                                <div className="w-32 h-32 rounded-[3.5rem] bg-[#1A1A2E] dark:bg-[#1E293B] flex items-center justify-center text-[#E8820C] shadow-2xl relative group">
                                     <MessageSquare size={56} className="group-hover:scale-110 transition-transform duration-700" />
                                     <div className="absolute -inset-6 bg-[#E8820C] dark:bg-[#E8820C]/30 rounded-[4.5rem] blur-2xl animate-pulse"></div>
                                 </div>
@@ -573,7 +573,7 @@ export default function ChatPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowAttachments(!showAttachments)}
-                                className={`w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl active:scale-90 mb-1 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] dark:bg-white text-white dark:text-[#1A1A2E] hover:scale-105'}`}
+                                className={`w-14 h-14 md:w-20 md:h-20 shrink-0 rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl active:scale-90 mb-1 ${showAttachments ? 'bg-red-500 text-white rotate-45' : 'bg-[#1A1A2E] dark:bg-[#E8820C] text-white hover:scale-105'}`}
                             >
                                 <Plus size={28} className="md:size-10" />
                             </button>
